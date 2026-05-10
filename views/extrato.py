@@ -7,7 +7,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
 from menu import get_menu
-from database import get_connection
+from database import get_connection, get_cursor
 from utils import verificar_admin, formatar_moeda_input, limpar_valor
 
 
@@ -30,12 +30,8 @@ def extrato_view(page: ft.Page):
     def get_contas_opcoes():
         try:
             conn = get_connection()
-            cur  = conn.cursor()
-            cur.execute("""
-                SELECT DISTINCT s.nome FROM subcontas s
-                WHERE s.usuario_id = ?
-                ORDER BY s.nome
-            """, (uid,))
+            cur  = get_cursor(conn)
+            cur.execute("SELECT DISTINCT s.nome FROM subcontas s WHERE s.usuario_id=%s ORDER BY s.nome", (uid,))
             nomes = cur.fetchall()
             conn.close()
             opcoes = [ft.dropdown.Option("Todas")]
@@ -83,25 +79,25 @@ def extrato_view(page: ft.Page):
     def carregar_tabela():
         try:
             conn   = get_connection()
-            cur    = conn.cursor()
+            cur    = get_cursor(conn)
             query  = """
                 SELECT t.id, t.data, s.nome, t.valor, t.tipo, t.descricao
                 FROM transacoes t
                 JOIN subcontas s ON t.subconta_id = s.id
-                WHERE t.usuario_id = ?
+                WHERE t.usuario_id = %s
             """
             params = [uid]
 
             if filtro_mes.value and filtro_mes.value != "Todos":
-                query += " AND t.data LIKE ?"
+                query += " AND t.data LIKE %s"
                 params.append(f"%{filtro_mes.value}")
 
             if filtro_tipo.value and filtro_tipo.value != "Todos":
-                query += " AND t.tipo = ?"
+                query += " AND t.tipo = %s"
                 params.append(filtro_tipo.value)
 
             if filtro_conta.value and filtro_conta.value != "Todas":
-                query += " AND s.nome = ?"
+                query += " AND s.nome = %s"
                 params.append(filtro_conta.value)
 
             query += " ORDER BY t.data DESC, t.id DESC"
@@ -172,7 +168,8 @@ def extrato_view(page: ft.Page):
     def deletar(tid):
         try:
             conn = get_connection()
-            conn.execute("DELETE FROM transacoes WHERE id=? AND usuario_id=?", (tid, uid))
+            cur  = get_cursor(conn)
+            cur.execute("DELETE FROM transacoes WHERE id=%s AND usuario_id=%s", (tid, uid))
             conn.commit()
             conn.close()
             carregar_tabela()
@@ -198,10 +195,10 @@ def extrato_view(page: ft.Page):
             return
         try:
             conn = get_connection()
-            conn.execute(
-                "UPDATE transacoes SET data=?, valor=?, descricao=? WHERE id=? AND usuario_id=?",
-                (data_f.value, limpar_valor(valor_f.value), desc_f.value,
-                 state["editing_id"], uid)
+            cur  = get_cursor(conn)
+            cur.execute(
+                "UPDATE transacoes SET data=%s, valor=%s, descricao=%s WHERE id=%s AND usuario_id=%s",
+                (data_f.value, limpar_valor(valor_f.value), desc_f.value, state["editing_id"], uid)
             )
             conn.commit()
             conn.close()
@@ -219,7 +216,7 @@ def extrato_view(page: ft.Page):
                 page.update()
                 return
 
-            pasta = "C:\\Alexandre\\ControleFinanceiro\\relatorios"
+            pasta = "/tmp/relatorios"
             os.makedirs(pasta, exist_ok=True)
             mes_label    = (filtro_mes.value if filtro_mes.value != "Todos" else "completo").replace("/", "-")
             nome_arquivo = f"extrato_{mes_label}_{datetime.now().strftime('%d%m%Y_%H%M%S')}.pdf"
@@ -293,7 +290,7 @@ def extrato_view(page: ft.Page):
             elems.append(tabela_pdf)
             doc.build(elems)
 
-            msg_pdf.value = f"✅ PDF salvo em: {caminho}"
+            msg_pdf.value = f"✅ PDF gerado com sucesso!"
             msg_pdf.color = ft.colors.GREEN_700
             page.update()
 
