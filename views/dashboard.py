@@ -110,7 +110,9 @@ def dashboard_view(page):
             conn = get_connection()
             cur  = get_cursor(conn)
             cur.execute("SELECT COALESCE(SUM(saldo_inicial), 0) FROM bancos WHERE usuario_id=%s", (uid,))
-            saldo_inicial = cur.fetchone()["coalesce"] or 0.0
+## - subistituido            saldo_inicial = cur.fetchone()["coalesce"] or 0.0
+            row = cur.fetchone()
+            saldo_inicial = float(row[0] if row and row[0] else 0)
             m_sel = int(mes_str.split("/")[0])
             a_sel = int(mes_str.split("/")[1])
             cur.execute("""

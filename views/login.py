@@ -1,6 +1,6 @@
 import flet as ft
 from datetime import datetime
-from database import autenticar, get_connection
+from database import autenticar, get_connection, get_cursor
 
 
 def login_view(page: ft.Page):
@@ -21,14 +21,14 @@ def login_view(page: ft.Page):
         try:
             mes_str = datetime.now().strftime("%m/%Y")
             conn = get_connection()
-            cur  = conn.cursor()
+            cur  = get_cursor(conn)
             cur.execute("""
                 SELECT s.nome FROM subcontas s
                 WHERE s.fixa = 1
-                AND s.usuario_id = ?
+                AND s.usuario_id = %s
                 AND s.id NOT IN (
                     SELECT subconta_id FROM transacoes
-                    WHERE data LIKE ? AND usuario_id = ?
+                    WHERE data LIKE %s AND usuario_id = %s
                 )
                 ORDER BY s.nome
             """, (uid, f"%{mes_str}", uid))
@@ -144,20 +144,16 @@ def login_view(page: ft.Page):
                         ft.Text("FINANÇA SIMPLES", size=26, weight="bold", color="#1565C0"),
                         ft.Text("Acesse sua conta", size=14, color=ft.colors.GREY_600),
                         ft.Divider(height=10, color="transparent"),
-
                         login_input,
                         senha_input,
                         erro_text,
                         carregando,
-
                         ft.ElevatedButton(
                             "ENTRAR", width=300, height=45,
                             bgcolor=ft.colors.BLUE_700, color=ft.colors.WHITE,
                             on_click=fazer_login,
                         ),
-
                         ft.Divider(height=8, color="transparent"),
-
                         ft.Row([
                             ft.Text("Não tem conta?", size=13, color=ft.colors.GREY_600),
                             ft.TextButton(
@@ -166,7 +162,6 @@ def login_view(page: ft.Page):
                                 style=ft.ButtonStyle(color="#1565C0"),
                             ),
                         ], alignment=ft.MainAxisAlignment.CENTER, spacing=4),
-
                         ft.Text(
                             "Acesso padrão: admin / admin123",
                             size=11, color=ft.colors.GREY_400, italic=True
