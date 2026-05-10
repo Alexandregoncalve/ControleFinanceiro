@@ -55,7 +55,7 @@ def dividas_view(page):
                 FROM transacoes t
                 JOIN subcontas s ON t.subconta_id = s.id
                 JOIN categorias c ON s.categoria_id = c.id
-                WHERE c.nome = 'DÍVIDAS' AND t.usuario_id=%s
+                WHERE UPPER(c.nome) LIKE '%DIVIDA%' AND t.usuario_id=%s
                 GROUP BY t.subconta_id, s.nome, t.descricao
                 ORDER BY s.nome, t.descricao
             """, (uid,))
@@ -208,16 +208,21 @@ def dividas_view(page):
                         "➕ REGISTRAR PAGAMENTO DE PARCELA",
                         "Registra uma parcela paga como transação de despesa",
                         ft.Column([
-                            ft.Row([dd_subconta, tf_descricao, tf_total, tf_vencimento], spacing=10, wrap=True),
+                            ft.Row([dd_subconta, tf_descricao, tf_total, tf_vencimento],
+                                   spacing=10, wrap=True),
                             ft.Row([tf_parcelas, tf_pago, tf_taxa,
-                                    ft.ElevatedButton("REGISTRAR PARCELA", icon=ft.icons.SAVE,
-                                                      bgcolor="#C62828", color=ft.colors.WHITE,
-                                                      on_click=registrar_parcela)], spacing=10, wrap=True),
+                                    ft.ElevatedButton(
+                                        "REGISTRAR PARCELA", icon=ft.icons.SAVE,
+                                        bgcolor="#C62828", color=ft.colors.WHITE,
+                                        on_click=registrar_parcela)],
+                                   spacing=10, wrap=True),
                             msg_form,
                         ], spacing=10),
                     ),
                     ft.Divider(height=8, color="transparent"),
-                    secao("📋 DÍVIDAS REGISTRADAS", "Histórico de parcelas pagas por categoria", lista_dividas),
+                    secao("📋 DÍVIDAS REGISTRADAS",
+                          "Histórico de parcelas pagas por categoria",
+                          lista_dividas),
                     ft.Divider(height=16, color="transparent"),
                 ], scroll=ft.ScrollMode.ALWAYS, expand=True),
             ),
