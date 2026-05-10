@@ -1,6 +1,6 @@
 import flet as ft
 from menu import get_menu
-from database import get_connection
+from database import get_connection, get_cursor
 from utils import verificar_admin, limpar_valor, formatar_moeda_input
 
 
@@ -11,12 +11,8 @@ def contas_view(page: ft.Page):
     def obter_categorias():
         try:
             conn = get_connection()
-            cur  = conn.cursor()
-            cur.execute("""
-                SELECT id, nome, tipo FROM categorias
-                WHERE usuario_id = ?
-                ORDER BY tipo, nome
-            """, (uid,))
+            cur  = get_cursor(conn)
+            cur.execute("SELECT id, nome, tipo FROM categorias WHERE usuario_id=%s ORDER BY tipo, nome", (uid,))
             rows = cur.fetchall()
             conn.close()
             return rows
@@ -27,13 +23,12 @@ def contas_view(page: ft.Page):
     def obter_subcontas():
         try:
             conn = get_connection()
-            cur  = conn.cursor()
+            cur  = get_cursor(conn)
             cur.execute("""
                 SELECT s.id, s.nome, c.tipo, s.categoria_id, s.fixa, s.orcamento, c.nome as cat_nome
                 FROM subcontas s
                 JOIN categorias c ON s.categoria_id = c.id
-                WHERE s.usuario_id = ?
-                ORDER BY c.nome, s.nome
+                WHERE s.usuario_id=%s ORDER BY c.nome, s.nome
             """, (uid,))
             rows = cur.fetchall()
             conn.close()
@@ -79,8 +74,7 @@ def contas_view(page: ft.Page):
                     ft.TextButton(
                         "Excluir",
                         style=ft.ButtonStyle(color=ft.colors.RED_700),
-                        on_click=lambda _, sid=s["id"]: verificar_admin(
-                            page, lambda sid=sid: deletar(sid))
+                        on_click=lambda _, sid=s["id"]: verificar_admin(page, lambda sid=sid: deletar(sid))
                     ),
                 ])),
             ]))
@@ -89,7 +83,8 @@ def contas_view(page: ft.Page):
     def deletar(sid):
         try:
             conn = get_connection()
-            conn.execute("DELETE FROM subcontas WHERE id=? AND usuario_id=?", (sid, uid))
+            cur  = get_cursor(conn)
+            cur.execute("DELETE FROM subcontas WHERE id=%s AND usuario_id=%s", (sid, uid))
             conn.commit()
             conn.close()
             msg.value = "✅ Subconta excluída."
@@ -120,7 +115,6 @@ def contas_view(page: ft.Page):
         msg.value = ""
         page.update()
 
-    # ── Formulário Conta Pai ──────────────────────────────────────────────
     n_p = ft.TextField(label="Nome Conta Pai", width=280)
     t_p = ft.Dropdown(
         label="Tipo", width=140,
@@ -134,8 +128,9 @@ def contas_view(page: ft.Page):
             return
         try:
             conn = get_connection()
-            conn.execute(
-                "INSERT INTO categorias (usuario_id, nome, tipo) VALUES (?,?,?)",
+            cur  = get_cursor(conn)
+            cur.execute(
+                "INSERT INTO categorias (usuario_id, nome, tipo) VALUES (%s,%s,%s)",
                 (uid, n_p.value.strip().upper(), t_p.value)
             )
             conn.commit()
@@ -153,7 +148,6 @@ def contas_view(page: ft.Page):
             msg.value = "❌ Erro ao criar conta pai."
             page.update()
 
-    # ── Formulário Subconta ───────────────────────────────────────────────
     sel_p = ft.Dropdown(
         label="Vincular à Conta Pai", width=280,
         options=[
@@ -176,19 +170,19 @@ def contas_view(page: ft.Page):
             return
         try:
             conn     = get_connection()
-            cur      = conn.cursor()
+            cur      = get_cursor(conn)
             fixa_val = 1 if fix.value else 0
             orc_val  = limpar_valor(orc.value) if orc.value else 0.0
 
             if state["editing_id"] is None:
                 cur.execute(
-                    "INSERT INTO subcontas (usuario_id, categoria_id, nome, fixa, orcamento) VALUES (?,?,?,?,?)",
+                    "INSERT INTO subcontas (usuario_id, categoria_id, nome, fixa, orcamento) VALUES (%s,%s,%s,%s,%s)",
                     (uid, int(sel_p.value), n_s.value.strip().upper(), fixa_val, orc_val)
                 )
                 msg.value = "✅ Subconta criada."
             else:
                 cur.execute(
-                    "UPDATE subcontas SET categoria_id=?, nome=?, fixa=?, orcamento=? WHERE id=? AND usuario_id=?",
+                    "UPDATE subcontas SET categoria_id=%s, nome=%s, fixa=%s, orcamento=%s WHERE id=%s AND usuario_id=%s",
                     (int(sel_p.value), n_s.value.strip().upper(), fixa_val, orc_val,
                      state["editing_id"], uid)
                 )

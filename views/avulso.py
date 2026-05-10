@@ -2,24 +2,22 @@ import flet as ft
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from menu import get_menu
-from database import get_connection
+from database import get_connection, get_cursor
 from utils import formatar_moeda_input, limpar_valor
 
 
 def avulso_view(page: ft.Page):
-
     uid = page.session.get("user_id")
 
     def carregar_subcontas():
         try:
             conn = get_connection()
-            cur  = conn.cursor()
+            cur  = get_cursor(conn)
             cur.execute("""
                 SELECT s.id, s.nome, c.tipo
                 FROM subcontas s
                 JOIN categorias c ON s.categoria_id = c.id
-                WHERE s.usuario_id = ?
-                ORDER BY c.tipo, s.nome
+                WHERE s.usuario_id=%s ORDER BY c.tipo, s.nome
             """, (uid,))
             rows = cur.fetchall()
             conn.close()
@@ -29,19 +27,9 @@ def avulso_view(page: ft.Page):
             return []
 
     subs  = carregar_subcontas()
-    state = {
-        "subconta_id":   None,
-        "subconta_nome": "",
-        "cat_real_id":   None,
-        "cat_real_nome": "",
-    }
+    state = {"subconta_id": None, "subconta_nome": "", "cat_real_id": None, "cat_real_nome": ""}
 
-    # ── Campo data com datepicker ─────────────────────────────────────────
-    data_field = ft.TextField(
-        label="Data", width=160,
-        value=datetime.now().strftime("%d/%m/%Y"),
-        read_only=True,
-    )
+    data_field = ft.TextField(label="Data", width=160, value=datetime.now().strftime("%d/%m/%Y"), read_only=True)
 
     def ao_selecionar_data(e):
         if date_picker.value:
@@ -49,26 +37,15 @@ def avulso_view(page: ft.Page):
             atualizar_info_parcelas(None)
             page.update()
 
-    date_picker = ft.DatePicker(
-        first_date=datetime(2020, 1, 1),
-        last_date=datetime(2030, 12, 31),
-        on_change=ao_selecionar_data,
-    )
+    date_picker = ft.DatePicker(first_date=datetime(2020, 1, 1), last_date=datetime(2030, 12, 31), on_change=ao_selecionar_data)
     page.overlay.append(date_picker)
 
-    btn_data = ft.ElevatedButton(
-        "📅 Selecionar Data",
-        bgcolor=ft.colors.BLUE_100,
-        color=ft.colors.BLUE_900,
-        on_click=lambda e: setattr(date_picker, "open", True) or page.update(),
-    )
+    btn_data = ft.ElevatedButton("📅 Selecionar Data", bgcolor=ft.colors.BLUE_100, color=ft.colors.BLUE_900,
+                                  on_click=lambda e: setattr(date_picker, "open", True) or page.update())
 
-    # ── Parcelas ──────────────────────────────────────────────────────────
     parcelas_row   = ft.Row(visible=False)
-    parcelas_field = ft.Dropdown(
-        label="Parcelas", width=150, value="1",
-        options=[ft.dropdown.Option(str(i), f"{i}x") for i in range(1, 13)],
-    )
+    parcelas_field = ft.Dropdown(label="Parcelas", width=150, value="1",
+                                  options=[ft.dropdown.Option(str(i), f"{i}x") for i in range(1, 13)])
     parcelas_info  = ft.Text("", size=12, color=ft.colors.BLUE_700, italic=True)
     parcelas_row.controls = [parcelas_field, parcelas_info]
 
@@ -106,40 +83,21 @@ def avulso_view(page: ft.Page):
 
     parcelas_field.on_change = atualizar_info_parcelas
 
-    # ── Busca reativa conta principal ─────────────────────────────────────
-    busca_field = ft.TextField(
-        label="🔍 Buscar conta (ex: cartao, combustível...)",
-        width=400,
-        on_change=lambda e: filtrar_contas(e.control.value),
-    )
-    lista_sugestoes     = ft.Column(spacing=0, visible=False)
-    sugestoes_container = ft.Container(
-        content=lista_sugestoes,
-        border=ft.border.all(1, "#DDD"),
-        border_radius=8,
-        bgcolor=ft.colors.WHITE,
-        width=400,
-    )
+    busca_field     = ft.TextField(label="🔍 Buscar conta (ex: cartao, combustível...)", width=400,
+                                    on_change=lambda e: filtrar_contas(e.control.value))
+    lista_sugestoes = ft.Column(spacing=0, visible=False)
+    sugestoes_container = ft.Container(content=lista_sugestoes, border=ft.border.all(1, "#DDD"),
+                                        border_radius=8, bgcolor=ft.colors.WHITE, width=400)
 
-    # ── Busca reativa categoria real (só para cartão) ─────────────────────
     cat_real_row       = ft.Column(visible=False, spacing=4)
-    busca_cat_real     = ft.TextField(
-        label="🏷️ Categoria real (ex: mercado, combustível...)",
-        width=400,
-        on_change=lambda e: filtrar_cat_real(e.control.value),
-    )
+    busca_cat_real     = ft.TextField(label="🏷️ Categoria real (ex: mercado, combustível...)", width=400,
+                                       on_change=lambda e: filtrar_cat_real(e.control.value))
     lista_cat_real     = ft.Column(spacing=0, visible=False)
-    cat_real_container = ft.Container(
-        content=lista_cat_real,
-        border=ft.border.all(1, "#DDD"),
-        border_radius=8,
-        bgcolor=ft.colors.WHITE,
-        width=400,
-    )
+    cat_real_container = ft.Container(content=lista_cat_real, border=ft.border.all(1, "#DDD"),
+                                       border_radius=8, bgcolor=ft.colors.WHITE, width=400)
     cat_real_row.controls = [
         ft.Text("💡 Onde foi gasto no cartão?", size=12, color=ft.colors.ORANGE_700, weight="bold"),
-        busca_cat_real,
-        cat_real_container,
+        busca_cat_real, cat_real_container,
     ]
 
     def selecionar_conta(sid, nome, tipo):
@@ -148,18 +106,17 @@ def avulso_view(page: ft.Page):
         busca_field.value      = f"{nome} ({tipo})"
         lista_sugestoes.controls.clear()
         lista_sugestoes.visible = False
-
         if eh_cartao(nome):
             parcelas_row.visible = True
             cat_real_row.visible = True
             atualizar_info_parcelas(None)
         else:
-            parcelas_row.visible  = False
-            parcelas_info.value   = ""
-            cat_real_row.visible  = False
-            state["cat_real_id"]  = None
-            state["cat_real_nome"]= ""
-            busca_cat_real.value  = ""
+            parcelas_row.visible   = False
+            parcelas_info.value    = ""
+            cat_real_row.visible   = False
+            state["cat_real_id"]   = None
+            state["cat_real_nome"] = ""
+            busca_cat_real.value   = ""
         page.update()
 
     def filtrar_contas(texto: str):
@@ -168,18 +125,15 @@ def avulso_view(page: ft.Page):
         state["subconta_nome"] = ""
         parcelas_row.visible   = False
         cat_real_row.visible   = False
-
         if not texto:
             lista_sugestoes.visible = False
             page.update()
             return
-
         filtradas = [s for s in subs if texto.upper() in s["nome"].upper()]
         if not filtradas:
             lista_sugestoes.visible = False
             page.update()
             return
-
         for s in filtradas[:8]:
             cor = ft.colors.GREEN_700 if s["tipo"] == "Receita" else ft.colors.RED_700
             lista_sugestoes.controls.append(
@@ -211,18 +165,15 @@ def avulso_view(page: ft.Page):
         lista_cat_real.controls.clear()
         state["cat_real_id"]   = None
         state["cat_real_nome"] = ""
-
         if not texto:
             lista_cat_real.visible = False
             page.update()
             return
-
         filtradas = [s for s in subs if texto.upper() in s["nome"].upper()]
         if not filtradas:
             lista_cat_real.visible = False
             page.update()
             return
-
         for s in filtradas[:8]:
             cor = ft.colors.GREEN_700 if s["tipo"] == "Receita" else ft.colors.RED_700
             lista_cat_real.controls.append(
@@ -242,10 +193,8 @@ def avulso_view(page: ft.Page):
         lista_cat_real.visible = True
         page.update()
 
-    val  = ft.TextField(
-        label="Valor (ex: 462,00)", width=200,
-        on_blur=lambda e: (formatar_moeda_input(e), atualizar_info_parcelas(e)),
-    )
+    val  = ft.TextField(label="Valor (ex: 462,00)", width=200,
+                        on_blur=lambda e: (formatar_moeda_input(e), atualizar_info_parcelas(e)))
     desc = ft.TextField(label="Descrição", width=400)
     msg  = ft.Text("", size=13)
 
@@ -263,69 +212,56 @@ def avulso_view(page: ft.Page):
             msg.value = "⚠️ Informe a categoria real do gasto no cartão."
             page.update()
             return
-
         try:
             conn = get_connection()
-            cur  = conn.cursor()
+            cur  = get_cursor(conn)
             cur.execute("""
                 SELECT c.tipo FROM categorias c
                 JOIN subcontas s ON s.categoria_id = c.id
-                WHERE s.id = ?
+                WHERE s.id=%s
             """, (int(state["subconta_id"]),))
             row  = cur.fetchone()
             tipo = row["tipo"] if row else "Despesa"
 
-            total_valor   = limpar_valor(val.value)
-            n_parcelas    = int(parcelas_field.value or 1) if parcelas_row.visible else 1
-            valor_parc    = round(total_valor / n_parcelas, 2)
-            descricao     = desc.value.strip()
-            data_base     = get_data_base()
-            cat_real_id   = state["cat_real_id"]
+            total_valor = limpar_valor(val.value)
+            n_parcelas  = int(parcelas_field.value or 1) if parcelas_row.visible else 1
+            valor_parc  = round(total_valor / n_parcelas, 2)
+            descricao   = desc.value.strip()
+            data_base   = get_data_base()
+            cat_real_id = state["cat_real_id"]
             cat_real_nome = state["cat_real_nome"]
 
             for i in range(1, n_parcelas + 1):
                 dt   = data_base + relativedelta(months=i)
                 data = f"10/{dt.month:02d}/{dt.year}"
-
                 if cat_real_nome:
                     base_desc = f"{cat_real_nome} - {descricao}" if descricao else cat_real_nome
                 else:
                     base_desc = descricao
-
                 desc_parc = base_desc
                 if n_parcelas > 1:
                     desc_parc = f"{base_desc} {i}/{n_parcelas}" if base_desc else f"{i}/{n_parcelas}"
-
                 cur.execute("""
                     INSERT INTO transacoes
                         (usuario_id, data, valor, subconta_id, tipo, descricao,
                          parcela_atual, total_parcelas, categoria_real_id)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """, (uid, data, valor_parc, int(state["subconta_id"]), tipo,
                       desc_parc, i, n_parcelas, cat_real_id))
 
             conn.commit()
             conn.close()
-
-            busca_field.value      = ""
-            val.value              = ""
-            desc.value             = ""
-            busca_cat_real.value   = ""
-            state["subconta_id"]   = None
-            state["subconta_nome"] = ""
-            state["cat_real_id"]   = None
-            state["cat_real_nome"] = ""
-            parcelas_row.visible   = False
-            parcelas_info.value    = ""
-            parcelas_field.value   = "1"
-            cat_real_row.visible   = False
+            busca_field.value = val.value = desc.value = busca_cat_real.value = ""
+            state.update({"subconta_id": None, "subconta_nome": "", "cat_real_id": None, "cat_real_nome": ""})
+            parcelas_row.visible = parcelas_info.value = False
+            parcelas_field.value = "1"
+            cat_real_row.visible = False
             lista_sugestoes.controls.clear()
             lista_sugestoes.visible = False
             lista_cat_real.controls.clear()
-            lista_cat_real.visible  = False
+            lista_cat_real.visible = False
             msg.value = f"✅ {n_parcelas}x lançamento(s) salvo(s) com sucesso!"
             page.update()
-
         except Exception as ex:
             print(f"[avulso] salvar: {ex}")
             msg.value = "❌ Erro ao salvar. Tente novamente."
@@ -341,20 +277,10 @@ def avulso_view(page: ft.Page):
                 content=ft.Column([
                     ft.Text("LANÇAMENTO AVULSO", size=18, weight="bold", color="blue"),
                     ft.Row([data_field, btn_data], spacing=10),
-                    busca_field,
-                    sugestoes_container,
-                    val,
-                    parcelas_row,
-                    cat_real_row,
-                    desc,
-                    msg,
-                    ft.ElevatedButton(
-                        "SALVAR LANÇAMENTO",
-                        icon=ft.icons.SAVE,
-                        bgcolor="blue", color="white",
-                        height=45,
-                        on_click=salvar,
-                    ),
+                    busca_field, sugestoes_container,
+                    val, parcelas_row, cat_real_row, desc, msg,
+                    ft.ElevatedButton("SALVAR LANÇAMENTO", icon=ft.icons.SAVE,
+                                      bgcolor="blue", color="white", height=45, on_click=salvar),
                 ], spacing=16)
             )
         ]

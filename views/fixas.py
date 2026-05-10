@@ -1,7 +1,7 @@
 import flet as ft
 from datetime import datetime
 from menu import get_menu
-from database import get_connection
+from database import get_connection, get_cursor
 from utils import formatar_moeda_input, limpar_valor
 
 
@@ -11,17 +11,10 @@ def fixas_view(page: ft.Page):
 
     try:
         conn = get_connection()
-        cur  = conn.cursor()
-        cur.execute("""
-            SELECT s.id, s.nome FROM subcontas s
-            WHERE s.fixa = 1 AND s.usuario_id = ?
-            ORDER BY s.nome
-        """, (uid,))
+        cur  = get_cursor(conn)
+        cur.execute("SELECT s.id, s.nome FROM subcontas s WHERE s.fixa=1 AND s.usuario_id=%s ORDER BY s.nome", (uid,))
         subs = cur.fetchall()
-        cur.execute("""
-            SELECT subconta_id FROM transacoes
-            WHERE data LIKE ? AND usuario_id = ?
-        """, (f"%/{mes}", uid))
+        cur.execute("SELECT subconta_id FROM transacoes WHERE data LIKE %s AND usuario_id=%s", (f"%/{mes}", uid))
         pagos = {r["subconta_id"] for r in cur.fetchall()}
         conn.close()
     except Exception as ex:
@@ -35,8 +28,7 @@ def fixas_view(page: ft.Page):
             d_f = ft.TextField(label="Descrição", value=s["nome"], width=250)
             campos.append(ft.Row([
                 ft.Checkbox(label=s["nome"]),
-                v_f,
-                d_f,
+                v_f, d_f,
                 ft.Text(str(s["id"]), visible=False),
             ]))
 
@@ -49,10 +41,9 @@ def fixas_view(page: ft.Page):
             msg.value = "⚠️ Selecione ao menos uma conta e informe o valor."
             page.update()
             return
-
         try:
             conn = get_connection()
-            cur  = conn.cursor()
+            cur  = get_cursor(conn)
             for r in selecionados:
                 sid  = int(r.controls[3].value)
                 v    = limpar_valor(r.controls[1].value)
@@ -60,13 +51,13 @@ def fixas_view(page: ft.Page):
                 cur.execute("""
                     SELECT c.tipo FROM categorias c
                     JOIN subcontas s ON s.categoria_id = c.id
-                    WHERE s.id = ?
+                    WHERE s.id=%s
                 """, (sid,))
                 row  = cur.fetchone()
                 tipo = row["tipo"] if row else "Despesa"
                 cur.execute("""
                     INSERT INTO transacoes (usuario_id, data, valor, subconta_id, tipo, descricao)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    VALUES (%s,%s,%s,%s,%s,%s)
                 """, (uid, datetime.now().strftime("%d/%m/%Y"), v, sid, tipo, desc))
             conn.commit()
             conn.close()
@@ -92,15 +83,10 @@ def fixas_view(page: ft.Page):
                     ft.Text(f"CONTAS FIXAS — {mes}", size=18, weight="bold", color="blue"),
                     ft.Text("Selecione as contas pagas e informe o valor:", size=13),
                     ft.Divider(),
-                    pendentes,
-                    msg,
-                    ft.ElevatedButton(
-                        "BAIXAR SELECIONADAS",
-                        icon=ft.icons.CHECK_CIRCLE,
-                        bgcolor="blue", color="white",
-                        height=45,
-                        on_click=baixar,
-                    ) if campos else ft.Container(),
+                    pendentes, msg,
+                    ft.ElevatedButton("BAIXAR SELECIONADAS", icon=ft.icons.CHECK_CIRCLE,
+                                      bgcolor="blue", color="white", height=45,
+                                      on_click=baixar) if campos else ft.Container(),
                 ], spacing=14)
             )
         ]

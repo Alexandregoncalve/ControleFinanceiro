@@ -2,11 +2,10 @@ import flet as ft
 from datetime import datetime
 from collections import defaultdict
 from menu import get_menu
-from database import get_connection
+from database import get_connection, get_cursor
 
 
 def parcelas_view(page: ft.Page):
-
     uid = page.session.get("user_id")
 
     def fmt(v):
@@ -43,18 +42,13 @@ def parcelas_view(page: ft.Page):
     def carregar():
         try:
             conn = get_connection()
-            cur  = conn.cursor()
+            cur  = get_cursor(conn)
             cur.execute("""
-                SELECT
-                    t.descricao,
-                    s.nome as conta,
-                    t.valor,
-                    t.parcela_atual,
-                    t.total_parcelas,
-                    t.data
+                SELECT t.descricao, s.nome as conta, t.valor,
+                       t.parcela_atual, t.total_parcelas, t.data
                 FROM transacoes t
                 JOIN subcontas s ON t.subconta_id = s.id
-                WHERE t.total_parcelas > 1 AND t.usuario_id = ?
+                WHERE t.total_parcelas > 1 AND t.usuario_id=%s
                 ORDER BY t.data ASC
             """, (uid,))
             rows = cur.fetchall()
@@ -80,10 +74,8 @@ def parcelas_view(page: ft.Page):
                 valor_total    = valor_parcela * total_parcelas
                 parcelas_ord   = sorted(parcelas, key=lambda x: x["data"])
 
-                pagas = sum(
-                    1 for p in parcelas_ord
-                    if datetime.strptime(p["data"], "%d/%m/%Y") <= hoje
-                )
+                pagas = sum(1 for p in parcelas_ord
+                            if datetime.strptime(p["data"], "%d/%m/%Y") <= hoje)
                 restantes = total_parcelas - pagas
 
                 proxima = None
@@ -99,17 +91,11 @@ def parcelas_view(page: ft.Page):
                 pct = (pagas / total_parcelas) if total_parcelas > 0 else 0
 
                 if restantes == 0:
-                    status     = "✅ Quitado"
-                    cor_status = ft.colors.GREEN_700
-                    cor_barra  = "green"
+                    status = "✅ Quitado"; cor_status = ft.colors.GREEN_700; cor_barra = "green"
                 elif pagas == 0:
-                    status     = "🔴 Não iniciado"
-                    cor_status = ft.colors.RED_700
-                    cor_barra  = "red"
+                    status = "🔴 Não iniciado"; cor_status = ft.colors.RED_700; cor_barra = "red"
                 else:
-                    status     = f"⏳ {pagas}/{total_parcelas} pagas"
-                    cor_status = ft.colors.ORANGE_700
-                    cor_barra  = "orange"
+                    status = f"⏳ {pagas}/{total_parcelas} pagas"; cor_status = ft.colors.ORANGE_700; cor_barra = "orange"
 
                 total_em_aberto += valor_parcela * restantes
                 total_pago      += valor_parcela * pagas
@@ -123,10 +109,8 @@ def parcelas_view(page: ft.Page):
                         ft.Text(f"{pagas}/{total_parcelas}", size=11, color="grey"),
                         ft.ProgressBar(value=pct, color=cor_barra, height=8, width=120),
                     ], spacing=2)),
-                    ft.DataCell(ft.Text(
-                        proxima or "-", size=12,
-                        color=ft.colors.BLUE_700 if proxima else ft.colors.GREY_400
-                    )),
+                    ft.DataCell(ft.Text(proxima or "-", size=12,
+                                        color=ft.colors.BLUE_700 if proxima else ft.colors.GREY_400)),
                     ft.DataCell(ft.Text(status, size=12, color=cor_status, weight="bold")),
                 ]))
 
@@ -160,8 +144,7 @@ def parcelas_view(page: ft.Page):
                     ], alignment="spaceBetween"),
                     ft.Text("Acompanhe todas as compras parceladas em andamento.", size=12, color="grey"),
                     ft.Divider(),
-                    resumo_text,
-                    msg,
+                    resumo_text, msg,
                     ft.Divider(),
                     ft.Row(controls=[tabela], scroll=ft.ScrollMode.ALWAYS),
                 ], scroll=ft.ScrollMode.ALWAYS, expand=True)
