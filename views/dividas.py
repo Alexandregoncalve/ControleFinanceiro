@@ -32,7 +32,7 @@ def dividas_view(page):
             cur.execute("""
                 SELECT s.id, s.nome FROM subcontas s
                 JOIN categorias c ON s.categoria_id = c.id
-                WHERE c.nome = 'DÍVIDAS' AND s.usuario_id=%s
+                WHERE UPPER(c.nome) LIKE '%DIVIDA%' AND s.usuario_id=%s
                 ORDER BY s.nome
             """, (uid,))
             rows = cur.fetchall()

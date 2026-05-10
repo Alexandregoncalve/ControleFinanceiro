@@ -54,21 +54,26 @@ def contas_view(page: ft.Page):
     )
 
     # ── Modal de edição ───────────────────────────────────────────────────
-    modal_id      = {"value": None}
-    modal_nome    = ft.TextField(label="Nome da Subconta", width=300)
-    modal_pai     = ft.Dropdown(label="Conta Pai", width=280, options=[])
-    modal_fixa    = ft.Checkbox(label="Fixa?")
-    modal_orc     = ft.TextField(label="Orçamento mensal (ex: 500,00)", width=220,
-                                  on_blur=formatar_moeda_input)
-    modal_msg     = ft.Text("", size=12, color=ft.colors.RED_700)
+    modal_state = {"id": None, "categoria_id": None}
+
+    modal_nome = ft.TextField(label="Nome da Subconta", width=320)
+    modal_fixa = ft.Checkbox(label="Fixa?")
+    modal_orc  = ft.TextField(label="Orçamento mensal (ex: 500,00)", width=220,
+                               on_blur=formatar_moeda_input)
+    modal_msg  = ft.Text("", size=12, color=ft.colors.RED_700)
+    modal_pai  = ft.Dropdown(label="Conta Pai", width=320, options=[])
 
     def fechar_modal(e):
         modal.open = False
         page.update()
 
     def salvar_modal(e):
-        if not modal_nome.value or not modal_pai.value:
-            modal_msg.value = "⚠️ Preencha nome e conta pai."
+        if not modal_nome.value.strip():
+            modal_msg.value = "⚠️ Preencha o nome da subconta."
+            page.update()
+            return
+        if not modal_pai.value:
+            modal_msg.value = "⚠️ Selecione a conta pai."
             page.update()
             return
         try:
@@ -79,12 +84,13 @@ def contas_view(page: ft.Page):
             cur.execute(
                 "UPDATE subcontas SET categoria_id=%s, nome=%s, fixa=%s, orcamento=%s WHERE id=%s AND usuario_id=%s",
                 (int(modal_pai.value), modal_nome.value.strip().upper(),
-                 fixa_val, orc_val, modal_id["value"], uid)
+                 fixa_val, orc_val, modal_state["id"], uid)
             )
             conn.commit()
             conn.close()
             modal.open = False
             msg.value  = "✅ Subconta atualizada!"
+            modal_msg.value = ""
             atualizar_tabela()
         except Exception as ex:
             print(f"[contas] salvar_modal: {ex}")
@@ -100,10 +106,10 @@ def contas_view(page: ft.Page):
         content=ft.Column([
             modal_nome,
             modal_pai,
-            ft.Row([modal_fixa], spacing=10),
+            modal_fixa,
             modal_orc,
             modal_msg,
-        ], spacing=12, tight=True),
+        ], spacing=14, tight=True, width=340),
         actions=[
             ft.TextButton("CANCELAR", on_click=fechar_modal),
             ft.ElevatedButton(
@@ -117,17 +123,19 @@ def contas_view(page: ft.Page):
     page.overlay.append(modal)
 
     def abrir_modal_edicao(s):
-        modal_id["value"]  = s["id"]
-        modal_nome.value   = s["nome"]
-        modal_fixa.value   = bool(s["fixa"])
-        modal_orc.value    = f"{s['orcamento']:_.2f}".replace(".", ",").replace("_", ".") if s["orcamento"] else ""
-        modal_msg.value    = ""
-        modal_pai.options  = [
+        modal_state["id"] = s["id"]
+        modal_nome.value  = s["nome"]
+        modal_fixa.value  = bool(s["fixa"])
+        modal_orc.value   = f"{s['orcamento']:_.2f}".replace(".", ",").replace("_", ".") if s["orcamento"] else ""
+        modal_msg.value   = ""
+
+        # Recarrega opções do dropdown
+        modal_pai.options = [
             ft.dropdown.Option(key=str(c["id"]), text=f"{c['nome']} ({c['tipo']})")
             for c in obter_categorias()
         ]
-        modal_pai.value    = str(s["categoria_id"])
-        modal.open         = True
+        modal_pai.value = str(s["categoria_id"])
+        modal.open = True
         page.update()
 
     def atualizar_tabela():
@@ -146,10 +154,7 @@ def contas_view(page: ft.Page):
                 )),
                 ft.DataCell(ft.Text(orc, color=ft.colors.BLUE_700, weight="bold")),
                 ft.DataCell(ft.Row([
-                    ft.TextButton(
-                        "Alterar",
-                        on_click=lambda _, d=s: abrir_modal_edicao(d)
-                    ),
+                    ft.TextButton("Alterar", on_click=lambda _, d=s: abrir_modal_edicao(d)),
                     ft.TextButton(
                         "Excluir",
                         style=ft.ButtonStyle(color=ft.colors.RED_700),
@@ -208,7 +213,7 @@ def contas_view(page: ft.Page):
             msg.value = "❌ Erro ao criar conta pai."
             page.update()
 
-    # ── Formulário Subconta ───────────────────────────────────────────────
+    # ── Formulário Nova Subconta ──────────────────────────────────────────
     sel_p = ft.Dropdown(
         label="Vincular à Conta Pai", width=280,
         options=[
