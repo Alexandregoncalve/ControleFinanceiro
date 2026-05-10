@@ -5,7 +5,7 @@ import psycopg2.extras
 
 DATABASE_URL = os.environ.get(
     "DATABASE_URL",
-    "postgresql://postgres:Discovery$010203%05@db.afcyjrhaaptcmvivcwkq.supabase.co:5432/postgres"
+    "postgresql://finacassimples_db_user:xjwALfBS8PcTDsNqE2Gv6OeCsZUScSRw@dpg-d7vr3bbeo5us73f0icig-a/finacassimples_db"
 )
 
 
@@ -43,6 +43,8 @@ def criar_usuario(nome: str, login: str, senha: str) -> dict:
             (login, _hash(senha), nome)
         )
         uid = cur.fetchone()["id"]
+        # Cria plano de contas para o novo usuário
+        _criar_dados_iniciais(cur, uid)
         conn.commit()
         conn.close()
         return {"ok": True, "id": uid}
@@ -69,6 +71,25 @@ def autenticar(login: str, senha: str):
         return None
 
 
+def restaurar_plano_contas(uid: int) -> bool:
+    """Restaura o plano de contas para um usuário que não tem categorias."""
+    try:
+        conn = get_connection()
+        cur  = get_cursor(conn)
+        cur.execute("SELECT COUNT(*) as total FROM categorias WHERE usuario_id=%s", (uid,))
+        if cur.fetchone()["total"] == 0:
+            _criar_dados_iniciais(cur, uid)
+            conn.commit()
+            print(f"✅ Plano de contas restaurado para usuario_id={uid}")
+        else:
+            print(f"ℹ️ Usuário {uid} já tem categorias.")
+        conn.close()
+        return True
+    except Exception as ex:
+        print(f"[restaurar_plano_contas] {ex}")
+        return False
+
+
 def init_db():
     conn   = get_connection()
     cursor = get_cursor(conn)
@@ -84,9 +105,11 @@ def init_db():
     cursor.execute("SELECT COUNT(*) as total FROM usuarios")
     if cursor.fetchone()["total"] == 0:
         cursor.execute(
-            "INSERT INTO usuarios (login, senha, nome) VALUES (%s, %s, %s)",
+            "INSERT INTO usuarios (login, senha, nome) VALUES (%s, %s, %s) RETURNING id",
             ("admin", _hash("admin123"), "Administrador")
         )
+        uid = cursor.fetchone()["id"]
+        _criar_dados_iniciais(cursor, uid)
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS perfil (
@@ -192,12 +215,17 @@ def init_db():
         )
     """)
 
-    cursor.execute("SELECT COUNT(*) as total FROM categorias")
-    if cursor.fetchone()["total"] == 0:
-        cursor.execute("SELECT id FROM usuarios WHERE login='admin'")
-        admin = cursor.fetchone()
-        uid   = admin["id"] if admin else 1
-        _criar_dados_iniciais(cursor, uid)
+    # Restaura plano de contas para usuários sem categorias
+    cursor.execute("SELECT id FROM usuarios")
+    usuarios = cursor.fetchall()
+    for u in usuarios:
+        cursor.execute(
+            "SELECT COUNT(*) as total FROM categorias WHERE usuario_id=%s",
+            (u["id"],)
+        )
+        if cursor.fetchone()["total"] == 0:
+            _criar_dados_iniciais(cursor, u["id"])
+            print(f"✅ Plano de contas criado para usuario_id={u['id']}")
 
     conn.commit()
     conn.close()
