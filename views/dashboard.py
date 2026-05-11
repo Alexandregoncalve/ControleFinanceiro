@@ -10,8 +10,7 @@ from utils import limpar_valor, formatar_moeda_input
 def dashboard_view(page):
     hoje  = datetime.now()
     state = {"mes": hoje.month, "ano": hoje.year}
-
-    uid = page.session.get("user_id")
+    uid   = page.session.get("user_id")
 
     def get_mes_str():
         return f"{state['mes']:02d}/{state['ano']}"
@@ -109,10 +108,9 @@ def dashboard_view(page):
         try:
             conn = get_connection()
             cur  = get_cursor(conn)
-            cur.execute("SELECT COALESCE(SUM(saldo_inicial), 0) FROM bancos WHERE usuario_id=%s", (uid,))
-## - subistituido            saldo_inicial = cur.fetchone()["coalesce"] or 0.0
+            cur.execute("SELECT COALESCE(SUM(saldo_inicial), 0) as total FROM bancos WHERE usuario_id=%s", (uid,))
             row = cur.fetchone()
-            saldo_inicial = float(row[0] if row and row[0] else 0)
+            saldo_inicial = float(row["total"] if row and row["total"] else 0)
             m_sel = int(mes_str.split("/")[0])
             a_sel = int(mes_str.split("/")[1])
             cur.execute("""
@@ -129,9 +127,9 @@ def dashboard_view(page):
             saldo_anterior = 0.0
             for r in rows:
                 if r["tipo"] == "Receita":
-                    saldo_anterior += r["total"]
+                    saldo_anterior += float(r["total"] or 0)
                 else:
-                    saldo_anterior -= r["total"]
+                    saldo_anterior -= float(r["total"] or 0)
             return saldo_inicial + saldo_anterior
         except Exception as ex:
             print(f"[dashboard] calcular_saldo_acumulado: {ex}")
@@ -143,10 +141,12 @@ def dashboard_view(page):
             cur  = get_cursor(conn)
 
             cur.execute("SELECT COALESCE(SUM(valor),0) as total FROM transacoes WHERE usuario_id=%s AND tipo='Receita' AND data LIKE %s", (uid, f"%{mes_str}",))
-            ent = cur.fetchone()["total"] or 0.0
+            row = cur.fetchone()
+            ent = float(row["total"] if row and row["total"] else 0)
 
             cur.execute("SELECT COALESCE(SUM(valor),0) as total FROM transacoes WHERE usuario_id=%s AND tipo='Despesa' AND data LIKE %s", (uid, f"%{mes_str}",))
-            sai = cur.fetchone()["total"] or 0.0
+            row = cur.fetchone()
+            sai = float(row["total"] if row and row["total"] else 0)
 
             saldo_anterior  = calcular_saldo_acumulado(mes_str)
             saldo_mes       = ent - sai
@@ -164,9 +164,9 @@ def dashboard_view(page):
             else:
                 msg_meta.value = ""
 
-            meta_rec = meta_row["meta_receita"]   if meta_row else 0.0
-            meta_des = meta_row["meta_despesa"]   if meta_row else 0.0
-            meta_res = meta_row["meta_resultado"] if meta_row else 0.0
+            meta_rec = float(meta_row["meta_receita"]   or 0) if meta_row else 0.0
+            meta_des = float(meta_row["meta_despesa"]   or 0) if meta_row else 0.0
+            meta_res = float(meta_row["meta_resultado"] or 0) if meta_row else 0.0
 
             meta_rec_field.value = f"{meta_rec:_.2f}".replace(".", ",").replace("_", ".") if meta_rec else ""
             meta_des_field.value = f"{meta_des:_.2f}".replace(".", ",").replace("_", ".") if meta_des else ""
@@ -190,13 +190,15 @@ def dashboard_view(page):
                 WHERE t.usuario_id=%s AND t.tipo='Despesa' AND t.data LIKE %s
                 AND (s.nome LIKE '%CARTAO%' OR s.nome LIKE '%CARTÃO%')
             """, (uid, f"%{mes_str}",))
-            total_cartao = cur.fetchone()["total"] or 0.0
+            row = cur.fetchone()
+            total_cartao = float(row["total"] if row and row["total"] else 0)
 
             cur.execute("""
                 SELECT COUNT(*) as total FROM subcontas s WHERE s.fixa=1 AND s.usuario_id=%s
                 AND s.id NOT IN (SELECT subconta_id FROM transacoes WHERE data LIKE %s AND usuario_id=%s)
             """, (uid, f"%{mes_str}", uid))
-            fixas_pendentes = cur.fetchone()["total"] or 0
+            row = cur.fetchone()
+            fixas_pendentes = int(row["total"] if row and row["total"] else 0)
 
             cur.execute("""
                 SELECT
@@ -238,10 +240,9 @@ def dashboard_view(page):
             print(f"[dashboard] carregar: {ex}")
             return
 
-        pct_gasto = (sai / ent * 100) if ent > 0 else 0
-        pct_rec   = (ent / meta_rec * 100) if meta_rec > 0 else 0
-        pct_des   = (sai / meta_des * 100) if meta_des > 0 else 0
-        pct_res   = (saldo_mes / meta_res * 100) if meta_res > 0 else 0
+        pct_rec = (ent / meta_rec * 100) if meta_rec > 0 else 0
+        pct_des = (sai / meta_des * 100) if meta_des > 0 else 0
+        pct_res = (saldo_mes / meta_res * 100) if meta_res > 0 else 0
 
         m, a = state["mes"], state["ano"]
         dias_restantes = max(0, monthrange(a, m)[1] - hoje.day) if (m == hoje.month and a == hoje.year) else 0
@@ -367,10 +368,10 @@ def dashboard_view(page):
         ]
 
         CORES_BANCO = ["#0277BD", "#00695C", "#4E342E", "#AD1457", "#EF6C00", "#37474F"]
-        total_bancos = sum(b["saldo_inicial"] for b in bancos_rows) if bancos_rows else 0.0
+        total_bancos = sum(float(b["saldo_inicial"] or 0) for b in bancos_rows) if bancos_rows else 0.0
         cards_banco_lista = []
         for i, b in enumerate(bancos_rows):
-            saldo_b  = b["saldo_inicial"]
+            saldo_b  = float(b["saldo_inicial"] or 0)
             cor_card = CORES_BANCO[i % len(CORES_BANCO)] if saldo_b >= 0 else "#B71C1C"
             cards_banco_lista.append(ft.Container(
                 content=ft.Column([
@@ -405,7 +406,7 @@ def dashboard_view(page):
 
         hist = defaultdict(lambda: {"Receita": 0.0, "Despesa": 0.0})
         for r in hist_rows:
-            hist[r["mes"]][r["tipo"]] = r["total"]
+            hist[r["mes"]][r["tipo"]] = float(r["total"] or 0)
         meses_hist = sorted(hist.keys())[-6:]
 
         if meses_hist:
@@ -447,11 +448,11 @@ def dashboard_view(page):
 
         detalhes_col.controls = []
         for g in gastos:
-            pct_g = (g["total"] / sai * 100) if sai > 0 else 0
+            pct_g = (float(g["total"] or 0) / sai * 100) if sai > 0 else 0
             detalhes_col.controls.append(ft.Column([
                 ft.Row([
                     ft.Text(g["nome_exib"], size=11, expand=True),
-                    ft.Text(fmt(g["total"]), size=11, weight="bold", color="red"),
+                    ft.Text(fmt(float(g["total"] or 0)), size=11, weight="bold", color="red"),
                     ft.Text(fmt_pct(pct_g), size=10, color="grey"),
                 ], alignment="spaceBetween"),
                 ft.ProgressBar(value=pct_g / 100, color="#C62828", bgcolor="#EEE", height=5),
@@ -465,18 +466,19 @@ def dashboard_view(page):
             fatias  = []
             legenda = []
             for i, g in enumerate(gastos):
-                pct = (g["total"] / sai * 100)
-                cor = CORES[i % len(CORES)]
+                val_g = float(g["total"] or 0)
+                pct   = (val_g / sai * 100)
+                cor   = CORES[i % len(CORES)]
                 titulo = f"{pct:.0f}%" if pct >= 5 else ""
                 fatias.append(ft.PieChartSection(
-                    value=g["total"], title=titulo,
+                    value=val_g, title=titulo,
                     title_style=ft.TextStyle(size=12, color=ft.colors.WHITE, weight=ft.FontWeight.BOLD),
                     color=cor, radius=80,
                 ))
                 legenda.append(ft.Row([
                     ft.Container(width=12, height=12, bgcolor=cor, border_radius=3),
                     ft.Text(g["nome_exib"], size=11, expand=True),
-                    ft.Text(fmt(g["total"]), size=11, weight="bold"),
+                    ft.Text(fmt(val_g), size=11, weight="bold"),
                     ft.Text(fmt_pct(pct), size=10, color="grey"),
                 ], spacing=6))
             pizza_container.controls = [
@@ -491,8 +493,8 @@ def dashboard_view(page):
         else:
             itens = []
             for o in orcamentos:
-                orc_val  = o["orc_val"]
-                gasto_o  = o["gasto"]
+                orc_val  = float(o["orc_val"] or 0)
+                gasto_o  = float(o["gasto"]   or 0)
                 pct_o    = (gasto_o / orc_val * 100) if orc_val > 0 else 0
                 restante = orc_val - gasto_o
                 if pct_o >= 100:
@@ -522,7 +524,7 @@ def dashboard_view(page):
         dados = defaultdict(dict)
         meses_set = set()
         for row in comp_rows:
-            dados[row["nome_exib"]][row["mes"]] = row["total"]
+            dados[row["nome_exib"]][row["mes"]] = float(row["total"] or 0)
             meses_set.add(row["mes"])
         meses_exib = list(reversed(sorted(meses_set, reverse=True)[:6]))
 

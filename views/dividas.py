@@ -37,7 +37,11 @@ def dividas_view(page):
             """, (uid,))
             rows = cur.fetchall()
             conn.close()
-            dd_subconta.options = [ft.dropdown.Option(str(r["id"]), r["nome"]) for r in rows]
+            if rows:
+                dd_subconta.options = [ft.dropdown.Option(str(r["id"]), r["nome"]) for r in rows]
+            else:
+                dd_subconta.options = []
+            dd_subconta.update()
             page.update()
         except Exception as ex:
             print(f"[dividas] carregar_subcontas: {ex}")
@@ -71,9 +75,8 @@ def dividas_view(page):
                 return
 
             total_pago = 0.0
-
             for d in dividas:
-                pago = d["total_pago"] or 0.0
+                pago = float(d["total_pago"] or 0)
                 total_pago += pago
                 lista_dividas.controls.append(ft.Container(
                     content=ft.Column([
@@ -140,17 +143,14 @@ def dividas_view(page):
                 msg_form.color = ft.colors.RED_700
                 page.update()
                 return
-
             valor = limpar_valor(tf_total.value)
             if valor <= 0:
                 msg_form.value = "❌ Informe o valor da parcela."
                 msg_form.color = ft.colors.RED_700
                 page.update()
                 return
-
             descricao = tf_descricao.value.strip() or "Parcela dívida"
             data_str  = hoje.strftime("%d/%m/%Y")
-
             conn = get_connection()
             cur  = get_cursor(conn)
             cur.execute("""
@@ -159,7 +159,6 @@ def dividas_view(page):
             """, (uid, int(dd_subconta.value), valor, data_str, descricao))
             conn.commit()
             conn.close()
-
             msg_form.value = f"✅ Parcela de {fmt(valor)} registrada!"
             msg_form.color = ft.colors.GREEN_700
             tf_total.value = tf_descricao.value = tf_parcelas.value = ""
@@ -208,21 +207,16 @@ def dividas_view(page):
                         "➕ REGISTRAR PAGAMENTO DE PARCELA",
                         "Registra uma parcela paga como transação de despesa",
                         ft.Column([
-                            ft.Row([dd_subconta, tf_descricao, tf_total, tf_vencimento],
-                                   spacing=10, wrap=True),
+                            ft.Row([dd_subconta, tf_descricao, tf_total, tf_vencimento], spacing=10, wrap=True),
                             ft.Row([tf_parcelas, tf_pago, tf_taxa,
-                                    ft.ElevatedButton(
-                                        "REGISTRAR PARCELA", icon=ft.icons.SAVE,
-                                        bgcolor="#C62828", color=ft.colors.WHITE,
-                                        on_click=registrar_parcela)],
-                                   spacing=10, wrap=True),
+                                    ft.ElevatedButton("REGISTRAR PARCELA", icon=ft.icons.SAVE,
+                                                      bgcolor="#C62828", color=ft.colors.WHITE,
+                                                      on_click=registrar_parcela)], spacing=10, wrap=True),
                             msg_form,
                         ], spacing=10),
                     ),
                     ft.Divider(height=8, color="transparent"),
-                    secao("📋 DÍVIDAS REGISTRADAS",
-                          "Histórico de parcelas pagas por categoria",
-                          lista_dividas),
+                    secao("📋 DÍVIDAS REGISTRADAS", "Histórico de parcelas pagas por categoria", lista_dividas),
                     ft.Divider(height=16, color="transparent"),
                 ], scroll=ft.ScrollMode.ALWAYS, expand=True),
             ),

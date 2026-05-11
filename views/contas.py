@@ -54,14 +54,12 @@ def contas_view(page: ft.Page):
     )
 
     # ── Modal de edição ───────────────────────────────────────────────────
-    modal_state = {"id": None, "categoria_id": None}
-
-    modal_nome = ft.TextField(label="Nome da Subconta", width=320)
-    modal_fixa = ft.Checkbox(label="Fixa?")
-    modal_orc  = ft.TextField(label="Orçamento mensal (ex: 500,00)", width=220,
-                               on_blur=formatar_moeda_input)
-    modal_msg  = ft.Text("", size=12, color=ft.colors.RED_700)
-    modal_pai  = ft.Dropdown(label="Conta Pai", width=320, options=[])
+    modal_state = {"id": None}
+    modal_nome  = ft.TextField(label="Nome da Subconta", width=320)
+    modal_fixa  = ft.Checkbox(label="Fixa?")
+    modal_orc   = ft.TextField(label="Orçamento mensal (ex: 500,00)", width=220, on_blur=formatar_moeda_input)
+    modal_msg   = ft.Text("", size=12, color=ft.colors.RED_700)
+    modal_pai   = ft.Dropdown(label="Conta Pai", width=320, options=[])
 
     def fechar_modal(e):
         modal.open = False
@@ -88,8 +86,8 @@ def contas_view(page: ft.Page):
             )
             conn.commit()
             conn.close()
-            modal.open = False
-            msg.value  = "✅ Subconta atualizada!"
+            modal.open  = False
+            msg.value   = "✅ Subconta atualizada!"
             modal_msg.value = ""
             atualizar_tabela()
         except Exception as ex:
@@ -104,19 +102,11 @@ def contas_view(page: ft.Page):
             ft.Text("Editar Subconta", size=16, weight="bold", color="#1565C0"),
         ], spacing=8),
         content=ft.Column([
-            modal_nome,
-            modal_pai,
-            modal_fixa,
-            modal_orc,
-            modal_msg,
+            modal_nome, modal_pai, modal_fixa, modal_orc, modal_msg,
         ], spacing=14, tight=True, width=340),
         actions=[
             ft.TextButton("CANCELAR", on_click=fechar_modal),
-            ft.ElevatedButton(
-                "SALVAR ALTERAÇÃO",
-                bgcolor="#1565C0", color="white",
-                on_click=salvar_modal,
-            ),
+            ft.ElevatedButton("SALVAR ALTERAÇÃO", bgcolor="#1565C0", color="white", on_click=salvar_modal),
         ],
         actions_alignment=ft.MainAxisAlignment.END,
     )
@@ -126,10 +116,8 @@ def contas_view(page: ft.Page):
         modal_state["id"] = s["id"]
         modal_nome.value  = s["nome"]
         modal_fixa.value  = bool(s["fixa"])
-        modal_orc.value   = f"{s['orcamento']:_.2f}".replace(".", ",").replace("_", ".") if s["orcamento"] else ""
+        modal_orc.value   = f"{float(s['orcamento'] or 0):_.2f}".replace(".", ",").replace("_", ".") if s["orcamento"] else ""
         modal_msg.value   = ""
-
-        # Recarrega opções do dropdown
         modal_pai.options = [
             ft.dropdown.Option(key=str(c["id"]), text=f"{c['nome']} ({c['tipo']})")
             for c in obter_categorias()
@@ -142,7 +130,7 @@ def contas_view(page: ft.Page):
         tabela.rows.clear()
         for s in obter_subcontas():
             cor = ft.colors.GREEN_700 if s["tipo"] == "Receita" else ft.colors.RED_700
-            orc = fmt(s["orcamento"]) if s["orcamento"] else "-"
+            orc = fmt(float(s["orcamento"] or 0)) if s["orcamento"] else "-"
             tabela.rows.append(ft.DataRow(cells=[
                 ft.DataCell(ft.Text(s["nome"])),
                 ft.DataCell(ft.Text(s["cat_nome"])),
@@ -158,8 +146,7 @@ def contas_view(page: ft.Page):
                     ft.TextButton(
                         "Excluir",
                         style=ft.ButtonStyle(color=ft.colors.RED_700),
-                        on_click=lambda _, sid=s["id"]: verificar_admin(
-                            page, lambda sid=sid: deletar(sid))
+                        on_click=lambda _, sid=s["id"]: verificar_admin(page, lambda sid=sid: deletar(sid))
                     ),
                 ])),
             ]))
@@ -181,10 +168,8 @@ def contas_view(page: ft.Page):
 
     # ── Formulário Conta Pai ──────────────────────────────────────────────
     n_p = ft.TextField(label="Nome Conta Pai", width=280)
-    t_p = ft.Dropdown(
-        label="Tipo", width=140,
-        options=[ft.dropdown.Option("Despesa"), ft.dropdown.Option("Receita")]
-    )
+    t_p = ft.Dropdown(label="Tipo", width=140,
+                       options=[ft.dropdown.Option("Despesa"), ft.dropdown.Option("Receita")])
 
     def salvar_pai(e):
         if not n_p.value or not t_p.value:
@@ -202,11 +187,14 @@ def contas_view(page: ft.Page):
             conn.close()
             n_p.value = ""
             t_p.value = None
+            novas = obter_categorias()
             sel_p.options = [
                 ft.dropdown.Option(key=str(c["id"]), text=f"{c['nome']} ({c['tipo']})")
-                for c in obter_categorias()
+                for c in novas
             ]
-            msg.value = "✅ Conta pai criada."
+            msg.value = "✅ Conta pai criada!"
+            sel_p.update()
+            msg.update()
             atualizar_tabela()
         except Exception as ex:
             print(f"[contas] salvar_pai: {ex}")
@@ -262,31 +250,29 @@ def contas_view(page: ft.Page):
                 padding=20, expand=True,
                 content=ft.Column([
                     ft.Text("GERENCIAR CONTAS", size=18, weight="bold", color="blue"),
-
                     ft.Container(
                         content=ft.Column([
                             ft.Text("Nova Conta Pai", weight="bold", size=13),
                             ft.Row([n_p, t_p,
-                                    ft.ElevatedButton("CRIAR PAI", bgcolor="teal", color="white",
-                                                      on_click=salvar_pai)]),
+                                    ft.ElevatedButton("CRIAR PAI", bgcolor="teal", color="white", on_click=salvar_pai)]),
                         ], spacing=8),
                         padding=14, bgcolor="#E3F2FD", border_radius=8,
                     ),
-
                     ft.Container(
                         content=ft.Column([
                             ft.Text("Nova Subconta", weight="bold", size=13),
                             ft.Row([sel_p, n_s, fix], wrap=True, spacing=10),
-                            ft.Row([orc,
-                                    ft.ElevatedButton("SALVAR SUBCONTA", bgcolor="blue", color="white",
-                                                      on_click=salvar_sub)], spacing=10),
+                            ft.Row([orc, ft.ElevatedButton("SALVAR SUBCONTA", bgcolor="blue", color="white", on_click=salvar_sub)], spacing=10),
                         ], spacing=8),
                         padding=14, bgcolor="#F5F5F5", border_radius=8,
                     ),
-
                     msg,
                     ft.Divider(),
-                    ft.Row(controls=[tabela], scroll=ft.ScrollMode.ALWAYS),
+                    ft.Column(
+                        controls=[ft.Row(controls=[tabela], scroll=ft.ScrollMode.ALWAYS)],
+                        scroll=ft.ScrollMode.ALWAYS,
+                        expand=True,
+                    ),
                 ], spacing=14, scroll=ft.ScrollMode.ALWAYS, expand=True)
             )
         ]
