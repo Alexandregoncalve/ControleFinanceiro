@@ -7,146 +7,239 @@ from utils import verificar_admin, limpar_valor, formatar_moeda_input
 def contas_view(page: ft.Page):
     uid = page.session.get("user_id")
 
-    # Campos de Entrada - Nova Conta Pai
-    n_p = ft.TextField(label="Nome da Categoria (ex: LAZER)", width=300, border_radius=10)
-    t_p = ft.Dropdown(
-        label="Tipo", width=150, border_radius=10,
-        options=[ft.dropdown.Option("Receita"), ft.dropdown.Option("Despesa")]
-    )
-
-    # Campos de Entrada - Nova Subconta
-    sel_p = ft.Dropdown(label="Selecionar Conta Pai", width=300, border_radius=10)
-    n_s = ft.TextField(label="Nome da Subconta (ex: CINEMA)", width=300, border_radius=10)
-    fix = ft.Checkbox(label="Conta Fixa?", value=False)
-    orc = ft.TextField(label="Meta de Orçamento (Opcional)", width=220, border_radius=10, on_blur=formatar_moeda_input)
-
-    msg = ft.Text("", size=14, weight="bold")
-
-    tabela = ft.DataTable(
-        columns=[
-            ft.DataColumn(ft.Text("Conta Pai")),
-            ft.DataColumn(ft.Text("Subconta")),
-            ft.DataColumn(ft.Text("Tipo")),
-            ft.DataColumn(ft.Text("Orçamento")),
-            ft.DataColumn(ft.Text("Ações")),
-        ],
-        rows=[]
-    )
-
-    def carregar_combos():
+    def obter_categorias():
         try:
             conn = get_connection()
-            cur = get_cursor(conn)
-            cur.execute("SELECT id, nome FROM categorias WHERE usuario_id=%s ORDER BY nome", (uid,))
+            cur  = get_cursor(conn)
+            cur.execute("SELECT id, nome, tipo FROM categorias WHERE usuario_id=%s ORDER BY tipo, nome", (uid,))
             rows = cur.fetchall()
             conn.close()
+            return rows
+        except Exception as ex:
+            print(f"[contas] obter_categorias: {ex}")
+            return []
 
-            sel_p.options = [ft.dropdown.Option(key=str(r["id"]), text=r["nome"]) for r in rows]
-            page.update()
-        except Exception as e:
-            print(f"Erro carregar_combos: {e}")
-
-    def carregar_tabela():
+    def obter_subcontas():
         try:
             conn = get_connection()
-            cur = get_cursor(conn)
+            cur  = get_cursor(conn)
             cur.execute("""
-                SELECT s.id, s.nome as sub_nome, c.nome as cat_nome, c.tipo, s.orcamento 
-                FROM subcontas s 
-                JOIN categorias c ON s.categoria_id = c.id 
-                WHERE s.usuario_id=%s 
-                ORDER BY c.nome, s.nome
+                SELECT s.id, s.nome, c.tipo, s.categoria_id, s.fixa, s.orcamento, c.nome as cat_nome
+                FROM subcontas s
+                JOIN categorias c ON s.categoria_id = c.id
+                WHERE s.usuario_id=%s ORDER BY c.nome, s.nome
             """, (uid,))
             rows = cur.fetchall()
             conn.close()
+            return rows
+        except Exception as ex:
+            print(f"[contas] obter_subcontas: {ex}")
+            return []
 
-            tabela.rows.clear()
-            for r in rows:
-                tabela.rows.append(
-                    ft.DataRow(cells=[
-                        ft.DataCell(ft.Text(r["cat_nome"])),
-                        ft.DataCell(ft.Text(r["sub_nome"])),
-                        ft.DataCell(ft.Text(r["tipo"])),
-                        ft.DataCell(
-                            ft.Text(f"R$ {r['orcamento']:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))),
-                        ft.DataCell(
-                            ft.IconButton(
-                                ft.icons.DELETE_OUTLINE,
-                                icon_color="red",
-                                on_click=lambda _, sid=r["id"]: confirmar_exclusao(sid)
-                            )
-                        ),
-                    ])
-                )
+    def fmt(v):
+        return f"R$ {v:_.2f}".replace(".", ",").replace("_", ".")
+
+    msg = ft.Text("", size=13)
+
+    tabela = ft.DataTable(
+        columns=[
+            ft.DataColumn(ft.Text("Subconta")),
+            ft.DataColumn(ft.Text("Conta Pai")),
+            ft.DataColumn(ft.Text("Tipo")),
+            ft.DataColumn(ft.Text("Fixa")),
+            ft.DataColumn(ft.Text("Orçamento")),
+            ft.DataColumn(ft.Text("Ações")),
+        ],
+        rows=[],
+    )
+
+    # ── Modal de edição ───────────────────────────────────────────────────
+    modal_state = {"id": None}
+    modal_nome  = ft.TextField(label="Nome da Subconta", width=320)
+    modal_fixa  = ft.Checkbox(label="Fixa?")
+    modal_orc   = ft.TextField(label="Orçamento mensal (ex: 500,00)", width=220, on_blur=formatar_moeda_input)
+    modal_msg   = ft.Text("", size=12, color=ft.colors.RED_700)
+    modal_pai   = ft.Dropdown(label="Conta Pai", width=320, options=[])
+
+    def fechar_modal(e):
+        modal.open = False
+        page.update()
+
+    def salvar_modal(e):
+        if not modal_nome.value.strip():
+            modal_msg.value = "⚠️ Preencha o nome da subconta."
             page.update()
-        except Exception as e:
-            print(f"Erro carregar_tabela: {e}")
+            return
+        if not modal_pai.value:
+            modal_msg.value = "⚠️ Selecione a conta pai."
+            page.update()
+            return
+        try:
+            conn     = get_connection()
+            cur      = get_cursor(conn)
+            fixa_val = 1 if modal_fixa.value else 0
+            orc_val  = limpar_valor(modal_orc.value) if modal_orc.value else 0.0
+            cur.execute(
+                "UPDATE subcontas SET categoria_id=%s, nome=%s, fixa=%s, orcamento=%s WHERE id=%s AND usuario_id=%s",
+                (int(modal_pai.value), modal_nome.value.strip().upper(),
+                 fixa_val, orc_val, modal_state["id"], uid)
+            )
+            conn.commit()
+            conn.close()
+            modal.open  = False
+            msg.value   = "✅ Subconta atualizada!"
+            modal_msg.value = ""
+            atualizar_tabela()
+        except Exception as ex:
+            print(f"[contas] salvar_modal: {ex}")
+            modal_msg.value = "❌ Erro ao salvar."
+            page.update()
+
+    modal = ft.AlertDialog(
+        modal=True,
+        title=ft.Row([
+            ft.Icon(ft.icons.EDIT, color="#1565C0"),
+            ft.Text("Editar Subconta", size=16, weight="bold", color="#1565C0"),
+        ], spacing=8),
+        content=ft.Column([
+            modal_nome, modal_pai, modal_fixa, modal_orc, modal_msg,
+        ], spacing=14, tight=True, width=340),
+        actions=[
+            ft.TextButton("CANCELAR", on_click=fechar_modal),
+            ft.ElevatedButton("SALVAR ALTERAÇÃO", bgcolor="#1565C0", color="white", on_click=salvar_modal),
+        ],
+        actions_alignment=ft.MainAxisAlignment.END,
+    )
+    page.overlay.append(modal)
+
+    def abrir_modal_edicao(s):
+        modal_state["id"] = s["id"]
+        modal_nome.value  = s["nome"]
+        modal_fixa.value  = bool(s["fixa"])
+        modal_orc.value   = f"{float(s['orcamento'] or 0):_.2f}".replace(".", ",").replace("_", ".") if s["orcamento"] else ""
+        modal_msg.value   = ""
+        modal_pai.options = [
+            ft.dropdown.Option(key=str(c["id"]), text=f"{c['nome']} ({c['tipo']})")
+            for c in obter_categorias()
+        ]
+        modal_pai.value = str(s["categoria_id"])
+        modal.open = True
+        page.update()
+
+    def atualizar_tabela():
+        tabela.rows.clear()
+        for s in obter_subcontas():
+            cor = ft.colors.GREEN_700 if s["tipo"] == "Receita" else ft.colors.RED_700
+            orc = fmt(float(s["orcamento"] or 0)) if s["orcamento"] else "-"
+            tabela.rows.append(ft.DataRow(cells=[
+                ft.DataCell(ft.Text(s["nome"])),
+                ft.DataCell(ft.Text(s["cat_nome"])),
+                ft.DataCell(ft.Text(s["tipo"], color=cor)),
+                ft.DataCell(ft.Icon(
+                    ft.icons.CHECK_CIRCLE if s["fixa"] else ft.icons.REMOVE,
+                    color=ft.colors.BLUE_600 if s["fixa"] else ft.colors.GREY_400,
+                    size=18,
+                )),
+                ft.DataCell(ft.Text(orc, color=ft.colors.BLUE_700, weight="bold")),
+                ft.DataCell(ft.Row([
+                    ft.TextButton("Alterar", on_click=lambda _, d=s: abrir_modal_edicao(d)),
+                    ft.TextButton(
+                        "Excluir",
+                        style=ft.ButtonStyle(color=ft.colors.RED_700),
+                        on_click=lambda _, sid=s["id"]: verificar_admin(page, lambda sid=sid: deletar(sid))
+                    ),
+                ])),
+            ]))
+        page.update()
+
+    def deletar(sid):
+        try:
+            conn = get_connection()
+            cur  = get_cursor(conn)
+            cur.execute("DELETE FROM subcontas WHERE id=%s AND usuario_id=%s", (sid, uid))
+            conn.commit()
+            conn.close()
+            msg.value = "✅ Subconta excluída."
+            atualizar_tabela()
+        except Exception as ex:
+            print(f"[contas] deletar: {ex}")
+            msg.value = "❌ Erro ao excluir."
+            page.update()
+
+    # ── Formulário Conta Pai ──────────────────────────────────────────────
+    n_p = ft.TextField(label="Nome Conta Pai", width=280)
+    t_p = ft.Dropdown(label="Tipo", width=140,
+                       options=[ft.dropdown.Option("Despesa"), ft.dropdown.Option("Receita")])
 
     def salvar_pai(e):
         if not n_p.value or not t_p.value:
-            msg.value = "⚠️ Preencha o nome e o tipo da Conta Pai!"
-            msg.color = "red"
+            msg.value = "⚠️ Preencha nome e tipo da conta pai."
             page.update()
             return
         try:
             conn = get_connection()
-            cur = conn.cursor()
+            cur  = get_cursor(conn)
             cur.execute(
-                "INSERT INTO categorias (usuario_id, nome, tipo) VALUES (%s, %s, %s)",
-                (uid, n_p.value.upper(), t_p.value)
+                "INSERT INTO categorias (usuario_id, nome, tipo) VALUES (%s,%s,%s)",
+                (uid, n_p.value.strip().upper(), t_p.value)
             )
             conn.commit()
             conn.close()
             n_p.value = ""
-            msg.value = "✅ Conta Pai criada!"
-            msg.color = "green"
-            carregar_combos()
+            t_p.value = None
+            novas = obter_categorias()
+            sel_p.options = [
+                ft.dropdown.Option(key=str(c["id"]), text=f"{c['nome']} ({c['tipo']})")
+                for c in novas
+            ]
+            msg.value = "✅ Conta pai criada!"
+            sel_p.update()
+            msg.update()
+            atualizar_tabela()
         except Exception as ex:
-            msg.value = f"❌ Erro: {ex}"
+            print(f"[contas] salvar_pai: {ex}")
+            msg.value = "❌ Erro ao criar conta pai."
             page.update()
 
+    # ── Formulário Nova Subconta ──────────────────────────────────────────
+    sel_p = ft.Dropdown(
+        label="Vincular à Conta Pai", width=280,
+        options=[
+            ft.dropdown.Option(key=str(c["id"]), text=f"{c['nome']} ({c['tipo']})")
+            for c in obter_categorias()
+        ]
+    )
+    n_s = ft.TextField(label="Nome Subconta", width=280)
+    fix = ft.Checkbox(label="Fixa?")
+    orc = ft.TextField(label="Orçamento mensal (ex: 500,00)", width=220, on_blur=formatar_moeda_input)
+
     def salvar_sub(e):
-        if not sel_p.value or not n_s.value:
-            msg.value = "⚠️ Selecione a Conta Pai e o nome da Subconta!"
-            msg.color = "red"
+        if not n_s.value or not sel_p.value:
+            msg.value = "⚠️ Preencha nome e conta pai."
             page.update()
             return
         try:
-            conn = get_connection()
-            cur = conn.cursor()
-            valor_orc = limpar_valor(orc.value)
-            cur.execute("""
-                INSERT INTO subcontas (usuario_id, categoria_id, nome, fixa, orcamento) 
-                VALUES (%s, %s, %s, %s, %s)
-            """, (uid, int(sel_p.value), n_s.value.upper(), 1 if fix.value else 0, valor_orc))
+            conn     = get_connection()
+            cur      = get_cursor(conn)
+            fixa_val = 1 if fix.value else 0
+            orc_val  = limpar_valor(orc.value) if orc.value else 0.0
+            cur.execute(
+                "INSERT INTO subcontas (usuario_id, categoria_id, nome, fixa, orcamento) VALUES (%s,%s,%s,%s,%s)",
+                (uid, int(sel_p.value), n_s.value.strip().upper(), fixa_val, orc_val)
+            )
             conn.commit()
             conn.close()
+            msg.value = "✅ Subconta criada."
             n_s.value = ""
             orc.value = ""
-            msg.value = "✅ Subconta salva!"
-            msg.color = "green"
-            carregar_tabela()
+            fix.value = False
+            atualizar_tabela()
         except Exception as ex:
-            msg.value = f"❌ Erro ao salvar: {ex}"
+            print(f"[contas] salvar_sub: {ex}")
+            msg.value = "❌ Erro ao salvar subconta."
             page.update()
 
-    def confirmar_exclusao(sub_id):
-        def deletar():
-            try:
-                conn = get_connection()
-                cur = conn.cursor()
-                cur.execute("DELETE FROM subcontas WHERE id=%s AND usuario_id=%s", (sub_id, uid))
-                conn.commit()
-                conn.close()
-                carregar_tabela()
-            except Exception as ex:
-                print(f"Erro ao deletar: {ex}")
-
-        verificar_admin(page, deletar)
-
-    # Inicialização da tela
-    carregar_combos()
-    carregar_tabela()
+    atualizar_tabela()
 
     return ft.View(
         route="/contas",
@@ -154,36 +247,33 @@ def contas_view(page: ft.Page):
             get_menu(page),
             ft.Divider(),
             ft.Container(
-                padding=20,
+                padding=20, expand=True,
                 content=ft.Column([
-                    ft.Text("GERENCIAR PLANO DE CONTAS", size=20, weight="bold", color="blue"),
-
-                    # Seção Conta Pai
+                    ft.Text("GERENCIAR CONTAS", size=18, weight="bold", color="blue"),
                     ft.Container(
                         content=ft.Column([
-                            ft.Text("1. Criar Categoria Principal (Conta Pai)", weight="bold"),
-                            ft.Row([n_p, t_p, ft.ElevatedButton("CRIAR PAI", bgcolor="teal", color="white",
-                                                                on_click=salvar_pai)]),
-                        ]),
-                        padding=15, bgcolor="#E3F2FD", border_radius=10
+                            ft.Text("Nova Conta Pai", weight="bold", size=13),
+                            ft.Row([n_p, t_p,
+                                    ft.ElevatedButton("CRIAR PAI", bgcolor="teal", color="white", on_click=salvar_pai)]),
+                        ], spacing=8),
+                        padding=14, bgcolor="#E3F2FD", border_radius=8,
                     ),
-
-                    # Seção Subconta
                     ft.Container(
                         content=ft.Column([
-                            ft.Text("2. Criar Item de Gasto (Subconta)", weight="bold"),
-                            ft.Row([sel_p, n_s, fix], wrap=True),
-                            ft.Row([orc, ft.ElevatedButton("SALVAR SUBCONTA", bgcolor="blue", color="white",
-                                                           on_click=salvar_sub)]),
-                        ]),
-                        padding=15, bgcolor="#F5F5F5", border_radius=10
+                            ft.Text("Nova Subconta", weight="bold", size=13),
+                            ft.Row([sel_p, n_s, fix], wrap=True, spacing=10),
+                            ft.Row([orc, ft.ElevatedButton("SALVAR SUBCONTA", bgcolor="blue", color="white", on_click=salvar_sub)], spacing=10),
+                        ], spacing=8),
+                        padding=14, bgcolor="#F5F5F5", border_radius=8,
                     ),
-
                     msg,
                     ft.Divider(),
-                    ft.Text("SEU PLANO DE CONTAS ATUAL", weight="bold"),
-                    ft.Column([ft.Row([tabela], scroll=ft.ScrollMode.ALWAYS)], scroll=ft.ScrollMode.ALWAYS, expand=True)
-                ], spacing=15, scroll=ft.ScrollMode.ALWAYS, expand=True)
+                    ft.Column(
+                        controls=[ft.Row(controls=[tabela], scroll=ft.ScrollMode.ALWAYS)],
+                        scroll=ft.ScrollMode.ALWAYS,
+                        expand=True,
+                    ),
+                ], spacing=14, scroll=ft.ScrollMode.ALWAYS, expand=True)
             )
         ]
     )
