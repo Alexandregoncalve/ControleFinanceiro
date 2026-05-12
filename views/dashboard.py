@@ -70,14 +70,17 @@ def dashboard_view(page):
             mres = limpar_valor(meta_res_field.value)
             with db_session() as cur:
                 cur.execute("SELECT id FROM metas WHERE mes=%s AND usuario_id=%s", (mes_str, uid))
-                if cur.fetchone():
+                row = cur.fetchone()
+                if row:
                     cur.execute(
                         "UPDATE metas SET meta_receita=%s, meta_despesa=%s, meta_resultado=%s WHERE mes=%s AND usuario_id=%s",
-                        (mr, md, mres, mes_str, uid))
+                        (mr, md, mres, mes_str, uid)
+                    )
                 else:
                     cur.execute(
                         "INSERT INTO metas (mes, meta_receita, meta_despesa, meta_resultado, usuario_id) VALUES (%s,%s,%s,%s,%s)",
-                        (mes_str, mr, md, mres, uid))
+                        (mes_str, mr, md, mres, uid)
+                    )
             msg_meta.value = "✅ Metas salvas!"
             carregar(mes_str)
             page.update()
@@ -107,11 +110,14 @@ def dashboard_view(page):
                         (CAST(SPLIT_PART(data, '/', 3) AS INTEGER) = %s AND CAST(SPLIT_PART(data, '/', 2) AS INTEGER) < %s)
                     ) GROUP BY tipo
                 """, (uid, a_sel, a_sel, m_sel))
-                res = cur.fetchall()
-                saldo_ant = 0.0
-                for r in res:
-                    saldo_ant += float(r[1] or 0) if r[0] == "Receita" else -float(r[1] or 0)
-                return saldo_inicial + saldo_ant
+                rows = cur.fetchall()
+                saldo_anterior = 0.0
+                for r in rows:
+                    if r[0] == "Receita":
+                        saldo_anterior += float(r[1] or 0)
+                    else:
+                        saldo_anterior -= float(r[1] or 0)
+                return saldo_inicial + saldo_anterior
         except:
             return 0.0
 
@@ -128,7 +134,8 @@ def dashboard_view(page):
                 sai = float(cur.fetchone()[0] or 0)
 
                 saldo_anterior = calcular_saldo_acumulado(mes_str)
-                saldo_mes, saldo_acumulado = ent - sai, saldo_anterior + (ent - sai)
+                saldo_mes = ent - sai
+                saldo_acumulado = saldo_anterior + saldo_mes
 
                 cur.execute("SELECT nome_banco, saldo_inicial FROM bancos WHERE usuario_id=%s ORDER BY nome_banco",
                             (uid,))
@@ -138,7 +145,7 @@ def dashboard_view(page):
                 meta_row = cur.fetchone()
                 if not meta_row:
                     meta_row = buscar_meta_mes_anterior(mes_str)
-                    msg_meta.value = "💡 Meta copiada do mês anterior." if meta_row else ""
+                    msg_meta.value = "💡 Meta copiada." if meta_row else ""
                 else:
                     msg_meta.value = ""
 
@@ -150,9 +157,9 @@ def dashboard_view(page):
                 meta_res_field.value = f"{meta_res:_.2f}".replace(".", ",").replace("_", ".") if meta_res else ""
 
                 cur.execute("""
-                    SELECT CASE WHEN t.categoria_real_id IS NOT NULL THEN sr.nome ELSE s.nome END as nome_exib, SUM(t.valor) as total
+                    SELECT CASE WHEN t.categoria_real_id IS NOT NULL THEN sr.nome ELSE s.nome END, SUM(t.valor)
                     FROM transacoes t JOIN subcontas s ON t.subconta_id = s.id LEFT JOIN subcontas sr ON t.categoria_real_id = sr.id
-                    WHERE t.usuario_id=%s AND t.tipo='Despesa' AND t.data LIKE %s GROUP BY nome_exib ORDER BY total DESC
+                    WHERE t.usuario_id=%s AND t.tipo='Despesa' AND t.data LIKE %s GROUP BY 1 ORDER BY 2 DESC
                 """, (uid, f"%{mes_str}",))
                 gastos = cur.fetchall()
 
@@ -167,23 +174,23 @@ def dashboard_view(page):
                 fixas_pendentes = int(cur.fetchone()[0] or 0)
 
                 cur.execute("""
-                    SELECT CASE WHEN t.categoria_real_id IS NOT NULL THEN sr.nome ELSE s.nome END as nome_exib, 
-                           MAX(CASE WHEN t.categoria_real_id IS NOT NULL THEN sr.orcamento ELSE s.orcamento END) as orc_val, SUM(t.valor) as gasto
+                    SELECT CASE WHEN t.categoria_real_id IS NOT NULL THEN sr.nome ELSE s.nome END, 
+                           MAX(CASE WHEN t.categoria_real_id IS NOT NULL THEN sr.orcamento ELSE s.orcamento END), SUM(t.valor)
                     FROM transacoes t JOIN subcontas s ON t.subconta_id = s.id LEFT JOIN subcontas sr ON t.categoria_real_id = sr.id
-                    WHERE t.usuario_id=%s AND t.tipo='Despesa' AND t.data LIKE %s GROUP BY nome_exib HAVING MAX(CASE WHEN t.categoria_real_id IS NOT NULL THEN sr.orcamento ELSE s.orcamento END) > 0
+                    WHERE t.usuario_id=%s AND t.tipo='Despesa' AND t.data LIKE %s GROUP BY 1 HAVING MAX(2) > 0
                 """, (uid, f"%{mes_str}",))
                 orcamentos = cur.fetchall()
 
                 cur.execute(
-                    "SELECT SPLIT_PART(data, '/', 2) || '/' || SPLIT_PART(data, '/', 3) as mes, tipo, SUM(valor) FROM transacoes WHERE usuario_id=%s GROUP BY mes, tipo ORDER BY mes DESC LIMIT 24",
+                    "SELECT SPLIT_PART(data, '/', 2) || '/' || SPLIT_PART(data, '/', 3) as m, tipo, SUM(valor) FROM transacoes WHERE usuario_id=%s GROUP BY 1, 2 ORDER BY 1 DESC LIMIT 24",
                     (uid,))
                 hist_rows = cur.fetchall()
 
                 cur.execute("""
-                    SELECT SPLIT_PART(t.data, '/', 2) || '/' || SPLIT_PART(t.data, '/', 3) as mes,
-                    CASE WHEN t.categoria_real_id IS NOT NULL THEN sr.nome ELSE s.nome END as nome_exib, SUM(t.valor)
+                    SELECT SPLIT_PART(t.data, '/', 2) || '/' || SPLIT_PART(t.data, '/', 3), 
+                           CASE WHEN t.categoria_real_id IS NOT NULL THEN sr.nome ELSE s.nome END, SUM(t.valor)
                     FROM transacoes t JOIN subcontas s ON t.subconta_id = s.id LEFT JOIN subcontas sr ON t.categoria_real_id = sr.id
-                    WHERE t.usuario_id=%s AND t.tipo='Despesa' GROUP BY mes, nome_exib ORDER BY mes DESC
+                    WHERE t.usuario_id=%s AND t.tipo='Despesa' GROUP BY 1, 2 ORDER BY 1 DESC
                 """, (uid,))
                 comp_rows = cur.fetchall()
 
@@ -248,11 +255,8 @@ def dashboard_view(page):
             [ft.Row([ft.Text(g[0], expand=True), ft.Text(fmt(g[1]), weight="bold", color="red")]),
              ft.ProgressBar(value=g[1] / sai if sai > 0 else 0, color="#C62828", height=5)], spacing=2) for g in gastos]
         sections = [ft.PieChartSection(g[1], title=f"{g[1] / sai * 100:.0f}%" if g[1] / sai > 0.05 else "",
-                                       color=CORES[i % len(CORES)], radius=80,
-                                       title_style=ft.TextStyle(size=12, color="white", weight="bold")) for i, g in
-                    enumerate(gastos)]
-        pizza_container.controls = [
-            ft.PieChart(sections=sections, sections_space=2, center_space_radius=40, height=220)] if sections else [
+                                       color=CORES[i % len(CORES)], radius=80) for i, g in enumerate(gastos)]
+        pizza_container.controls = [ft.PieChart(sections=sections, height=220)] if sections else [
             ft.Text("Sem despesas")]
         orcamento_container.controls = [ft.Column(
             [ft.Row([ft.Text(o[0], expand=True), ft.Text(fmt(o[2]) + "/" + fmt(o[1]), size=10)]),
