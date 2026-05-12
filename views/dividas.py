@@ -1,70 +1,77 @@
 import flet as ft
 from datetime import datetime
 from menu import get_menu
-from database import get_connection, get_cursor
+from database import db_session  # Importando a nova função de segurança
 from utils import formatar_moeda_input, limpar_valor
 
 
 def dividas_view(page):
-
     def fmt(v):
         return f"R$ {v:_.2f}".replace(".", ",").replace("_", ".")
 
     hoje = datetime.now()
-    uid  = page.session.get("user_id")
+    uid = page.session.get("user_id")
 
-    dd_subconta   = ft.Dropdown(label="Tipo de Dívida", width=220)
-    tf_descricao  = ft.TextField(label="Descrição", width=300, hint_text="Ex: Empréstimo Banco X")
-    tf_total      = ft.TextField(label="Valor Total", width=160, on_blur=formatar_moeda_input)
-    tf_parcelas   = ft.TextField(label="Nº Parcelas", width=120, keyboard_type=ft.KeyboardType.NUMBER)
-    tf_pago       = ft.TextField(label="Parcelas Pagas", width=120, keyboard_type=ft.KeyboardType.NUMBER)
+    # Componentes de Entrada
+    dd_subconta = ft.Dropdown(label="Tipo de Dívida", width=220, disabled=True)
+    tf_descricao = ft.TextField(label="Descrição", width=300, hint_text="Ex: Empréstimo Banco X")
+    tf_total = ft.TextField(label="Valor Total", width=160, on_blur=formatar_moeda_input)
+    tf_parcelas = ft.TextField(label="Nº Parcelas", width=120, keyboard_type=ft.KeyboardType.NUMBER)
+    tf_pago = ft.TextField(label="Parcelas Pagas", width=120, keyboard_type=ft.KeyboardType.NUMBER)
     tf_vencimento = ft.TextField(label="Dia Vencimento", width=140, keyboard_type=ft.KeyboardType.NUMBER)
-    tf_taxa       = ft.TextField(label="Taxa Juros % a.m.", width=160, on_blur=formatar_moeda_input)
-    msg_form      = ft.Text("", size=12)
+    tf_taxa = ft.TextField(label="Taxa Juros % a.m.", width=160, on_blur=formatar_moeda_input)
+    msg_form = ft.Text("", size=12)
 
+    # Componentes de Exibição
     lista_dividas = ft.Column(spacing=8, scroll=ft.ScrollMode.AUTO)
-    resumo_row    = ft.Row(spacing=12, wrap=True)
+    resumo_row = ft.Row(spacing=12, wrap=True)
 
     def carregar_subcontas():
+        """Alimenta o dropdown com categorias que tenham 'DIVIDA' no nome."""
         try:
-            conn = get_connection()
-            cur  = get_cursor(conn)
-            cur.execute("""
-                SELECT s.id, s.nome FROM subcontas s
-                JOIN categorias c ON s.categoria_id = c.id
-                WHERE UPPER(c.nome) LIKE '%DIVIDA%' AND s.usuario_id=%s
-                ORDER BY s.nome
-            """, (uid,))
-            rows = cur.fetchall()
-            conn.close()
+            with db_session() as cur:
+                cur.execute("""
+                    SELECT s.id, s.nome FROM subcontas s
+                    JOIN categorias c ON s.categoria_id = c.id
+                    WHERE (UPPER(c.nome) LIKE '%DIVIDA%' OR UPPER(s.nome) LIKE '%DIVIDA%') 
+                    AND s.usuario_id=%s
+                    ORDER BY s.nome
+                """, (uid,))
+                rows = cur.fetchall()
+
             if rows:
                 dd_subconta.options = [ft.dropdown.Option(str(r["id"]), r["nome"]) for r in rows]
+                dd_subconta.disabled = False
+                dd_subconta.hint_text = "Selecione o tipo"
             else:
                 dd_subconta.options = []
+                dd_subconta.disabled = True
+                dd_subconta.hint_text = "Crie uma conta de Dívida em 'CONTAS'"
+
             dd_subconta.update()
             page.update()
         except Exception as ex:
             print(f"[dividas] carregar_subcontas: {ex}")
 
     def carregar_dividas():
+        """Alimenta a lista e o resumo de dívidas pagas."""
         try:
-            conn = get_connection()
-            cur  = get_cursor(conn)
-            cur.execute("""
-                SELECT s.nome as tipo, t.descricao,
-                       SUM(t.valor) as total_pago,
-                       COUNT(*) as parcelas_pagas,
-                       t.subconta_id,
-                       MAX(t.data) as ultima_data
-                FROM transacoes t
-                JOIN subcontas s ON t.subconta_id = s.id
-                JOIN categorias c ON s.categoria_id = c.id
-                WHERE UPPER(c.nome) LIKE '%DIVIDA%' AND t.usuario_id=%s
-                GROUP BY t.subconta_id, s.nome, t.descricao
-                ORDER BY s.nome, t.descricao
-            """, (uid,))
-            dividas = cur.fetchall()
-            conn.close()
+            with db_session() as cur:
+                cur.execute("""
+                    SELECT s.nome as tipo, t.descricao,
+                           SUM(t.valor) as total_pago,
+                           COUNT(*) as parcelas_pagas,
+                           t.subconta_id,
+                           MAX(t.data) as ultima_data
+                    FROM transacoes t
+                    JOIN subcontas s ON t.subconta_id = s.id
+                    JOIN categorias c ON s.categoria_id = c.id
+                    WHERE (UPPER(c.nome) LIKE '%DIVIDA%' OR UPPER(s.nome) LIKE '%DIVIDA%') 
+                    AND t.usuario_id=%s
+                    GROUP BY t.subconta_id, s.nome, t.descricao
+                    ORDER BY s.nome, t.descricao
+                """, (uid,))
+                dividas = cur.fetchall()
 
             lista_dividas.controls = []
 
@@ -143,34 +150,40 @@ def dividas_view(page):
                 msg_form.color = ft.colors.RED_700
                 page.update()
                 return
+
             valor = limpar_valor(tf_total.value)
             if valor <= 0:
                 msg_form.value = "❌ Informe o valor da parcela."
                 msg_form.color = ft.colors.RED_700
                 page.update()
                 return
+
             descricao = tf_descricao.value.strip() or "Parcela dívida"
-            data_str  = hoje.strftime("%d/%m/%Y")
-            conn = get_connection()
-            cur  = get_cursor(conn)
-            cur.execute("""
-                INSERT INTO transacoes (usuario_id, subconta_id, tipo, valor, data, descricao)
-                VALUES (%s,%s,'Despesa',%s,%s,%s)
-            """, (uid, int(dd_subconta.value), valor, data_str, descricao))
-            conn.commit()
-            conn.close()
+            data_str = hoje.strftime("%d/%m/%Y")
+
+            with db_session() as cur:
+                cur.execute("""
+                    INSERT INTO transacoes (usuario_id, subconta_id, tipo, valor, data, descricao)
+                    VALUES (%s, %s, 'Despesa', %s, %s, %s)
+                """, (uid, int(dd_subconta.value), valor, data_str, descricao))
+
             msg_form.value = f"✅ Parcela de {fmt(valor)} registrada!"
             msg_form.color = ft.colors.GREEN_700
+
+            # Limpa Campos
             tf_total.value = tf_descricao.value = tf_parcelas.value = ""
-            tf_pago.value  = tf_vencimento.value = tf_taxa.value = ""
+            tf_pago.value = tf_vencimento.value = tf_taxa.value = ""
             dd_subconta.value = None
+
             carregar_dividas()
+            page.update()
         except Exception as ex:
             print(f"[dividas] registrar_parcela: {ex}")
             msg_form.value = f"❌ Erro: {ex}"
             msg_form.color = ft.colors.RED_700
             page.update()
 
+    # Carga Inicial
     carregar_subcontas()
     carregar_dividas()
 
