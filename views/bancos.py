@@ -53,7 +53,7 @@ def bancos_view(page: ft.Page):
             with db_session() as cur:
                 cur.execute("SELECT id, nome_banco FROM bancos WHERE usuario_id=%s ORDER BY nome_banco", (uid,))
                 bancos = cur.fetchall()
-            banco_dd.options = [ft.dropdown.Option(str(b[0]), b[1]) for b in bancos]
+            banco_dd.options = [ft.dropdown.Option(str(b['id']), b['nome_banco']) for b in bancos]
             page.update()
         except Exception as ex:
             print(f"[bancos] carregar_banco_dd erro: {ex}")
@@ -68,17 +68,17 @@ def bancos_view(page: ft.Page):
             content=ft.Column([
                 ft.Row([
                     ft.Icon(ft.icons.ACCOUNT_BALANCE, color="white", size=28),
-                    ft.Text(b[1], color="white", weight="bold", size=16, expand=True),
+                    ft.Text(b['nome_banco'], color="white", weight="bold", size=16, expand=True),
                 ], spacing=10),
                 ft.Divider(color=ft.colors.with_opacity(0.3, "white"), height=18),
                 ft.Row([
                     ft.Column([
                         ft.Text("Saldo Inicial", color=ft.colors.with_opacity(0.75, "white"), size=11),
-                        ft.Text(fmt(b[2] or 0), color="white", size=20, weight="bold"),
+                        ft.Text(fmt(b['saldo_inicial'] or 0), color="white", size=20, weight="bold"),
                     ]),
                     ft.Column([
                         ft.Text("Início", color=ft.colors.with_opacity(0.75, "white"), size=11),
-                        ft.Text(b[3] if len(b) > 3 and b[3] else "—", color="white", size=13),
+                        ft.Text(b['coalesce'] if b['coalesce'] else "—", color="white", size=13),
                     ], alignment=ft.MainAxisAlignment.END)
                 ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                 ft.Divider(color=ft.colors.with_opacity(0.3, "white"), height=18),
@@ -86,14 +86,14 @@ def bancos_view(page: ft.Page):
                     ft.TextButton("✏️ Editar", style=ft.ButtonStyle(color="white"),
                                   on_click=lambda _, b=b: preparar_edicao_banco(b)),
                     ft.TextButton("🗑️ Excluir", style=ft.ButtonStyle(color=ft.colors.RED_200),
-                                  on_click=lambda _, bid=b[0]: excluir_banco(bid)),
+                                  on_click=lambda _, bid=b['id']: excluir_banco(bid)),
                 ], alignment=ft.MainAxisAlignment.END),
             ], spacing=4),
         )
 
     def card_cartao(c, banco_map):
-        tipo_cor = {"Crédito": "#E65100", "Débito": "#2E7D32", "Ambos": "#6A1B9A"}.get(c[2], "#37474F")
-        banco_nome = banco_map.get(int(c[4]) if c[4] else 0, "—")
+        tipo_cor = {"Crédito": "#E65100", "Débito": "#2E7D32", "Ambos": "#6A1B9A"}.get(c['tipo'], "#37474F")
+        banco_nome = banco_map.get(int(c['banco_id']) if c['banco_id'] else 0, "—")
         return ft.Container(
             width=280,
             border_radius=14,
@@ -103,15 +103,15 @@ def bancos_view(page: ft.Page):
             content=ft.Column([
                 ft.Row([
                     ft.Icon(ft.icons.CREDIT_CARD, color="white", size=28),
-                    ft.Text(c[1], color="white", weight="bold", size=16, expand=True),
+                    ft.Text(c['nome_cartao'], color="white", weight="bold", size=16, expand=True),
                 ], spacing=10),
                 ft.Container(bgcolor=ft.colors.with_opacity(0.2, "white"), border_radius=6,
                              padding=ft.padding.symmetric(horizontal=8, vertical=4),
-                             content=ft.Text(c[2], color="white", size=11, weight="bold")),
+                             content=ft.Text(c['tipo'], color="white", size=11, weight="bold")),
                 ft.Divider(color=ft.colors.with_opacity(0.3, "white"), height=18),
                 ft.Row([
                     ft.Column([ft.Text("Limite", color=ft.colors.with_opacity(0.75, "white"), size=11),
-                               ft.Text(fmt(c[3] or 0), color="white", size=16, weight="bold")]),
+                               ft.Text(fmt(c['limite'] or 0), color="white", size=16, weight="bold")]),
                     ft.Column([ft.Text("Banco", color=ft.colors.with_opacity(0.75, "white"), size=11),
                                ft.Text(banco_nome, color="white", size=13)]),
                 ], spacing=30),
@@ -120,7 +120,7 @@ def bancos_view(page: ft.Page):
                     ft.TextButton("✏️ Editar", style=ft.ButtonStyle(color="white"),
                                   on_click=lambda _, c=c: preparar_edicao_cartao(c)),
                     ft.TextButton("🗑️ Excluir", style=ft.ButtonStyle(color=ft.colors.RED_200),
-                                  on_click=lambda _, cid=c[0]: excluir_cartao(cid)),
+                                  on_click=lambda _, cid=c['id']: excluir_cartao(cid)),
                 ], alignment=ft.MainAxisAlignment.END),
             ], spacing=4),
         )
@@ -137,8 +137,7 @@ def bancos_view(page: ft.Page):
                     (uid,))
                 cartoes = cur.fetchall()
 
-            print(f"[bancos] dados brutos: {bancos}")
-            banco_map = {int(b[0]): b[1] for b in bancos}
+            banco_map = {int(b['id']): b['nome_banco'] for b in bancos}
 
             lista_bancos_col.controls.clear()
             lista_bancos_col.controls.append(ft.Row(
@@ -209,10 +208,10 @@ def bancos_view(page: ft.Page):
             page.update()
 
     def preparar_edicao_banco(b):
-        state["editing_banco_id"] = b[0]
-        nome_banco_f.value = b[1]
-        saldo_inicial_f.value = f'{b[2] or 0:_.2f}'.replace(".", ",").replace("_", ".")
-        data_inicial_f.value = b[3] if b[3] else datetime.now().strftime("%d/%m/%Y")
+        state["editing_banco_id"] = b['id']
+        nome_banco_f.value = b['nome_banco']
+        saldo_inicial_f.value = f"{b['saldo_inicial'] or 0:_.2f}".replace(".", ",").replace("_", ".")
+        data_inicial_f.value = b['coalesce'] if b['coalesce'] else datetime.now().strftime("%d/%m/%Y")
         btn_salvar_banco.text = "ATUALIZAR BANCO"
         page.update()
 
@@ -264,11 +263,11 @@ def bancos_view(page: ft.Page):
             page.update()
 
     def preparar_edicao_cartao(c):
-        state["editing_cartao_id"] = c[0]
-        nome_cartao_f.value = c[1]
-        tipo_cartao_f.value = c[2]
-        limite_f.value = f'{c[3] or 0:_.2f}'.replace(".", ",").replace("_", ".")
-        banco_dd.value = str(c[4])
+        state["editing_cartao_id"] = c['id']
+        nome_cartao_f.value = c['nome_cartao']
+        tipo_cartao_f.value = c['tipo']
+        limite_f.value = f"{c['limite'] or 0:_.2f}".replace(".", ",").replace("_", ".")
+        banco_dd.value = str(c['banco_id'])
         btn_salvar_cartao.text = "ATUALIZAR CARTÃO"
         page.update()
 
