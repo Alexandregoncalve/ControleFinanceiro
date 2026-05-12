@@ -48,7 +48,9 @@ def dividas_view(page):
             dd_subconta.update()
             page.update()
         except Exception as ex:
+            import traceback
             print(f"[dividas] carregar_subcontas erro: {ex}")
+            traceback.print_exc()
 
     def carregar_dividas():
         try:
@@ -137,7 +139,9 @@ def dividas_view(page):
             ]
             page.update()
         except Exception as ex:
+            import traceback
             print(f"[dividas] carregar_dividas erro: {ex}")
+            traceback.print_exc()
 
     def registrar_parcela(e):
         try:
@@ -173,7 +177,9 @@ def dividas_view(page):
             carregar_dividas()
             page.update()
         except Exception as ex:
+            import traceback
             print(f"[dividas] registrar_parcela erro: {ex}")
+            traceback.print_exc()
             msg_form.value = f"❌ Erro: {ex}"
             msg_form.color = ft.colors.RED_700
             page.update()
