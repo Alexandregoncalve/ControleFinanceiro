@@ -137,6 +137,7 @@ def bancos_view(page: ft.Page):
                     (uid,))
                 cartoes = cur.fetchall()
 
+            print(f"[bancos] dados brutos: {bancos}")
             banco_map = {int(b[0]): b[1] for b in bancos}
 
             lista_bancos_col.controls.clear()
