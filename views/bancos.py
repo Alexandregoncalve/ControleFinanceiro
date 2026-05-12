@@ -148,13 +148,10 @@ def bancos_view(page: ft.Page):
 
             carregar_banco_dd()
             page.update()
-##    except Exception as ex:
-##            print(f"[bancos] carregar_listas erro: {ex}")
-
-    except Exception as ex:
-    import traceback
-    print(f"[bancos] carregar_listas erro: {ex}")
-    traceback.print_exc()
+        except Exception as ex:
+            import traceback
+            print(f"[bancos] carregar_listas erro: {ex}")
+            traceback.print_exc()
 
     def salvar_banco(e):
         nome = nome_banco_f.value.strip()
