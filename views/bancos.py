@@ -23,7 +23,6 @@ def bancos_view(page: ft.Page):
 
     nome_banco_f = ft.TextField(label="Nome do Banco", width=250)
     saldo_inicial_f = ft.TextField(label="Saldo Inicial", width=180, on_blur=formatar_moeda_input)
-    # NOVO CAMPO: DATA INICIAL
     data_inicial_f = ft.TextField(
         label="Data Inicial (DD/MM/AAAA)",
         width=180,
@@ -81,7 +80,7 @@ def bancos_view(page: ft.Page):
                     ]),
                     ft.Column([
                         ft.Text("Início", color=ft.colors.with_opacity(0.75, "white"), size=11),
-                        ft.Text(b[3] if len(b) > 3 else "—", color="white", size=13),
+                        ft.Text(b[3] if len(b) > 3 and b[3] else "—", color="white", size=13),
                     ], alignment=ft.MainAxisAlignment.END)
                 ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                 ft.Divider(color=ft.colors.with_opacity(0.3, "white"), height=18),
@@ -157,12 +156,28 @@ def bancos_view(page: ft.Page):
     def salvar_banco(e):
         nome = nome_banco_f.value.strip()
         saldo = limpar_valor(saldo_inicial_f.value.strip() or "0")
-        data = data_inicial_f.value.strip()
+        data_str = data_inicial_f.value.strip()
+
+        # ✅ CORREÇÃO: validar e manter formato DD/MM/AAAA (VARCHAR no banco)
+        if data_str:
+            try:
+                # Valida se a data está no formato correto
+                datetime.strptime(data_str, "%d/%m/%Y")
+                data = data_str  # Salva como string DD/MM/AAAA
+            except ValueError:
+                msg_banco.value = "⚠️ Data inválida. Use o formato DD/MM/AAAA."
+                msg_banco.color = ft.colors.ORANGE_700
+                page.update()
+                return
+        else:
+            data = datetime.now().strftime("%d/%m/%Y")
+
         if not nome:
-            msg_banco.value = "⚠️ Informe o nome do banco.";
-            msg_banco.color = ft.colors.ORANGE_700;
-            page.update();
+            msg_banco.value = "⚠️ Informe o nome do banco."
+            msg_banco.color = ft.colors.ORANGE_700
+            page.update()
             return
+
         try:
             with db_session() as cur:
                 if state["editing_banco_id"]:
@@ -174,15 +189,17 @@ def bancos_view(page: ft.Page):
                     cur.execute(
                         "INSERT INTO bancos (nome_banco, saldo_inicial, data_criacao, usuario_id) VALUES (%s, %s, %s, %s)",
                         (nome, saldo, data, uid))
-            msg_banco.value = "✅ Salvo com sucesso!";
+            msg_banco.value = "✅ Salvo com sucesso!"
             msg_banco.color = ft.colors.GREEN_700
-            nome_banco_f.value = saldo_inicial_f.value = ""
+            nome_banco_f.value = ""
+            saldo_inicial_f.value = ""
             data_inicial_f.value = datetime.now().strftime("%d/%m/%Y")
             btn_salvar_banco.text = "SALVAR BANCO"
             carregar_listas()
         except Exception as ex:
-            msg_banco.value = "❌ Erro ao salvar banco.";
-            msg_banco.color = ft.colors.RED_700;
+            print(f"[bancos] salvar_banco erro: {ex}")
+            msg_banco.value = f"❌ Erro ao salvar banco: {ex}"
+            msg_banco.color = ft.colors.RED_700
             page.update()
 
     def preparar_edicao_banco(b):
@@ -198,17 +215,21 @@ def bancos_view(page: ft.Page):
             with db_session() as cur:
                 cur.execute("DELETE FROM bancos WHERE id=%s AND usuario_id=%s", (bid, uid))
             carregar_listas()
-        except:
-            pass
+        except Exception as ex:
+            print(f"[bancos] excluir_banco erro: {ex}")
 
     def salvar_cartao(e):
-        nome, tipo, limite, bid = nome_cartao_f.value.strip(), tipo_cartao_f.value, limpar_valor(
-            limite_f.value.strip() or "0"), banco_dd.value
+        nome = nome_cartao_f.value.strip()
+        tipo = tipo_cartao_f.value
+        limite = limpar_valor(limite_f.value.strip() or "0")
+        bid = banco_dd.value
+
         if not nome or not tipo or not bid:
-            msg_cartao.value = "⚠️ Preencha todos os campos.";
-            msg_cartao.color = ft.colors.ORANGE_700;
-            page.update();
+            msg_cartao.value = "⚠️ Preencha todos os campos."
+            msg_cartao.color = ft.colors.ORANGE_700
+            page.update()
             return
+
         try:
             with db_session() as cur:
                 if state["editing_cartao_id"]:
@@ -220,22 +241,27 @@ def bancos_view(page: ft.Page):
                     cur.execute(
                         "INSERT INTO cartoes (nome_cartao, tipo, limite, banco_id, usuario_id) VALUES (%s, %s, %s, %s, %s)",
                         (nome, tipo, limite, int(bid), uid))
-            msg_cartao.value = "✅ Cartão salvo!";
+            msg_cartao.value = "✅ Cartão salvo!"
             msg_cartao.color = ft.colors.GREEN_700
-            nome_cartao_f.value = limite_f.value = "";
-            tipo_cartao_f.value = banco_dd.value = None
+            nome_cartao_f.value = ""
+            limite_f.value = ""
+            tipo_cartao_f.value = None
+            banco_dd.value = None
             btn_salvar_cartao.text = "SALVAR CARTÃO"
             carregar_listas()
-        except:
-            msg_cartao.value = "❌ Erro ao salvar cartão.";
-            msg_cartao.color = ft.colors.RED_700;
+        except Exception as ex:
+            print(f"[bancos] salvar_cartao erro: {ex}")
+            msg_cartao.value = f"❌ Erro ao salvar cartão: {ex}"
+            msg_cartao.color = ft.colors.RED_700
             page.update()
 
     def preparar_edicao_cartao(c):
         state["editing_cartao_id"] = c[0]
-        nome_cartao_f.value, tipo_cartao_f.value, limite_f.value, banco_dd.value = c[1], c[
-            2], f'{c[3] or 0:_.2f}'.replace(".", ",").replace("_", "."), str(c[4])
-        btn_salvar_cartao.text = "ATUALIZAR CARTÃO";
+        nome_cartao_f.value = c[1]
+        tipo_cartao_f.value = c[2]
+        limite_f.value = f'{c[3] or 0:_.2f}'.replace(".", ",").replace("_", ".")
+        banco_dd.value = str(c[4])
+        btn_salvar_cartao.text = "ATUALIZAR CARTÃO"
         page.update()
 
     def excluir_cartao(cid):
@@ -243,8 +269,8 @@ def bancos_view(page: ft.Page):
             with db_session() as cur:
                 cur.execute("DELETE FROM cartoes WHERE id=%s AND usuario_id=%s", (cid, uid))
             carregar_listas()
-        except:
-            pass
+        except Exception as ex:
+            print(f"[bancos] excluir_cartao erro: {ex}")
 
     btn_salvar_banco = ft.ElevatedButton("SALVAR BANCO", bgcolor="#1565C0", color="white", on_click=salvar_banco)
     btn_salvar_cartao = ft.ElevatedButton("SALVAR CARTÃO", bgcolor="#E65100", color="white", on_click=salvar_cartao)
