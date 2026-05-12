@@ -101,7 +101,6 @@ def dashboard_view(page):
         try:
             with db_session() as cur:
                 cur.execute("SELECT COALESCE(SUM(saldo_inicial), 0) FROM bancos WHERE usuario_id=%s", (uid,))
-                # Ajuste de índice [0] para PostgreSQL Web
                 saldo_inicial = float(cur.fetchone()[0] or 0)
                 m_sel, a_sel = int(mes_str.split("/")[0]), int(mes_str.split("/")[1])
                 cur.execute("""
@@ -128,12 +127,10 @@ def dashboard_view(page):
                 cur.execute(
                     "SELECT COALESCE(SUM(valor),0) FROM transacoes WHERE usuario_id=%s AND tipo='Receita' AND data LIKE %s",
                     (uid, f"%{mes_str}",))
-                # Ajuste de índice [0] para PostgreSQL Web
                 ent = float(cur.fetchone()[0] or 0)
                 cur.execute(
                     "SELECT COALESCE(SUM(valor),0) FROM transacoes WHERE usuario_id=%s AND tipo='Despesa' AND data LIKE %s",
                     (uid, f"%{mes_str}",))
-                # Ajuste de índice [0] para PostgreSQL Web
                 sai = float(cur.fetchone()[0] or 0)
 
                 saldo_anterior = calcular_saldo_acumulado(mes_str)
@@ -169,20 +166,18 @@ def dashboard_view(page):
                 cur.execute(
                     "SELECT COALESCE(SUM(t.valor),0) FROM transacoes t JOIN subcontas s ON t.subconta_id = s.id WHERE t.usuario_id=%s AND t.tipo='Despesa' AND t.data LIKE %s AND (s.nome ILIKE '%%CARTAO%%' OR s.nome ILIKE '%%CARTÃO%%')",
                     (uid, f"%{mes_str}"))
-                # Ajuste de índice [0] para PostgreSQL Web
                 total_cartao = float(cur.fetchone()[0] or 0)
 
                 cur.execute(
                     "SELECT COUNT(*) FROM subcontas s WHERE s.fixa=1 AND s.usuario_id=%s AND s.id NOT IN (SELECT subconta_id FROM transacoes WHERE data LIKE %s AND usuario_id=%s)",
                     (uid, f"%{mes_str}", uid))
-                # Ajuste de índice [0] para PostgreSQL Web
                 fixas_pendentes = int(cur.fetchone()[0] or 0)
 
                 cur.execute("""
                     SELECT CASE WHEN t.categoria_real_id IS NOT NULL THEN sr.nome ELSE s.nome END, 
                            MAX(CASE WHEN t.categoria_real_id IS NOT NULL THEN sr.orcamento ELSE s.orcamento END), SUM(t.valor)
                     FROM transacoes t JOIN subcontas s ON t.subconta_id = s.id LEFT JOIN subcontas sr ON t.categoria_real_id = sr.id
-                    WHERE t.usuario_id=%s AND t.tipo='Despesa' AND t.data LIKE %s GROUP BY 1 HAVING MAX(CASE WHEN t.categoria_real_id IS NOT NULL THEN sr.orcamento ELSE s.orcamento END) > 0
+                    WHERE t.usuario_id=%s AND t.tipo='Despesa' AND t.data LIKE %s GROUP BY 1 HAVING MAX(2) > 0
                 """, (uid, f"%{mes_str}",))
                 orcamentos = cur.fetchall()
 
