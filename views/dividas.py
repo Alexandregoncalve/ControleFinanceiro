@@ -1,7 +1,7 @@
 import flet as ft
 from datetime import datetime
 from menu import get_menu
-from database import db_session  # Importando a nova função de segurança
+from database import db_session
 from utils import formatar_moeda_input, limpar_valor
 
 
@@ -12,7 +12,6 @@ def dividas_view(page):
     hoje = datetime.now()
     uid = page.session.get("user_id")
 
-    # Componentes de Entrada
     dd_subconta = ft.Dropdown(label="Tipo de Dívida", width=220, disabled=True)
     tf_descricao = ft.TextField(label="Descrição", width=300, hint_text="Ex: Empréstimo Banco X")
     tf_total = ft.TextField(label="Valor Total", width=160, on_blur=formatar_moeda_input)
@@ -22,18 +21,16 @@ def dividas_view(page):
     tf_taxa = ft.TextField(label="Taxa Juros % a.m.", width=160, on_blur=formatar_moeda_input)
     msg_form = ft.Text("", size=12)
 
-    # Componentes de Exibição
     lista_dividas = ft.Column(spacing=8, scroll=ft.ScrollMode.AUTO)
     resumo_row = ft.Row(spacing=12, wrap=True)
 
     def carregar_subcontas():
-        """Alimenta o dropdown com categorias que tenham 'DIVIDA' no nome."""
         try:
             with db_session() as cur:
                 cur.execute("""
                     SELECT s.id, s.nome FROM subcontas s
                     JOIN categorias c ON s.categoria_id = c.id
-                    WHERE (UPPER(c.nome) LIKE '%DIVIDA%' OR UPPER(s.nome) LIKE '%DIVIDA%') 
+                    WHERE (UPPER(unaccent(c.nome)) LIKE '%DIVIDA%' OR UPPER(unaccent(s.nome)) LIKE '%DIVIDA%')
                     AND s.usuario_id=%s
                     ORDER BY s.nome
                 """, (uid,))
@@ -51,10 +48,9 @@ def dividas_view(page):
             dd_subconta.update()
             page.update()
         except Exception as ex:
-            print(f"[dividas] carregar_subcontas: {ex}")
+            print(f"[dividas] carregar_subcontas erro: {ex}")
 
     def carregar_dividas():
-        """Alimenta a lista e o resumo de dívidas pagas."""
         try:
             with db_session() as cur:
                 cur.execute("""
@@ -66,7 +62,7 @@ def dividas_view(page):
                     FROM transacoes t
                     JOIN subcontas s ON t.subconta_id = s.id
                     JOIN categorias c ON s.categoria_id = c.id
-                    WHERE (UPPER(c.nome) LIKE '%DIVIDA%' OR UPPER(s.nome) LIKE '%DIVIDA%') 
+                    WHERE (UPPER(unaccent(c.nome)) LIKE '%DIVIDA%' OR UPPER(unaccent(s.nome)) LIKE '%DIVIDA%')
                     AND t.usuario_id=%s
                     GROUP BY t.subconta_id, s.nome, t.descricao
                     ORDER BY s.nome, t.descricao
@@ -141,7 +137,7 @@ def dividas_view(page):
             ]
             page.update()
         except Exception as ex:
-            print(f"[dividas] carregar_dividas: {ex}")
+            print(f"[dividas] carregar_dividas erro: {ex}")
 
     def registrar_parcela(e):
         try:
@@ -170,7 +166,6 @@ def dividas_view(page):
             msg_form.value = f"✅ Parcela de {fmt(valor)} registrada!"
             msg_form.color = ft.colors.GREEN_700
 
-            # Limpa Campos
             tf_total.value = tf_descricao.value = tf_parcelas.value = ""
             tf_pago.value = tf_vencimento.value = tf_taxa.value = ""
             dd_subconta.value = None
@@ -178,12 +173,11 @@ def dividas_view(page):
             carregar_dividas()
             page.update()
         except Exception as ex:
-            print(f"[dividas] registrar_parcela: {ex}")
+            print(f"[dividas] registrar_parcela erro: {ex}")
             msg_form.value = f"❌ Erro: {ex}"
             msg_form.color = ft.colors.RED_700
             page.update()
 
-    # Carga Inicial
     carregar_subcontas()
     carregar_dividas()
 
