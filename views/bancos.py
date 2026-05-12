@@ -93,6 +93,7 @@ def bancos_view(page: ft.Page):
 
     def card_cartao(c, banco_map):
         tipo_cor = {"Crédito": "#E65100", "Débito": "#2E7D32", "Ambos": "#6A1B9A"}.get(c[2], "#37474F")
+        banco_nome = banco_map.get(int(c[4]) if c[4] else 0, "—")
         return ft.Container(
             width=280,
             border_radius=14,
@@ -112,7 +113,7 @@ def bancos_view(page: ft.Page):
                     ft.Column([ft.Text("Limite", color=ft.colors.with_opacity(0.75, "white"), size=11),
                                ft.Text(fmt(c[3] or 0), color="white", size=16, weight="bold")]),
                     ft.Column([ft.Text("Banco", color=ft.colors.with_opacity(0.75, "white"), size=11),
-                               ft.Text(banco_map.get(c[4], "—"), color="white", size=13)]),
+                               ft.Text(banco_nome, color="white", size=13)]),
                 ], spacing=30),
                 ft.Divider(color=ft.colors.with_opacity(0.3, "white"), height=18),
                 ft.Row([
@@ -136,15 +137,19 @@ def bancos_view(page: ft.Page):
                     (uid,))
                 cartoes = cur.fetchall()
 
-            banco_map = {b[0]: b[1] for b in bancos}
+            banco_map = {int(b[0]): b[1] for b in bancos}
+
             lista_bancos_col.controls.clear()
             lista_bancos_col.controls.append(ft.Row(
                 [card_banco(b, CORES_BANCO[i % len(CORES_BANCO)]) for i, b in enumerate(bancos)] if bancos else [
-                    ft.Text("Nenhum banco cadastrado.", color=ft.colors.GREY_500, italic=True)], wrap=True, spacing=16))
+                    ft.Text("Nenhum banco cadastrado.", color=ft.colors.GREY_500, italic=True)],
+                wrap=True, spacing=16))
 
             lista_cartoes_col.controls.clear()
-            lista_cartoes_col.controls.append(ft.Row([card_cartao(c, banco_map) for c in cartoes] if cartoes else [
-                ft.Text("Nenhum cartão cadastrado.", color=ft.colors.GREY_500, italic=True)], wrap=True, spacing=16))
+            lista_cartoes_col.controls.append(ft.Row(
+                [card_cartao(c, banco_map) for c in cartoes] if cartoes else [
+                    ft.Text("Nenhum cartão cadastrado.", color=ft.colors.GREY_500, italic=True)],
+                wrap=True, spacing=16))
 
             carregar_banco_dd()
             page.update()
@@ -195,7 +200,9 @@ def bancos_view(page: ft.Page):
             btn_salvar_banco.text = "SALVAR BANCO"
             carregar_listas()
         except Exception as ex:
+            import traceback
             print(f"[bancos] salvar_banco erro: {ex}")
+            traceback.print_exc()
             msg_banco.value = f"❌ Erro ao salvar banco: {ex}"
             msg_banco.color = ft.colors.RED_700
             page.update()
@@ -248,7 +255,9 @@ def bancos_view(page: ft.Page):
             btn_salvar_cartao.text = "SALVAR CARTÃO"
             carregar_listas()
         except Exception as ex:
+            import traceback
             print(f"[bancos] salvar_cartao erro: {ex}")
+            traceback.print_exc()
             msg_cartao.value = f"❌ Erro ao salvar cartão: {ex}"
             msg_cartao.color = ft.colors.RED_700
             page.update()
