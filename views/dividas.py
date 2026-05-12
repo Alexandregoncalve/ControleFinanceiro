@@ -37,7 +37,7 @@ def dividas_view(page):
                 rows = cur.fetchall()
 
             if rows:
-                dd_subconta.options = [ft.dropdown.Option(str(r["id"]), r["nome"]) for r in rows]
+                dd_subconta.options = [ft.dropdown.Option(str(r['id']), r['nome']) for r in rows]
                 dd_subconta.disabled = False
                 dd_subconta.hint_text = "Selecione o tipo"
             else:
@@ -79,14 +79,14 @@ def dividas_view(page):
 
             total_pago = 0.0
             for d in dividas:
-                pago = float(d["total_pago"] or 0)
+                pago = float(d['total_pago'] or 0)
                 total_pago += pago
                 lista_dividas.controls.append(ft.Container(
                     content=ft.Column([
                         ft.Row([
                             ft.Column([
-                                ft.Text(d["descricao"] or d["tipo"], size=13, weight="bold"),
-                                ft.Text(d["tipo"], size=11, color="grey"),
+                                ft.Text(d['descricao'] or d['tipo'], size=13, weight="bold"),
+                                ft.Text(d['tipo'], size=11, color="grey"),
                             ], expand=True),
                             ft.Column([
                                 ft.Text("Total pago", size=10, color="grey"),
@@ -94,11 +94,11 @@ def dividas_view(page):
                             ], horizontal_alignment=ft.CrossAxisAlignment.END),
                             ft.Column([
                                 ft.Text("Parcelas pagas", size=10, color="grey"),
-                                ft.Text(str(d["parcelas_pagas"]), size=13, weight="bold"),
+                                ft.Text(str(d['parcelas_pagas']), size=13, weight="bold"),
                             ], horizontal_alignment=ft.CrossAxisAlignment.END),
                             ft.Column([
                                 ft.Text("Última parcela", size=10, color="grey"),
-                                ft.Text(d["ultima_data"] or "—", size=11),
+                                ft.Text(d['ultima_data'] or "—", size=11),
                             ], horizontal_alignment=ft.CrossAxisAlignment.END),
                         ], alignment="spaceBetween", vertical_alignment=ft.CrossAxisAlignment.CENTER),
                     ], spacing=4),
