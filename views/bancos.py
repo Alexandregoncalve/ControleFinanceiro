@@ -1,19 +1,18 @@
 import flet as ft
 from menu import get_menu
-from database import db_session  # Usando a função de segurança que você já tem
+from database import db_session
 from utils import limpar_valor, formatar_moeda_input
 from datetime import datetime
 
-# Paleta de cores para os cards de banco
 CORES_BANCO = [
-    "#1565C0",  # Azul
-    "#2E7D32",  # Verde
-    "#6A1B9A",  # Roxo
-    "#00838F",  # Ciano
-    "#E65100",  # Laranja
-    "#AD1457",  # Rosa
-    "#4527A0",  # Índigo
-    "#37474F",  # Cinza escuro
+    "#1565C0",
+    "#2E7D32",
+    "#6A1B9A",
+    "#00838F",
+    "#E65100",
+    "#AD1457",
+    "#4527A0",
+    "#37474F",
 ]
 
 
@@ -57,10 +56,9 @@ def bancos_view(page: ft.Page):
             banco_dd.options = [ft.dropdown.Option(str(b[0]), b[1]) for b in bancos]
             page.update()
         except Exception as ex:
-            print(f"[bancos] carregar_banco_dd: {ex}")
+            print(f"[bancos] carregar_banco_dd erro: {ex}")
 
     def card_banco(b, cor):
-        # b[0]=id, b[1]=nome, b[2]=saldo, b[3]=data
         return ft.Container(
             width=280,
             border_radius=14,
@@ -151,19 +149,23 @@ def bancos_view(page: ft.Page):
             carregar_banco_dd()
             page.update()
         except Exception as ex:
-            print(f"[bancos] carregar_listas: {ex}")
+            print(f"[bancos] carregar_listas erro: {ex}")
 
     def salvar_banco(e):
         nome = nome_banco_f.value.strip()
         saldo = limpar_valor(saldo_inicial_f.value.strip() or "0")
         data_str = data_inicial_f.value.strip()
 
-        # ✅ CORREÇÃO: validar e manter formato DD/MM/AAAA (VARCHAR no banco)
+        if not nome:
+            msg_banco.value = "⚠️ Informe o nome do banco."
+            msg_banco.color = ft.colors.ORANGE_700
+            page.update()
+            return
+
         if data_str:
             try:
-                # Valida se a data está no formato correto
                 datetime.strptime(data_str, "%d/%m/%Y")
-                data = data_str  # Salva como string DD/MM/AAAA
+                data = data_str
             except ValueError:
                 msg_banco.value = "⚠️ Data inválida. Use o formato DD/MM/AAAA."
                 msg_banco.color = ft.colors.ORANGE_700
@@ -171,12 +173,6 @@ def bancos_view(page: ft.Page):
                 return
         else:
             data = datetime.now().strftime("%d/%m/%Y")
-
-        if not nome:
-            msg_banco.value = "⚠️ Informe o nome do banco."
-            msg_banco.color = ft.colors.ORANGE_700
-            page.update()
-            return
 
         try:
             with db_session() as cur:
