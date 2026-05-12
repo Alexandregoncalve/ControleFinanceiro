@@ -177,7 +177,7 @@ def dashboard_view(page):
                     SELECT CASE WHEN t.categoria_real_id IS NOT NULL THEN sr.nome ELSE s.nome END, 
                            MAX(CASE WHEN t.categoria_real_id IS NOT NULL THEN sr.orcamento ELSE s.orcamento END), SUM(t.valor)
                     FROM transacoes t JOIN subcontas s ON t.subconta_id = s.id LEFT JOIN subcontas sr ON t.categoria_real_id = sr.id
-                    WHERE t.usuario_id=%s AND t.tipo='Despesa' AND t.data LIKE %s GROUP BY 1 HAVING MAX(2) > 0
+                    WHERE t.usuario_id=%s AND t.tipo='Despesa' AND t.data LIKE %s GROUP BY 1 HAVING MAX(CASE WHEN t.categoria_real_id IS NOT NULL THEN sr.orcamento ELSE s.orcamento END) > 0
                 """, (uid, f"%{mes_str}",))
                 orcamentos = cur.fetchall()
 
