@@ -4,7 +4,6 @@ from database import autenticar, get_connection, get_cursor
 
 
 def login_view(page: ft.Page):
-
     login_input = ft.TextField(
         label="E-mail ou usuário", width=300, border_radius=10,
         on_submit=lambda e: fazer_login(e)
@@ -14,14 +13,14 @@ def login_view(page: ft.Page):
         password=True, can_reveal_password=True,
         on_submit=lambda e: fazer_login(e)
     )
-    erro_text  = ft.Text("", color=ft.colors.RED_600, size=13)
+    erro_text = ft.Text("", color=ft.colors.RED_600, size=13)
     carregando = ft.ProgressRing(width=24, height=24, visible=False)
 
     def verificar_fixas_pendentes(uid):
         try:
             mes_str = datetime.now().strftime("%m/%Y")
             conn = get_connection()
-            cur  = get_cursor(conn)
+            cur = get_cursor(conn)
             cur.execute("""
                 SELECT s.nome FROM subcontas s
                 WHERE s.fixa = 1
@@ -40,6 +39,7 @@ def login_view(page: ft.Page):
             return []
 
     def mostrar_alerta_fixas(pendentes):
+        # Definição das funções internas primeiro
         def ir_fixas(e):
             dlg.open = False
             page.update()
@@ -48,7 +48,9 @@ def login_view(page: ft.Page):
         def ir_dashboard(e):
             dlg.open = False
             page.update()
-            page.go("/")
+            # Se já estivermos no /, apenas fechamos
+            if page.route != "/":
+                page.go("/")
 
         lista_contas = ft.Column(
             controls=[
@@ -91,36 +93,47 @@ def login_view(page: ft.Page):
             ],
             actions_alignment=ft.MainAxisAlignment.END,
         )
+
+        # O segredo: adicionamos ao overlay e abrimos
         page.overlay.append(dlg)
         dlg.open = True
         page.update()
 
     def fazer_login(e):
-        erro_text.value    = ""
+        erro_text.value = ""
         carregando.visible = True
         page.update()
 
-        login = login_input.value.strip()
-        senha = senha_input.value
+        login_val = login_input.value.strip()
+        senha_val = senha_input.value
 
-        if not login or not senha:
-            erro_text.value    = "Preencha e-mail e senha."
+        if not login_val or not senha_val:
+            erro_text.value = "Preencha e-mail e senha."
             carregando.visible = False
             page.update()
             return
 
-        usuario = autenticar(login, senha)
+        usuario = autenticar(login_val, senha_val)
         carregando.visible = False
 
         if usuario:
-            page.session.set("user_id",   usuario["id"])
+            # 1. Guarda os dados na sessão
+            page.session.set("user_id", usuario["id"])
             page.session.set("user_nome", usuario["nome"])
+
+            # 2. Busca as pendências
             pendentes = verificar_fixas_pendentes(usuario["id"])
+
+            # 3. NAVEGA PRIMEIRO (Isso limpa a view de login)
             page.go("/")
+
+            # 4. EXIBE O ALERTA POR ÚLTIMO
+            # Como o alerta é modal e está no overlay da page,
+            # ele persistirá sobre a nova tela carregada
             if pendentes:
                 mostrar_alerta_fixas(pendentes)
         else:
-            erro_text.value   = "E-mail ou senha incorretos."
+            erro_text.value = "E-mail ou senha incorretos."
             senha_input.value = ""
             senha_input.focus()
             page.update()
