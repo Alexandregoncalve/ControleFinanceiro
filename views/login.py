@@ -1,10 +1,10 @@
 import flet as ft
 from datetime import datetime
-import time  # Importação necessária para o delay
 from database import autenticar, get_connection, get_cursor
 
 
 def login_view(page: ft.Page):
+
     login_input = ft.TextField(
         label="E-mail ou usuário", width=300, border_radius=10,
         on_submit=lambda e: fazer_login(e)
@@ -14,14 +14,14 @@ def login_view(page: ft.Page):
         password=True, can_reveal_password=True,
         on_submit=lambda e: fazer_login(e)
     )
-    erro_text = ft.Text("", color=ft.colors.RED_600, size=13)
+    erro_text  = ft.Text("", color=ft.colors.RED_600, size=13)
     carregando = ft.ProgressRing(width=24, height=24, visible=False)
 
     def verificar_fixas_pendentes(uid):
         try:
             mes_str = datetime.now().strftime("%m/%Y")
             conn = get_connection()
-            cur = get_cursor(conn)
+            cur  = get_cursor(conn)
             cur.execute("""
                 SELECT s.nome FROM subcontas s
                 WHERE s.fixa = 1
@@ -45,9 +45,10 @@ def login_view(page: ft.Page):
             page.update()
             page.go("/fixas")
 
-        def fechar_banner(e):
+        def ir_dashboard(e):
             dlg.open = False
             page.update()
+            page.go("/")
 
         lista_contas = ft.Column(
             controls=[
@@ -80,7 +81,7 @@ def login_view(page: ft.Page):
                         size=13, weight="bold"),
             ], spacing=8, tight=True),
             actions=[
-                ft.TextButton("Agora não", on_click=fechar_banner),  # Mudado para apenas fechar o banner
+                ft.TextButton("Agora não", on_click=ir_dashboard),
                 ft.ElevatedButton(
                     "📋 IR PARA CONTAS FIXAS",
                     bgcolor=ft.colors.ORANGE_700,
@@ -90,14 +91,12 @@ def login_view(page: ft.Page):
             ],
             actions_alignment=ft.MainAxisAlignment.END,
         )
-
-        # Usando page.dialog em vez de overlay para garantir que trave na tela
-        page.dialog = dlg
+        page.overlay.append(dlg)
         dlg.open = True
         page.update()
 
     def fazer_login(e):
-        erro_text.value = ""
+        erro_text.value    = ""
         carregando.visible = True
         page.update()
 
@@ -105,7 +104,7 @@ def login_view(page: ft.Page):
         senha = senha_input.value
 
         if not login or not senha:
-            erro_text.value = "Preencha e-mail e senha."
+            erro_text.value    = "Preencha e-mail e senha."
             carregando.visible = False
             page.update()
             return
@@ -114,21 +113,14 @@ def login_view(page: ft.Page):
         carregando.visible = False
 
         if usuario:
-            page.session.set("user_id", usuario["id"])
+            page.session.set("user_id",   usuario["id"])
             page.session.set("user_nome", usuario["nome"])
-
-            # 1. Busca as pendências
             pendentes = verificar_fixas_pendentes(usuario["id"])
-
-            # 2. Navega para a página principal primeiro
             page.go("/")
-
-            # 3. Espera a Dashboard carregar e mostra o alerta
             if pendentes:
-                time.sleep(0.5)  # Aguarda 500ms para a rota mudar de fato
                 mostrar_alerta_fixas(pendentes)
         else:
-            erro_text.value = "E-mail ou senha incorretos."
+            erro_text.value   = "E-mail ou senha incorretos."
             senha_input.value = ""
             senha_input.focus()
             page.update()
