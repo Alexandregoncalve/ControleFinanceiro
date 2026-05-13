@@ -11,10 +11,8 @@ def dividas_view(page):
 
     hoje = datetime.now()
     uid = page.session.get("user_id")
-    print(f"[dividas] uid={uid} type={type(uid)}")
 
     if not uid:
-        print("[dividas] ERRO: uid é None!")
         return ft.View(
             route="/dividas",
             controls=[ft.Text("Sessão expirada. Faça login novamente.", color="red", size=16)]
@@ -38,12 +36,11 @@ def dividas_view(page):
                 cur.execute("""
                     SELECT s.id, s.nome FROM subcontas s
                     JOIN categorias c ON s.categoria_id = c.id
-                    WHERE (UPPER(unaccent(c.nome)) LIKE '%DIVIDA%' OR UPPER(unaccent(s.nome)) LIKE '%DIVIDA%')
+                    WHERE (UPPER(unaccent(c.nome)) LIKE '%%DIVIDA%%' OR UPPER(unaccent(s.nome)) LIKE '%%DIVIDA%%')
                     AND s.usuario_id=%s
                     ORDER BY s.nome
                 """, (uid,))
                 rows = cur.fetchall()
-                print(f"[dividas] subcontas encontradas: {rows}")
 
             if rows:
                 dd_subconta.options = [ft.dropdown.Option(str(r['id']), r['nome']) for r in rows]
@@ -73,13 +70,12 @@ def dividas_view(page):
                     FROM transacoes t
                     JOIN subcontas s ON t.subconta_id = s.id
                     JOIN categorias c ON s.categoria_id = c.id
-                    WHERE (UPPER(unaccent(c.nome)) LIKE '%DIVIDA%' OR UPPER(unaccent(s.nome)) LIKE '%DIVIDA%')
+                    WHERE (UPPER(unaccent(c.nome)) LIKE '%%DIVIDA%%' OR UPPER(unaccent(s.nome)) LIKE '%%DIVIDA%%')
                     AND t.usuario_id=%s
                     GROUP BY t.subconta_id, s.nome, t.descricao
                     ORDER BY s.nome, t.descricao
                 """, (uid,))
                 dividas = cur.fetchall()
-                print(f"[dividas] dividas encontradas: {len(dividas)}")
 
             lista_dividas.controls = []
 
@@ -111,7 +107,7 @@ def dividas_view(page):
                             ft.Column([
                                 ft.Text("Última parcela", size=10, color="grey"),
                                 ft.Text(d['ultima_data'] or "—", size=11),
-                            ], horizontal_alignment=ft.CrossAxisAlignment.END),
+                            ], horizontal_accessing=ft.CrossAxisAlignment.END),
                         ], alignment="spaceBetween", vertical_alignment=ft.CrossAxisAlignment.CENTER),
                     ], spacing=4),
                     padding=ft.padding.symmetric(vertical=10, horizontal=14),
