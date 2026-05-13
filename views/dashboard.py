@@ -51,6 +51,7 @@ def dashboard_view(page):
     bancos_container = ft.Row(spacing=12, wrap=True)
     grafico_barras_col = ft.Column(spacing=8)
     pizza_container = ft.Column(spacing=6)
+    legenda_pizza = ft.Column(spacing=4, scroll=ft.ScrollMode.AUTO)
     detalhes_col = ft.Column(scroll=ft.ScrollMode.AUTO, height=300, spacing=4)
     orcamento_container = ft.Column(spacing=6)
     comparativo_container = ft.Column(spacing=6)
@@ -158,9 +159,12 @@ def dashboard_view(page):
                 meta_res_field.value = f"{meta_res:_.2f}".replace(".", ",").replace("_", ".") if meta_res else ""
 
                 cur.execute("""
-                    SELECT CASE WHEN t.categoria_real_id IS NOT NULL THEN sr.nome ELSE s.nome END as nome, SUM(t.valor) as total
-                    FROM transacoes t JOIN subcontas s ON t.subconta_id = s.id LEFT JOIN subcontas sr ON t.categoria_real_id = sr.id
-                    WHERE t.usuario_id=%s AND t.tipo='Despesa' AND t.data LIKE %s GROUP BY 1 ORDER BY 2 DESC
+                    SELECT CASE WHEN t.categoria_real_id IS NOT NULL THEN sr.nome ELSE s.nome END as nome,
+                           SUM(t.valor) as total
+                    FROM transacoes t JOIN subcontas s ON t.subconta_id = s.id
+                    LEFT JOIN subcontas sr ON t.categoria_real_id = sr.id
+                    WHERE t.usuario_id=%s AND t.tipo='Despesa' AND t.data LIKE %s
+                    GROUP BY 1 ORDER BY 2 DESC
                 """, (uid, f"%%/{mes_str}",))
                 gastos = cur.fetchall()
 
@@ -178,7 +182,8 @@ def dashboard_view(page):
                     SELECT CASE WHEN t.categoria_real_id IS NOT NULL THEN sr.nome ELSE s.nome END as nome,
                            MAX(CASE WHEN t.categoria_real_id IS NOT NULL THEN sr.orcamento ELSE s.orcamento END) as orcamento,
                            SUM(t.valor) as total
-                    FROM transacoes t JOIN subcontas s ON t.subconta_id = s.id LEFT JOIN subcontas sr ON t.categoria_real_id = sr.id
+                    FROM transacoes t JOIN subcontas s ON t.subconta_id = s.id
+                    LEFT JOIN subcontas sr ON t.categoria_real_id = sr.id
                     WHERE t.usuario_id=%s AND t.tipo='Despesa' AND t.data LIKE %s GROUP BY 1
                     HAVING MAX(CASE WHEN t.categoria_real_id IS NOT NULL THEN sr.orcamento ELSE s.orcamento END) > 0
                 """, (uid, f"%%/{mes_str}",))
@@ -193,7 +198,8 @@ def dashboard_view(page):
                     SELECT SPLIT_PART(t.data, '/', 2) || '/' || SPLIT_PART(t.data, '/', 3) as mes,
                            CASE WHEN t.categoria_real_id IS NOT NULL THEN sr.nome ELSE s.nome END as nome,
                            SUM(t.valor) as total
-                    FROM transacoes t JOIN subcontas s ON t.subconta_id = s.id LEFT JOIN subcontas sr ON t.categoria_real_id = sr.id
+                    FROM transacoes t JOIN subcontas s ON t.subconta_id = s.id
+                    LEFT JOIN subcontas sr ON t.categoria_real_id = sr.id
                     WHERE t.usuario_id=%s AND t.tipo='Despesa' GROUP BY 1, 2 ORDER BY 1 DESC
                 """, (uid,))
                 comp_rows = cur.fetchall()
@@ -212,60 +218,73 @@ def dashboard_view(page):
 
         def card_meta(titulo, valor, meta, pct, cor_bg, icone):
             return ft.Container(
+                width=220, height=130,
+                padding=14, bgcolor=cor_bg, border_radius=14,
+                shadow=ft.BoxShadow(blur_radius=8, color=ft.colors.BLACK26),
                 content=ft.Column([
                     ft.Row([ft.Text(titulo, size=11, weight="bold", color="white"),
                             ft.Icon(icone, size=16, color="white")], alignment="spaceBetween"),
-                    ft.Text(fmt(valor), size=20, weight="bold", color="white"),
+                    ft.Text(fmt(valor), size=19, weight="bold", color="white"),
                     ft.Row([ft.Text("Meta:", size=10, color="white70"),
                             ft.Text(fmt(meta) if meta > 0 else "—", size=10, color="white")], spacing=4),
                     ft.Container(
-                        content=ft.Text(fmt_pct(pct) if meta > 0 else "Sem meta", size=12, weight="bold",
+                        content=ft.Text(fmt_pct(pct) if meta > 0 else "Sem meta", size=11, weight="bold",
                                         color="#1B5E20" if pct <= 100 else "#B71C1C"),
-                        bgcolor="white", border_radius=6, padding=ft.padding.symmetric(horizontal=8, vertical=2)),
-                    ft.ProgressBar(value=min(pct / 100, 1.0) if meta > 0 else 0, color="white", bgcolor="white24", height=6),
-                ], spacing=6), padding=16, bgcolor=cor_bg, border_radius=12, width=210,
-                shadow=ft.BoxShadow(blur_radius=8, color=ft.colors.BLACK26)
+                        bgcolor="white", border_radius=6,
+                        padding=ft.padding.symmetric(horizontal=8, vertical=2)),
+                    ft.ProgressBar(value=min(pct / 100, 1.0) if meta > 0 else 0,
+                                   color="white", bgcolor="white24", height=5),
+                ], spacing=5)
+            )
+
+        def card_simples(titulo, valor_str, cor_bg, icone, subtitulo=None):
+            return ft.Container(
+                width=220, height=130,
+                padding=14, bgcolor=cor_bg, border_radius=14,
+                shadow=ft.BoxShadow(blur_radius=8, color=ft.colors.BLACK26),
+                content=ft.Column([
+                    ft.Row([ft.Text(titulo, size=11, weight="bold", color="white"),
+                            ft.Icon(icone, size=16, color="white")], alignment="spaceBetween"),
+                    ft.Text(valor_str, size=19, weight="bold", color="white"),
+                    ft.Text(subtitulo or "", size=10, color="white70") if subtitulo else ft.Container(),
+                ], spacing=5)
             )
 
         cards_topo.controls = [
             card_meta("RECEITAS", ent, meta_rec, pct_rec, "#2E7D32", ft.icons.ARROW_UPWARD),
             card_meta("DESPESAS", sai, meta_des, pct_des, "#C62828", ft.icons.ARROW_DOWNWARD),
-            ft.Container(content=ft.Column([
-                ft.Row([ft.Text("RESULTADO", size=11, weight="bold", color="white"),
-                        ft.Icon(ft.icons.ACCOUNT_BALANCE_WALLET, size=16, color="white")], alignment="spaceBetween"),
-                ft.Text(fmt(saldo_mes), size=20, weight="bold", color="white"),
-                ft.ProgressBar(value=min(pct_res / 100, 1.0) if meta_res > 0 else 0, color="white", height=6)
-            ], spacing=6), padding=16, bgcolor="#1565C0" if saldo_mes >= 0 else "#B71C1C", border_radius=12, width=210),
-            ft.Container(content=ft.Column([
-                ft.Row([ft.Text("ACUMULADO", size=11, weight="bold", color="white"),
-                        ft.Icon(ft.icons.SAVINGS, size=16, color="white")], alignment="spaceBetween"),
-                ft.Text(fmt(saldo_acumulado), size=20, weight="bold", color="white")
-            ], spacing=6), padding=16, bgcolor="#4527A0", border_radius=12, width=210),
-            ft.Container(content=ft.Column([
-                ft.Row([ft.Text("💳 CARTÃO", size=11, weight="bold", color="white"),
-                        ft.Icon(ft.icons.CREDIT_CARD, size=16, color="white")], alignment="spaceBetween"),
-                ft.Text(fmt(total_cartao), size=20, weight="bold", color="white")
-            ], spacing=6), padding=16, bgcolor="#F57F17", border_radius=12, width=210),
-            ft.Container(content=ft.Column([
-                ft.Row([ft.Text("📅 DIAS REST.", size=11, weight="bold", color="white"),
-                        ft.Icon(ft.icons.CALENDAR_TODAY, size=16, color="white")], alignment="spaceBetween"),
-                ft.Text(str(dias_restantes), size=28, weight="bold", color="white")
-            ], spacing=6), padding=16, bgcolor="#00838F", border_radius=12, width=210),
+            card_simples("RESULTADO", fmt(saldo_mes), "#1565C0" if saldo_mes >= 0 else "#B71C1C",
+                         ft.icons.ACCOUNT_BALANCE_WALLET),
+            card_simples("ACUMULADO", fmt(saldo_acumulado), "#4527A0", ft.icons.SAVINGS),
+            card_simples("💳 CARTÃO", fmt(total_cartao), "#F57F17", ft.icons.CREDIT_CARD),
+            ft.Container(
+                width=220, height=130,
+                padding=14, bgcolor="#00838F", border_radius=14,
+                shadow=ft.BoxShadow(blur_radius=8, color=ft.colors.BLACK26),
+                content=ft.Column([
+                    ft.Row([ft.Text("📅 DIAS REST.", size=11, weight="bold", color="white"),
+                            ft.Icon(ft.icons.CALENDAR_TODAY, size=16, color="white")], alignment="spaceBetween"),
+                    ft.Text(str(dias_restantes), size=36, weight="bold", color="white"),
+                    ft.Text("dias restantes no mês", size=10, color="white70"),
+                ], spacing=5)
+            ),
         ]
 
         bancos_container.controls = [
             ft.Container(
+                width=220, height=80,
                 content=ft.Column([
                     ft.Text(b['nome_banco'], size=11, weight="bold", color="white"),
                     ft.Text(fmt(b['saldo_inicial'] or 0), size=18, color="white")
                 ]),
-                padding=16, bgcolor="#37474F", border_radius=12, width=210
+                padding=14, bgcolor="#37474F", border_radius=12
             ) for b in bancos_rows
         ]
 
         detalhes_col.controls = [
             ft.Column([
-                ft.Row([ft.Text(g['nome'], expand=True), ft.Text(fmt(g['total']), weight="bold", color="red")]),
+                ft.Row([ft.Text(g['nome'], expand=True, size=12),
+                        ft.Text(fmt(g['total']), weight="bold", color="red", size=12)]),
                 ft.ProgressBar(value=g['total'] / sai if sai > 0 else 0, color="#C62828", height=5)
             ], spacing=2) for g in gastos
         ]
@@ -277,15 +296,26 @@ def dashboard_view(page):
                 color=CORES[i % len(CORES)], radius=80
             ) for i, g in enumerate(gastos)
         ]
-        pizza_container.controls = [ft.PieChart(sections=sections, height=220)] if sections else [ft.Text("Sem despesas")]
+        pizza_container.controls = [ft.PieChart(sections=sections, height=200)] if sections else [
+            ft.Text("Sem despesas", color="grey", italic=True)]
+
+        legenda_pizza.controls = [
+            ft.Row([
+                ft.Container(width=12, height=12, bgcolor=CORES[i % len(CORES)], border_radius=3),
+                ft.Text(g['nome'], size=11, expand=True),
+                ft.Text(fmt(g['total']), size=11, color="#C62828", weight="bold"),
+            ], spacing=6) for i, g in enumerate(gastos)
+        ] if gastos else [ft.Text("Sem despesas", color="grey", italic=True)]
 
         orcamento_container.controls = [
             ft.Column([
-                ft.Row([ft.Text(o['nome'], expand=True), ft.Text(fmt(o['total']) + "/" + fmt(o['orcamento']), size=10)]),
-                ft.ProgressBar(value=min(o['total'] / o['orcamento'], 1.0) if o['orcamento'] > 0 else 0,
-                               color="orange" if o['total'] > o['orcamento'] * 0.8 else "blue", height=8)
+                ft.Row([ft.Text(o['nome'], expand=True, size=12),
+                        ft.Text(fmt(o['total']) + "/" + fmt(o['orcamento']), size=10)]),
+                ft.ProgressBar(
+                    value=min(o['total'] / o['orcamento'], 1.0) if o['orcamento'] > 0 else 0,
+                    color="orange" if o['total'] > o['orcamento'] * 0.8 else "blue", height=8)
             ]) for o in orcamentos
-        ]
+        ] if orcamentos else [ft.Text("Nenhum orçamento definido.", color="grey", italic=True, size=12)]
 
         hist = defaultdict(lambda: {"Receita": 0.0, "Despesa": 0.0})
         for r in hist_rows:
@@ -293,7 +323,7 @@ def dashboard_view(page):
 
         grafico_barras_col.controls = [
             ft.Row([
-                ft.Text(m, width=60),
+                ft.Text(m, width=65, size=11),
                 ft.ProgressBar(value=hist[m]['Receita'] / max(ent, 1), color="green", expand=True),
                 ft.ProgressBar(value=hist[m]['Despesa'] / max(sai, 1), color="red", expand=True)
             ], spacing=10) for m in sorted(hist.keys())[-6:]
@@ -305,9 +335,11 @@ def dashboard_view(page):
             comp_dados[r['nome']][r['mes']] = r['total']
             meses_c.add(r['mes'])
         meses_ord = sorted(list(meses_c))[-3:]
-        cols = [ft.DataColumn(ft.Text("Conta"))] + [ft.DataColumn(ft.Text(m)) for m in meses_ord]
+        cols = [ft.DataColumn(ft.Text("Conta", weight="bold"))] + [
+            ft.DataColumn(ft.Text(m, weight="bold")) for m in meses_ord]
         rows_c = [
-            ft.DataRow(cells=[ft.DataCell(ft.Text(n))] + [ft.DataCell(ft.Text(fmt(comp_dados[n].get(m, 0)))) for m in meses_ord])
+            ft.DataRow(cells=[ft.DataCell(ft.Text(n, weight="bold"))] + [
+                ft.DataCell(ft.Text(fmt(comp_dados[n].get(m, 0)))) for m in meses_ord])
             for n in comp_dados
         ]
         comparativo_container.controls = [ft.DataTable(columns=cols, rows=rows_c)]
@@ -351,12 +383,16 @@ def dashboard_view(page):
             ft.Divider(height=4, color="transparent"),
             bancos_container,
             ft.Row([
-                ft.Container(content=secao("📊 RECEITAS VS DESPESAS", "Histórico", grafico_barras_col), expand=3),
-                ft.Container(content=secao("💸 GASTOS POR CONTA", "Mês atual", detalhes_col), expand=2)
+                ft.Container(content=secao("📊 RECEITAS VS DESPESAS", "Histórico", grafico_barras_col), expand=2),
+                ft.Container(content=secao("🎯 ORÇAMENTO MENSAL", "Status", orcamento_container), expand=1),
             ], spacing=12),
             ft.Row([
-                ft.Container(content=secao("🍕 DESPESAS POR CATEGORIA", "Distribuição", pizza_container), expand=1),
-                ft.Container(content=secao("🎯 ORÇAMENTO MENSAL", "Status", orcamento_container), expand=1)
+                ft.Container(
+                    content=secao("🍕 DESPESAS POR CATEGORIA", "Distribuição",
+                                  ft.Row([pizza_container, ft.VerticalDivider(), legenda_pizza],
+                                         spacing=10, expand=True)),
+                    expand=1),
+                ft.Container(content=secao("💸 GASTOS POR CONTA", "Mês atual", detalhes_col), expand=1),
             ], spacing=12),
             secao("🎯 DEFINIR METAS DO MÊS", "Configure", metas_container),
             secao("📅 COMPARATIVO MENSAL", "Evolução", comparativo_container),
