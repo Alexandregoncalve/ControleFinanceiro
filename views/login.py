@@ -1,5 +1,6 @@
 import flet as ft
 from datetime import datetime
+import time
 from database import autenticar, get_connection, get_cursor
 
 
@@ -39,18 +40,14 @@ def login_view(page: ft.Page):
             return []
 
     def mostrar_alerta_fixas(pendentes):
-        # Definição das funções internas primeiro
+        def fechar_dlg(e):
+            dlg.open = False
+            page.update()
+
         def ir_fixas(e):
             dlg.open = False
             page.update()
             page.go("/fixas")
-
-        def ir_dashboard(e):
-            dlg.open = False
-            page.update()
-            # Se já estivermos no /, apenas fechamos
-            if page.route != "/":
-                page.go("/")
 
         lista_contas = ft.Column(
             controls=[
@@ -83,7 +80,7 @@ def login_view(page: ft.Page):
                         size=13, weight="bold"),
             ], spacing=8, tight=True),
             actions=[
-                ft.TextButton("Agora não", on_click=ir_dashboard),
+                ft.TextButton("Agora não", on_click=fechar_dlg),
                 ft.ElevatedButton(
                     "📋 IR PARA CONTAS FIXAS",
                     bgcolor=ft.colors.ORANGE_700,
@@ -94,8 +91,8 @@ def login_view(page: ft.Page):
             actions_alignment=ft.MainAxisAlignment.END,
         )
 
-        # O segredo: adicionamos ao overlay e abrimos
-        page.overlay.append(dlg)
+        # Define o diálogo da página e abre
+        page.dialog = dlg
         dlg.open = True
         page.update()
 
@@ -117,20 +114,18 @@ def login_view(page: ft.Page):
         carregando.visible = False
 
         if usuario:
-            # 1. Guarda os dados na sessão
             page.session.set("user_id", usuario["id"])
             page.session.set("user_nome", usuario["nome"])
 
-            # 2. Busca as pendências
+            # Busca pendências antes de mudar de tela
             pendentes = verificar_fixas_pendentes(usuario["id"])
 
-            # 3. NAVEGA PRIMEIRO (Isso limpa a view de login)
+            # Navega para a Dashboard primeiro
             page.go("/")
 
-            # 4. EXIBE O ALERTA POR ÚLTIMO
-            # Como o alerta é modal e está no overlay da page,
-            # ele persistirá sobre a nova tela carregada
+            # Se houver pendências, aguarda a Dashboard carregar e mostra o alerta
             if pendentes:
+                time.sleep(0.5)  # Meio segundo para o Flet processar a nova rota
                 mostrar_alerta_fixas(pendentes)
         else:
             erro_text.value = "E-mail ou senha incorretos."
