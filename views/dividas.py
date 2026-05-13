@@ -51,7 +51,6 @@ def dividas_view(page):
                 dd_subconta.disabled = True
                 dd_subconta.hint_text = "Crie uma conta de Dívida em 'CONTAS'"
 
-            dd_subconta.update()
             page.update()
         except Exception as ex:
             import traceback
@@ -107,7 +106,7 @@ def dividas_view(page):
                             ft.Column([
                                 ft.Text("Última parcela", size=10, color="grey"),
                                 ft.Text(d['ultima_data'] or "—", size=11),
-                            ], horizontal_accessing=ft.CrossAxisAlignment.END),
+                            ], horizontal_alignment=ft.CrossAxisAlignment.END),
                         ], alignment="spaceBetween", vertical_alignment=ft.CrossAxisAlignment.CENTER),
                     ], spacing=4),
                     padding=ft.padding.symmetric(vertical=10, horizontal=14),
@@ -181,6 +180,7 @@ def dividas_view(page):
             dd_subconta.value = None
 
             carregar_dividas()
+            carregar_subcontas()
             page.update()
         except Exception as ex:
             import traceback
@@ -189,9 +189,6 @@ def dividas_view(page):
             msg_form.value = f"❌ Erro: {ex}"
             msg_form.color = ft.colors.RED_700
             page.update()
-
-    carregar_subcontas()
-    carregar_dividas()
 
     def secao(titulo, subtitulo, conteudo):
         return ft.Container(
@@ -207,6 +204,9 @@ def dividas_view(page):
             bgcolor=ft.colors.WHITE,
             shadow=ft.BoxShadow(blur_radius=4, color=ft.colors.BLACK12),
         )
+
+    carregar_subcontas()
+    carregar_dividas()
 
     return ft.View(
         route="/dividas",
