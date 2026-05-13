@@ -11,6 +11,14 @@ def dividas_view(page):
 
     hoje = datetime.now()
     uid = page.session.get("user_id")
+    print(f"[dividas] uid={uid} type={type(uid)}")
+
+    if not uid:
+        print("[dividas] ERRO: uid é None!")
+        return ft.View(
+            route="/dividas",
+            controls=[ft.Text("Sessão expirada. Faça login novamente.", color="red", size=16)]
+        )
 
     dd_subconta = ft.Dropdown(label="Tipo de Dívida", width=220, disabled=True)
     tf_descricao = ft.TextField(label="Descrição", width=300, hint_text="Ex: Empréstimo Banco X")
@@ -35,6 +43,7 @@ def dividas_view(page):
                     ORDER BY s.nome
                 """, (uid,))
                 rows = cur.fetchall()
+                print(f"[dividas] subcontas encontradas: {rows}")
 
             if rows:
                 dd_subconta.options = [ft.dropdown.Option(str(r['id']), r['nome']) for r in rows]
@@ -70,6 +79,7 @@ def dividas_view(page):
                     ORDER BY s.nome, t.descricao
                 """, (uid,))
                 dividas = cur.fetchall()
+                print(f"[dividas] dividas encontradas: {len(dividas)}")
 
             lista_dividas.controls = []
 
