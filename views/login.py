@@ -162,10 +162,6 @@ def login_view(page: ft.Page):
                                 style=ft.ButtonStyle(color="#1565C0"),
                             ),
                         ], alignment=ft.MainAxisAlignment.CENTER, spacing=4),
-                        ft.Text(
-                            "Acesso padrão: admin / admin123",
-                            size=11, color=ft.colors.GREY_400, italic=True
-                        ),
                     ],
                 ),
             )
