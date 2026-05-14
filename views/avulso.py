@@ -26,8 +26,21 @@ def avulso_view(page: ft.Page):
             print(f"[avulso] carregar_subcontas: {ex}")
             return []
 
-    subs  = carregar_subcontas()
-    state = {"subconta_id": None, "subconta_nome": "", "cat_real_id": None, "cat_real_nome": ""}
+    def carregar_bancos():
+        try:
+            conn = get_connection()
+            cur  = get_cursor(conn)
+            cur.execute("SELECT id, nome_banco FROM bancos WHERE usuario_id=%s ORDER BY nome_banco", (uid,))
+            rows = cur.fetchall()
+            conn.close()
+            return rows
+        except Exception as ex:
+            print(f"[avulso] carregar_bancos: {ex}")
+            return []
+
+    subs   = carregar_subcontas()
+    bancos = carregar_bancos()
+    state  = {"subconta_id": None, "subconta_nome": "", "cat_real_id": None, "cat_real_nome": ""}
 
     data_field = ft.TextField(label="Data", width=160, value=datetime.now().strftime("%d/%m/%Y"), read_only=True)
 
@@ -42,6 +55,12 @@ def avulso_view(page: ft.Page):
 
     btn_data = ft.ElevatedButton("📅 Selecionar Data", bgcolor=ft.colors.BLUE_100, color=ft.colors.BLUE_900,
                                   on_click=lambda e: setattr(date_picker, "open", True) or page.update())
+
+    # ── BANCO ──────────────────────────────────────────────────────────────
+    opcoes_banco = [ft.dropdown.Option("", "— Selecione o banco —")] + [
+        ft.dropdown.Option(str(b["id"]), b["nome_banco"]) for b in bancos
+    ]
+    banco_dd = ft.Dropdown(label="🏦 Banco utilizado", width=220, options=opcoes_banco, value="")
 
     parcelas_row   = ft.Row(visible=False)
     parcelas_field = ft.Dropdown(label="Parcelas", width=150, value="1",
@@ -72,7 +91,6 @@ def avulso_view(page: ft.Page):
             datas     = []
             for i in range(1, n + 1):
                 dt = data_base + relativedelta(months=i)
-                # ✅ Usa o dia da data selecionada
                 datas.append(f"{data_base.day:02d}/{dt.month:02d}/{dt.year}")
             if n == 1:
                 parcelas_info.value = f"💳 À vista — vence em {datas[0]}"
@@ -213,6 +231,10 @@ def avulso_view(page: ft.Page):
             msg.value = "⚠️ Informe a categoria real do gasto no cartão."
             page.update()
             return
+
+        banco_id = banco_dd.value or None
+        banco_id = int(banco_id) if banco_id else None
+
         try:
             conn = get_connection()
             cur  = get_cursor(conn)
@@ -233,21 +255,20 @@ def avulso_view(page: ft.Page):
             cat_real_nome = state["cat_real_nome"]
 
             if n_parcelas == 1 and not parcelas_row.visible:
-                # ✅ Lançamento avulso normal — usa a data exata selecionada
+                # Lançamento avulso normal — usa a data exata selecionada
                 data = data_base.strftime("%d/%m/%Y")
                 base_desc = f"{cat_real_nome} - {descricao}" if cat_real_nome and descricao else cat_real_nome or descricao or state["subconta_nome"]
                 cur.execute("""
                     INSERT INTO transacoes
                         (usuario_id, data, valor, subconta_id, tipo, descricao,
-                         parcela_atual, total_parcelas, categoria_real_id)
-                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                         parcela_atual, total_parcelas, categoria_real_id, banco_id)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                 """, (uid, data, total_valor, int(state["subconta_id"]), tipo,
-                      base_desc, 1, 1, cat_real_id))
+                      base_desc, 1, 1, cat_real_id, banco_id))
             else:
-                # ✅ Parcelado no cartão — vencimentos a partir do próximo mês
+                # Parcelado no cartão — vencimentos a partir do próximo mês
                 for i in range(1, n_parcelas + 1):
                     dt   = data_base + relativedelta(months=i)
-                    # ✅ Usa o dia da data selecionada, não dia 10 fixo
                     data = f"{data_base.day:02d}/{dt.month:02d}/{dt.year}"
                     if cat_real_nome:
                         base_desc = f"{cat_real_nome} - {descricao}" if descricao else cat_real_nome
@@ -259,15 +280,16 @@ def avulso_view(page: ft.Page):
                     cur.execute("""
                         INSERT INTO transacoes
                             (usuario_id, data, valor, subconta_id, tipo, descricao,
-                             parcela_atual, total_parcelas, categoria_real_id)
-                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                             parcela_atual, total_parcelas, categoria_real_id, banco_id)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                     """, (uid, data, valor_parc, int(state["subconta_id"]), tipo,
-                          desc_parc, i, n_parcelas, cat_real_id))
+                          desc_parc, i, n_parcelas, cat_real_id, banco_id))
 
             conn.commit()
             conn.close()
 
             busca_field.value = val.value = desc.value = busca_cat_real.value = ""
+            banco_dd.value = ""
             state.update({"subconta_id": None, "subconta_nome": "", "cat_real_id": None, "cat_real_nome": ""})
             parcelas_row.visible = False
             parcelas_info.value  = ""
@@ -293,7 +315,7 @@ def avulso_view(page: ft.Page):
                 padding=20,
                 content=ft.Column([
                     ft.Text("LANÇAMENTO AVULSO", size=18, weight="bold", color="blue"),
-                    ft.Row([data_field, btn_data], spacing=10),
+                    ft.Row([data_field, btn_data, banco_dd], spacing=10),
                     busca_field, sugestoes_container,
                     val, parcelas_row, cat_real_row, desc, msg,
                     ft.ElevatedButton("SALVAR LANÇAMENTO", icon=ft.icons.SAVE,

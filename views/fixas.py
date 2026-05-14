@@ -16,19 +16,26 @@ def fixas_view(page: ft.Page):
         subs = cur.fetchall()
         cur.execute("SELECT subconta_id FROM transacoes WHERE data LIKE %s AND usuario_id=%s", (f"%/{mes}", uid))
         pagos = {r["subconta_id"] for r in cur.fetchall()}
+        cur.execute("SELECT id, nome_banco FROM bancos WHERE usuario_id=%s ORDER BY nome_banco", (uid,))
+        bancos = cur.fetchall()
         conn.close()
     except Exception as ex:
         print(f"[fixas] carregar: {ex}")
-        subs, pagos = [], set()
+        subs, pagos, bancos = [], set(), []
+
+    opcoes_banco = [ft.dropdown.Option("", "— Selecione o banco —")] + [
+        ft.dropdown.Option(str(b["id"]), b["nome_banco"]) for b in bancos
+    ]
 
     campos = []
     for s in subs:
         if s["id"] not in pagos:
             v_f = ft.TextField(label="Valor (ex: R$150,00)", width=150, on_blur=formatar_moeda_input)
             d_f = ft.TextField(label="Descrição", value=s["nome"], width=250)
+            banco_dd = ft.Dropdown(label="Banco", width=180, options=opcoes_banco, value="")
             campos.append(ft.Row([
                 ft.Checkbox(label=s["nome"]),
-                v_f, d_f,
+                v_f, d_f, banco_dd,
                 ft.Text(str(s["id"]), visible=False),
             ]))
 
@@ -45,9 +52,11 @@ def fixas_view(page: ft.Page):
             conn = get_connection()
             cur  = get_cursor(conn)
             for r in selecionados:
-                sid  = int(r.controls[3].value)
-                v    = limpar_valor(r.controls[1].value)
-                desc = r.controls[2].value
+                sid      = int(r.controls[4].value)
+                v        = limpar_valor(r.controls[1].value)
+                desc     = r.controls[2].value
+                banco_id = r.controls[3].value or None
+                banco_id = int(banco_id) if banco_id else None
                 cur.execute("""
                     SELECT c.tipo FROM categorias c
                     JOIN subcontas s ON s.categoria_id = c.id
@@ -56,9 +65,9 @@ def fixas_view(page: ft.Page):
                 row  = cur.fetchone()
                 tipo = row["tipo"] if row else "Despesa"
                 cur.execute("""
-                    INSERT INTO transacoes (usuario_id, data, valor, subconta_id, tipo, descricao)
-                    VALUES (%s,%s,%s,%s,%s,%s)
-                """, (uid, datetime.now().strftime("%d/%m/%Y"), v, sid, tipo, desc))
+                    INSERT INTO transacoes (usuario_id, data, valor, subconta_id, tipo, descricao, banco_id)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s)
+                """, (uid, datetime.now().strftime("%d/%m/%Y"), v, sid, tipo, desc, banco_id))
             conn.commit()
             conn.close()
             page.go("/")
@@ -81,7 +90,7 @@ def fixas_view(page: ft.Page):
                 padding=20,
                 content=ft.Column([
                     ft.Text(f"CONTAS FIXAS — {mes}", size=18, weight="bold", color="blue"),
-                    ft.Text("Selecione as contas pagas e informe o valor:", size=13),
+                    ft.Text("Selecione as contas pagas, informe o valor e o banco:", size=13),
                     ft.Divider(),
                     pendentes, msg,
                     ft.ElevatedButton("BAIXAR SELECIONADAS", icon=ft.icons.CHECK_CIRCLE,
