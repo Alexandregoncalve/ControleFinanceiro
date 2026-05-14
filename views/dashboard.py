@@ -90,31 +90,59 @@ def dashboard_view(page):
             return None
 
     def calcular_saldo_acumulado(mes_str):
+        """Saldo acumulado geral até o fim do mês selecionado."""
         try:
             with db_session() as cur:
-                # ✅ Considera saldo inicial de cada banco baseado na data_criacao
-                cur.execute("""
-                    SELECT COALESCE(SUM(saldo_inicial), 0) as total
-                    FROM bancos
-                    WHERE usuario_id=%s
-                """, (uid,))
+                cur.execute("SELECT COALESCE(SUM(saldo_inicial), 0) as total FROM bancos WHERE usuario_id=%s", (uid,))
                 saldo_inicial = float(cur.fetchone()['total'] or 0)
-
                 m_sel, a_sel = int(mes_str.split("/")[0]), int(mes_str.split("/")[1])
+                # Todas transações até o fim do mês selecionado
                 cur.execute("""
                     SELECT tipo, SUM(valor) as total FROM transacoes
                     WHERE usuario_id=%s AND (
                         CAST(SPLIT_PART(data,'/',3) AS INTEGER) < %s OR
-                        (CAST(SPLIT_PART(data,'/',3) AS INTEGER) = %s AND CAST(SPLIT_PART(data,'/',2) AS INTEGER) < %s)
+                        (CAST(SPLIT_PART(data,'/',3) AS INTEGER) = %s AND CAST(SPLIT_PART(data,'/',2) AS INTEGER) <= %s)
                     ) GROUP BY tipo
                 """, (uid, a_sel, a_sel, m_sel))
-                saldo_anterior = 0.0
+                saldo_mov = 0.0
                 for r in cur.fetchall():
-                    saldo_anterior += float(r['total'] or 0) if r['tipo'] == "Receita" else -float(r['total'] or 0)
-                return saldo_inicial + saldo_anterior
+                    saldo_mov += float(r['total'] or 0) if r['tipo'] == "Receita" else -float(r['total'] or 0)
+                return saldo_inicial + saldo_mov
         except Exception as ex:
             print(f"[dashboard] saldo_acumulado erro: {ex}")
             return 0.0
+
+    def calcular_saldo_banco(banco_id, saldo_inicial, mes_str):
+        """Saldo real de um banco específico até o fim do mês selecionado."""
+        try:
+            m_sel, a_sel = int(mes_str.split("/")[0]), int(mes_str.split("/")[1])
+            with db_session() as cur:
+                # Receitas vinculadas ao banco até o fim do mês
+                cur.execute("""
+                    SELECT COALESCE(SUM(valor), 0) as total FROM transacoes
+                    WHERE usuario_id=%s AND banco_id=%s AND tipo='Receita'
+                    AND (
+                        CAST(SPLIT_PART(data,'/',3) AS INTEGER) < %s OR
+                        (CAST(SPLIT_PART(data,'/',3) AS INTEGER) = %s AND CAST(SPLIT_PART(data,'/',2) AS INTEGER) <= %s)
+                    )
+                """, (uid, banco_id, a_sel, a_sel, m_sel))
+                receitas = float(cur.fetchone()['total'] or 0)
+
+                # Despesas vinculadas ao banco até o fim do mês
+                cur.execute("""
+                    SELECT COALESCE(SUM(valor), 0) as total FROM transacoes
+                    WHERE usuario_id=%s AND banco_id=%s AND tipo='Despesa'
+                    AND (
+                        CAST(SPLIT_PART(data,'/',3) AS INTEGER) < %s OR
+                        (CAST(SPLIT_PART(data,'/',3) AS INTEGER) = %s AND CAST(SPLIT_PART(data,'/',2) AS INTEGER) <= %s)
+                    )
+                """, (uid, banco_id, a_sel, a_sel, m_sel))
+                despesas = float(cur.fetchone()['total'] or 0)
+
+            return saldo_inicial + receitas - despesas
+        except Exception as ex:
+            print(f"[dashboard] calcular_saldo_banco erro: {ex}")
+            return saldo_inicial
 
     def carregar(mes_str):
         try:
@@ -123,12 +151,11 @@ def dashboard_view(page):
                 ent = float(cur.fetchone()['total'] or 0)
                 cur.execute("SELECT COALESCE(SUM(valor),0) as total FROM transacoes WHERE usuario_id=%s AND tipo='Despesa' AND data LIKE %s", (uid, f"%%/{mes_str}"))
                 sai = float(cur.fetchone()['total'] or 0)
-                saldo_anterior  = calcular_saldo_acumulado(mes_str)
                 saldo_mes       = ent - sai
-                saldo_acumulado = saldo_anterior + saldo_mes
+                saldo_acumulado = calcular_saldo_acumulado(mes_str)
 
-                # ✅ Busca bancos com agencia e numero_conta
-                cur.execute("SELECT nome_banco, saldo_inicial, agencia, numero_conta FROM bancos WHERE usuario_id=%s ORDER BY nome_banco", (uid,))
+                # ✅ Busca bancos com id para calcular saldo real
+                cur.execute("SELECT id, nome_banco, saldo_inicial, agencia, numero_conta FROM bancos WHERE usuario_id=%s ORDER BY nome_banco", (uid,))
                 bancos_rows = cur.fetchall()
 
                 cur.execute("SELECT * FROM metas WHERE mes=%s AND usuario_id=%s", (mes_str, uid))
@@ -268,18 +295,35 @@ def dashboard_view(page):
                 ], spacing=4)),
         ]
 
-        # ── BANCOS ─────────────────────────────────────────────────────────
-        bancos_container.controls = [
-            ft.Container(
-                width=220, height=90, padding=12, bgcolor="#37474F", border_radius=12,
-                content=ft.Column([
-                    ft.Text(b['nome_banco'], size=11, weight="bold", color="white"),
-                    ft.Text(fmt(b['saldo_inicial'] or 0), size=17, color="white"),
-                    ft.Text(
-                        f"Ag: {b['agencia'] or '—'} | Cta: {b['numero_conta'] or '—'}",
-                        size=10, color="white70"),
-                ], spacing=2)) for b in bancos_rows
-        ]
+        # ── BANCOS — saldo real até o mês selecionado ──────────────────────
+        bancos_cards = []
+        for b in bancos_rows:
+            saldo_real = calcular_saldo_banco(b['id'], float(b['saldo_inicial'] or 0), mes_str)
+            variacao   = saldo_real - float(b['saldo_inicial'] or 0)
+            cor_var    = "#A5D6A7" if variacao >= 0 else "#EF9A9A"
+            sinal      = "▲" if variacao >= 0 else "▼"
+            bancos_cards.append(
+                ft.Container(
+                    width=240, padding=14, bgcolor="#37474F", border_radius=12,
+                    shadow=ft.BoxShadow(blur_radius=6, color=ft.colors.BLACK26),
+                    content=ft.Column([
+                        ft.Row([
+                            ft.Icon(ft.icons.ACCOUNT_BALANCE, color="white", size=18),
+                            ft.Text(b['nome_banco'], size=12, weight="bold", color="white", expand=True),
+                        ], spacing=6),
+                        ft.Text(fmt(saldo_real), size=20, weight="bold", color="white"),
+                        ft.Row([
+                            ft.Text("Inicial:", size=10, color="white70"),
+                            ft.Text(fmt(b['saldo_inicial'] or 0), size=10, color="white70"),
+                            ft.Text(f"{sinal} {fmt(abs(variacao))}", size=10, color=cor_var, weight="bold"),
+                        ], spacing=6),
+                        ft.Text(
+                            f"Ag: {b['agencia'] or '—'} | Cta: {b['numero_conta'] or '—'}",
+                            size=10, color="white70"),
+                    ], spacing=4)
+                )
+            )
+        bancos_container.controls = bancos_cards
 
         # ── GRÁFICO RECEITAS VS DESPESAS ───────────────────────────────────
         hist = defaultdict(lambda: {"Receita": 0.0, "Despesa": 0.0})
@@ -477,7 +521,6 @@ def dashboard_view(page):
     return ft.View(route="/", bgcolor="#F5F6FA", controls=[
         get_menu(page),
         ft.Container(padding=ft.padding.symmetric(horizontal=20, vertical=8), expand=True, content=ft.Column([
-            # ✅ Período no lado ESQUERDO junto ao título
             ft.Row([
                 ft.Text("DASHBOARD FINANCEIRO", size=22, weight="bold", color="#1565C0"),
                 ft.Row([ft.Text("Período:", size=12, color="grey"), dd_mes], spacing=8),
