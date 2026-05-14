@@ -90,14 +90,6 @@ def init_db():
                 nome  TEXT NOT NULL
             )
         """)
-        cursor.execute("SELECT COUNT(*) as total FROM usuarios")
-        if cursor.fetchone()["total"] == 0:
-            cursor.execute(
-                "INSERT INTO usuarios (login, senha, nome) VALUES (%s, %s, %s) RETURNING id",
-                ("admin", _hash("admin123"), "Administrador")
-            )
-            uid = cursor.fetchone()["id"]
-            _criar_dados_iniciais(cursor, uid)
 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS perfil (
@@ -119,6 +111,9 @@ def init_db():
                 usuario_id    INTEGER,
                 nome_banco    TEXT,
                 saldo_inicial REAL,
+                data_criacao  VARCHAR(10),
+                agencia       VARCHAR(20),
+                numero_conta  VARCHAR(30),
                 FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
             )
         """)
@@ -189,18 +184,6 @@ def init_db():
                 FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
             )
         """)
-
-        # Restaura plano de contas para usuários sem categorias
-        cursor.execute("SELECT id FROM usuarios")
-        usuarios = cursor.fetchall()
-        for u in usuarios:
-            cursor.execute(
-                "SELECT COUNT(*) as total FROM categorias WHERE usuario_id=%s",
-                (u["id"],)
-            )
-            if cursor.fetchone()["total"] == 0:
-                _criar_dados_iniciais(cursor, u["id"])
-                print(f"✅ Plano de contas criado para usuario_id={u['id']}")
 
 
 def _criar_dados_iniciais(cursor, uid: int):

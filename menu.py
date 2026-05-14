@@ -5,26 +5,6 @@ from utils import sair
 def get_menu(page: ft.Page):
     nome_usuario = page.session.get("user_nome") or ""
 
-    def alternar_tema(_):
-        if page.theme_mode == ft.ThemeMode.LIGHT:
-            page.theme_mode = ft.ThemeMode.DARK
-            btn_tema.icon    = ft.icons.LIGHT_MODE
-            btn_tema.tooltip = "Modo Claro"
-            page.bgcolor     = "#1E1E1E"
-        else:
-            page.theme_mode = ft.ThemeMode.LIGHT
-            btn_tema.icon    = ft.icons.DARK_MODE
-            btn_tema.tooltip = "Modo Escuro"
-            page.bgcolor     = None
-        page.update()
-
-    btn_tema = ft.IconButton(
-        icon=ft.icons.DARK_MODE,
-        tooltip="Modo Escuro",
-        icon_color=ft.colors.GREY_700,
-        on_click=alternar_tema,
-    )
-
     return ft.Container(
         content=ft.Row(
             [
@@ -41,7 +21,6 @@ def get_menu(page: ft.Page):
                     ft.ElevatedButton("CADASTRO",     on_click=lambda _: page.go("/cadastro"),  bgcolor="purple",  color="white"),
                 ], spacing=8),
                 ft.Row([
-                    btn_tema,
                     ft.Text(f"👤 {nome_usuario}", size=13, color=ft.colors.GREY_700),
                     ft.ElevatedButton(
                         "SAIR", bgcolor=ft.colors.RED_700, color="white",
