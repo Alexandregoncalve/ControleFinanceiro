@@ -72,7 +72,8 @@ def avulso_view(page: ft.Page):
             datas     = []
             for i in range(1, n + 1):
                 dt = data_base + relativedelta(months=i)
-                datas.append(f"10/{dt.month:02d}/{dt.year}")
+                # ✅ Usa o dia da data selecionada
+                datas.append(f"{data_base.day:02d}/{dt.month:02d}/{dt.year}")
             if n == 1:
                 parcelas_info.value = f"💳 À vista — vence em {datas[0]}"
             else:
@@ -223,37 +224,53 @@ def avulso_view(page: ft.Page):
             row  = cur.fetchone()
             tipo = row["tipo"] if row else "Despesa"
 
-            total_valor = limpar_valor(val.value)
-            n_parcelas  = int(parcelas_field.value or 1) if parcelas_row.visible else 1
-            valor_parc  = round(total_valor / n_parcelas, 2)
-            descricao   = desc.value.strip()
-            data_base   = get_data_base()
-            cat_real_id = state["cat_real_id"]
+            total_valor   = limpar_valor(val.value)
+            n_parcelas    = int(parcelas_field.value or 1) if parcelas_row.visible else 1
+            valor_parc    = round(total_valor / n_parcelas, 2)
+            descricao     = desc.value.strip()
+            data_base     = get_data_base()
+            cat_real_id   = state["cat_real_id"]
             cat_real_nome = state["cat_real_nome"]
 
-            for i in range(1, n_parcelas + 1):
-                dt   = data_base + relativedelta(months=i)
-                data = f"10/{dt.month:02d}/{dt.year}"
-                if cat_real_nome:
-                    base_desc = f"{cat_real_nome} - {descricao}" if descricao else cat_real_nome
-                else:
-                    base_desc = descricao
-                desc_parc = base_desc
-                if n_parcelas > 1:
-                    desc_parc = f"{base_desc} {i}/{n_parcelas}" if base_desc else f"{i}/{n_parcelas}"
+            if n_parcelas == 1 and not parcelas_row.visible:
+                # ✅ Lançamento avulso normal — usa a data exata selecionada
+                data = data_base.strftime("%d/%m/%Y")
+                base_desc = f"{cat_real_nome} - {descricao}" if cat_real_nome and descricao else cat_real_nome or descricao or state["subconta_nome"]
                 cur.execute("""
                     INSERT INTO transacoes
                         (usuario_id, data, valor, subconta_id, tipo, descricao,
                          parcela_atual, total_parcelas, categoria_real_id)
                     VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                """, (uid, data, valor_parc, int(state["subconta_id"]), tipo,
-                      desc_parc, i, n_parcelas, cat_real_id))
+                """, (uid, data, total_valor, int(state["subconta_id"]), tipo,
+                      base_desc, 1, 1, cat_real_id))
+            else:
+                # ✅ Parcelado no cartão — vencimentos a partir do próximo mês
+                for i in range(1, n_parcelas + 1):
+                    dt   = data_base + relativedelta(months=i)
+                    # ✅ Usa o dia da data selecionada, não dia 10 fixo
+                    data = f"{data_base.day:02d}/{dt.month:02d}/{dt.year}"
+                    if cat_real_nome:
+                        base_desc = f"{cat_real_nome} - {descricao}" if descricao else cat_real_nome
+                    else:
+                        base_desc = descricao
+                    desc_parc = base_desc
+                    if n_parcelas > 1:
+                        desc_parc = f"{base_desc} {i}/{n_parcelas}" if base_desc else f"{i}/{n_parcelas}"
+                    cur.execute("""
+                        INSERT INTO transacoes
+                            (usuario_id, data, valor, subconta_id, tipo, descricao,
+                             parcela_atual, total_parcelas, categoria_real_id)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    """, (uid, data, valor_parc, int(state["subconta_id"]), tipo,
+                          desc_parc, i, n_parcelas, cat_real_id))
 
             conn.commit()
             conn.close()
+
             busca_field.value = val.value = desc.value = busca_cat_real.value = ""
             state.update({"subconta_id": None, "subconta_nome": "", "cat_real_id": None, "cat_real_nome": ""})
-            parcelas_row.visible = parcelas_info.value = False
+            parcelas_row.visible = False
+            parcelas_info.value  = ""
             parcelas_field.value = "1"
             cat_real_row.visible = False
             lista_sugestoes.controls.clear()
