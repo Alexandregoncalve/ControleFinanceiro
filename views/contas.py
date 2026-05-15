@@ -24,7 +24,8 @@ def contas_view(page: ft.Page):
             conn = get_connection()
             cur  = get_cursor(conn)
             cur.execute("""
-                SELECT s.id, s.nome, c.tipo, s.categoria_id, s.fixa, s.orcamento, c.nome as cat_nome
+                SELECT s.id, s.nome, c.tipo, s.categoria_id, s.fixa, s.orcamento,
+                       c.nome as cat_nome, s.dia_vencimento
                 FROM subcontas s
                 JOIN categorias c ON s.categoria_id = c.id
                 WHERE s.usuario_id=%s ORDER BY c.nome, s.nome
@@ -47,6 +48,7 @@ def contas_view(page: ft.Page):
             ft.DataColumn(ft.Text("Conta Pai")),
             ft.DataColumn(ft.Text("Tipo")),
             ft.DataColumn(ft.Text("Fixa")),
+            ft.DataColumn(ft.Text("Vencimento")),
             ft.DataColumn(ft.Text("Orçamento")),
             ft.DataColumn(ft.Text("Ações")),
         ],
@@ -54,12 +56,15 @@ def contas_view(page: ft.Page):
     )
 
     # ── Modal de edição ───────────────────────────────────────────────────
-    modal_state = {"id": None}
-    modal_nome  = ft.TextField(label="Nome da Subconta", width=320)
-    modal_fixa  = ft.Checkbox(label="Fixa?")
-    modal_orc   = ft.TextField(label="Orçamento mensal (ex: 500,00)", width=220, on_blur=formatar_moeda_input)
-    modal_msg   = ft.Text("", size=12, color=ft.colors.RED_700)
-    modal_pai   = ft.Dropdown(label="Conta Pai", width=320, options=[])
+    modal_state    = {"id": None}
+    modal_nome     = ft.TextField(label="Nome da Subconta", width=320)
+    modal_fixa     = ft.Checkbox(label="Fixa?")
+    modal_venc     = ft.TextField(label="Dia Vencimento (1-31)", width=160,
+                                   keyboard_type=ft.KeyboardType.NUMBER,
+                                   hint_text="Ex: 10")
+    modal_orc      = ft.TextField(label="Orçamento mensal (ex: 500,00)", width=220, on_blur=formatar_moeda_input)
+    modal_msg      = ft.Text("", size=12, color=ft.colors.RED_700)
+    modal_pai      = ft.Dropdown(label="Conta Pai", width=320, options=[])
 
     def fechar_modal(e):
         modal.open = False
@@ -79,15 +84,16 @@ def contas_view(page: ft.Page):
             cur      = get_cursor(conn)
             fixa_val = 1 if modal_fixa.value else 0
             orc_val  = limpar_valor(modal_orc.value) if modal_orc.value else 0.0
+            venc_val = int(modal_venc.value) if modal_venc.value and modal_venc.value.isdigit() else None
             cur.execute(
-                "UPDATE subcontas SET categoria_id=%s, nome=%s, fixa=%s, orcamento=%s WHERE id=%s AND usuario_id=%s",
+                "UPDATE subcontas SET categoria_id=%s, nome=%s, fixa=%s, orcamento=%s, dia_vencimento=%s WHERE id=%s AND usuario_id=%s",
                 (int(modal_pai.value), modal_nome.value.strip().upper(),
-                 fixa_val, orc_val, modal_state["id"], uid)
+                 fixa_val, orc_val, venc_val, modal_state["id"], uid)
             )
             conn.commit()
             conn.close()
-            modal.open  = False
-            msg.value   = "✅ Subconta atualizada!"
+            modal.open      = False
+            msg.value       = "✅ Subconta atualizada!"
             modal_msg.value = ""
             atualizar_tabela()
         except Exception as ex:
@@ -102,7 +108,9 @@ def contas_view(page: ft.Page):
             ft.Text("Editar Subconta", size=16, weight="bold", color="#1565C0"),
         ], spacing=8),
         content=ft.Column([
-            modal_nome, modal_pai, modal_fixa, modal_orc, modal_msg,
+            modal_nome, modal_pai,
+            ft.Row([modal_fixa, modal_venc], spacing=16),
+            modal_orc, modal_msg,
         ], spacing=14, tight=True, width=340),
         actions=[
             ft.TextButton("CANCELAR", on_click=fechar_modal),
@@ -117,6 +125,7 @@ def contas_view(page: ft.Page):
         modal_nome.value  = s["nome"]
         modal_fixa.value  = bool(s["fixa"])
         modal_orc.value   = f"{float(s['orcamento'] or 0):_.2f}".replace(".", ",").replace("_", ".") if s["orcamento"] else ""
+        modal_venc.value  = str(s["dia_vencimento"]) if s["dia_vencimento"] else ""
         modal_msg.value   = ""
         modal_pai.options = [
             ft.dropdown.Option(key=str(c["id"]), text=f"{c['nome']} ({c['tipo']})")
@@ -129,8 +138,9 @@ def contas_view(page: ft.Page):
     def atualizar_tabela():
         tabela.rows.clear()
         for s in obter_subcontas():
-            cor = ft.colors.GREEN_700 if s["tipo"] == "Receita" else ft.colors.RED_700
-            orc = fmt(float(s["orcamento"] or 0)) if s["orcamento"] else "-"
+            cor  = ft.colors.GREEN_700 if s["tipo"] == "Receita" else ft.colors.RED_700
+            orc  = fmt(float(s["orcamento"] or 0)) if s["orcamento"] else "—"
+            venc = f"Dia {s['dia_vencimento']}" if s["dia_vencimento"] else "—"
             tabela.rows.append(ft.DataRow(cells=[
                 ft.DataCell(ft.Text(s["nome"])),
                 ft.DataCell(ft.Text(s["cat_nome"])),
@@ -140,6 +150,7 @@ def contas_view(page: ft.Page):
                     color=ft.colors.BLUE_600 if s["fixa"] else ft.colors.GREY_400,
                     size=18,
                 )),
+                ft.DataCell(ft.Text(venc, color=ft.colors.ORANGE_700 if s["dia_vencimento"] else ft.colors.GREY_400)),
                 ft.DataCell(ft.Text(orc, color=ft.colors.BLUE_700, weight="bold")),
                 ft.DataCell(ft.Row([
                     ft.TextButton("Alterar", on_click=lambda _, d=s: abrir_modal_edicao(d)),
@@ -209,9 +220,11 @@ def contas_view(page: ft.Page):
             for c in obter_categorias()
         ]
     )
-    n_s = ft.TextField(label="Nome Subconta", width=280)
-    fix = ft.Checkbox(label="Fixa?")
-    orc = ft.TextField(label="Orçamento mensal (ex: 500,00)", width=220, on_blur=formatar_moeda_input)
+    n_s   = ft.TextField(label="Nome Subconta", width=280)
+    fix   = ft.Checkbox(label="Fixa?")
+    venc  = ft.TextField(label="Dia Vencimento (1-31)", width=160,
+                          keyboard_type=ft.KeyboardType.NUMBER, hint_text="Ex: 10")
+    orc   = ft.TextField(label="Orçamento mensal (ex: 500,00)", width=220, on_blur=formatar_moeda_input)
 
     def salvar_sub(e):
         if not n_s.value or not sel_p.value:
@@ -223,15 +236,15 @@ def contas_view(page: ft.Page):
             cur      = get_cursor(conn)
             fixa_val = 1 if fix.value else 0
             orc_val  = limpar_valor(orc.value) if orc.value else 0.0
+            venc_val = int(venc.value) if venc.value and venc.value.isdigit() else None
             cur.execute(
-                "INSERT INTO subcontas (usuario_id, categoria_id, nome, fixa, orcamento) VALUES (%s,%s,%s,%s,%s)",
-                (uid, int(sel_p.value), n_s.value.strip().upper(), fixa_val, orc_val)
+                "INSERT INTO subcontas (usuario_id, categoria_id, nome, fixa, orcamento, dia_vencimento) VALUES (%s,%s,%s,%s,%s,%s)",
+                (uid, int(sel_p.value), n_s.value.strip().upper(), fixa_val, orc_val, venc_val)
             )
             conn.commit()
             conn.close()
             msg.value = "✅ Subconta criada."
-            n_s.value = ""
-            orc.value = ""
+            n_s.value = venc.value = orc.value = ""
             fix.value = False
             atualizar_tabela()
         except Exception as ex:
@@ -262,7 +275,9 @@ def contas_view(page: ft.Page):
                         content=ft.Column([
                             ft.Text("Nova Subconta", weight="bold", size=13),
                             ft.Row([sel_p, n_s, fix], wrap=True, spacing=10),
-                            ft.Row([orc, ft.ElevatedButton("SALVAR SUBCONTA", bgcolor="blue", color="white", on_click=salvar_sub)], spacing=10),
+                            ft.Row([venc, orc,
+                                    ft.ElevatedButton("SALVAR SUBCONTA", bgcolor="blue", color="white", on_click=salvar_sub)],
+                                   spacing=10, wrap=True),
                         ], spacing=8),
                         padding=14, bgcolor="#F5F5F5", border_radius=8,
                     ),
