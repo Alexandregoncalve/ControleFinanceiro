@@ -56,11 +56,16 @@ def avulso_view(page: ft.Page):
     btn_data = ft.ElevatedButton("📅 Selecionar Data", bgcolor=ft.colors.BLUE_100, color=ft.colors.BLUE_900,
                                   on_click=lambda e: setattr(date_picker, "open", True) or page.update())
 
-    # ── BANCO ──────────────────────────────────────────────────────────────
+    # ── BANCO — persiste entre lançamentos ─────────────────────────────────
     opcoes_banco = [ft.dropdown.Option("", "— Selecione o banco —")] + [
         ft.dropdown.Option(str(b["id"]), b["nome_banco"]) for b in bancos
     ]
-    banco_dd = ft.Dropdown(label="🏦 Banco utilizado", width=220, options=opcoes_banco, value="")
+    banco_dd = ft.Dropdown(
+        label="🏦 Banco utilizado", width=220,
+        options=opcoes_banco,
+        value="",
+        hint_text="Banco fica selecionado entre lançamentos"
+    )
 
     parcelas_row   = ft.Row(visible=False)
     parcelas_field = ft.Dropdown(label="Parcelas", width=150, value="1",
@@ -119,12 +124,20 @@ def avulso_view(page: ft.Page):
         busca_cat_real, cat_real_container,
     ]
 
+    val  = ft.TextField(label="Valor (ex: 462,00)", width=200,
+                        on_blur=lambda e: (formatar_moeda_input(e), atualizar_info_parcelas(e)))
+    desc = ft.TextField(label="Descrição", width=400)
+    msg  = ft.Text("", size=13)
+
     def selecionar_conta(sid, nome, tipo):
         state["subconta_id"]   = sid
         state["subconta_nome"] = nome
         busca_field.value      = f"{nome} ({tipo})"
         lista_sugestoes.controls.clear()
         lista_sugestoes.visible = False
+        # ✅ Preenche descrição automaticamente com o nome da conta
+        if not desc.value.strip():
+            desc.value = nome
         if eh_cartao(nome):
             parcelas_row.visible = True
             cat_real_row.visible = True
@@ -212,11 +225,6 @@ def avulso_view(page: ft.Page):
         lista_cat_real.visible = True
         page.update()
 
-    val  = ft.TextField(label="Valor (ex: 462,00)", width=200,
-                        on_blur=lambda e: (formatar_moeda_input(e), atualizar_info_parcelas(e)))
-    desc = ft.TextField(label="Descrição", width=400)
-    msg  = ft.Text("", size=13)
-
     def salvar(e):
         msg.value = ""
         if not state["subconta_id"]:
@@ -249,15 +257,14 @@ def avulso_view(page: ft.Page):
             total_valor   = limpar_valor(val.value)
             n_parcelas    = int(parcelas_field.value or 1) if parcelas_row.visible else 1
             valor_parc    = round(total_valor / n_parcelas, 2)
-            descricao     = desc.value.strip()
+            descricao     = desc.value.strip() or state["subconta_nome"]
             data_base     = get_data_base()
             cat_real_id   = state["cat_real_id"]
             cat_real_nome = state["cat_real_nome"]
 
             if n_parcelas == 1 and not parcelas_row.visible:
-                # Lançamento avulso normal — usa a data exata selecionada
                 data = data_base.strftime("%d/%m/%Y")
-                base_desc = f"{cat_real_nome} - {descricao}" if cat_real_nome and descricao else cat_real_nome or descricao or state["subconta_nome"]
+                base_desc = f"{cat_real_nome} - {descricao}" if cat_real_nome and descricao else cat_real_nome or descricao
                 cur.execute("""
                     INSERT INTO transacoes
                         (usuario_id, data, valor, subconta_id, tipo, descricao,
@@ -266,7 +273,6 @@ def avulso_view(page: ft.Page):
                 """, (uid, data, total_valor, int(state["subconta_id"]), tipo,
                       base_desc, 1, 1, cat_real_id, banco_id))
             else:
-                # Parcelado no cartão — vencimentos a partir do próximo mês
                 for i in range(1, n_parcelas + 1):
                     dt   = data_base + relativedelta(months=i)
                     data = f"{data_base.day:02d}/{dt.month:02d}/{dt.year}"
@@ -274,9 +280,7 @@ def avulso_view(page: ft.Page):
                         base_desc = f"{cat_real_nome} - {descricao}" if descricao else cat_real_nome
                     else:
                         base_desc = descricao
-                    desc_parc = base_desc
-                    if n_parcelas > 1:
-                        desc_parc = f"{base_desc} {i}/{n_parcelas}" if base_desc else f"{i}/{n_parcelas}"
+                    desc_parc = f"{base_desc} {i}/{n_parcelas}" if n_parcelas > 1 and base_desc else base_desc or f"{i}/{n_parcelas}"
                     cur.execute("""
                         INSERT INTO transacoes
                             (usuario_id, data, valor, subconta_id, tipo, descricao,
@@ -288,8 +292,11 @@ def avulso_view(page: ft.Page):
             conn.commit()
             conn.close()
 
-            busca_field.value = val.value = desc.value = busca_cat_real.value = ""
-            banco_dd.value = ""
+            # ✅ Limpa campos MAS mantém banco e data selecionados
+            busca_field.value = ""
+            val.value = ""
+            desc.value = ""
+            busca_cat_real.value = ""
             state.update({"subconta_id": None, "subconta_nome": "", "cat_real_id": None, "cat_real_nome": ""})
             parcelas_row.visible = False
             parcelas_info.value  = ""
@@ -299,7 +306,8 @@ def avulso_view(page: ft.Page):
             lista_sugestoes.visible = False
             lista_cat_real.controls.clear()
             lista_cat_real.visible = False
-            msg.value = f"✅ {n_parcelas}x lançamento(s) salvo(s) com sucesso!"
+            # ✅ banco_dd.value NÃO é resetado — banco persiste!
+            msg.value = f"✅ {n_parcelas}x lançamento(s) salvo(s)! Banco mantido: {banco_dd.options[[o.key for o in banco_dd.options].index(str(banco_id))].text if banco_id else '—'}"
             page.update()
         except Exception as ex:
             print(f"[avulso] salvar: {ex}")
@@ -315,7 +323,15 @@ def avulso_view(page: ft.Page):
                 padding=20,
                 content=ft.Column([
                     ft.Text("LANÇAMENTO AVULSO", size=18, weight="bold", color="blue"),
-                    ft.Row([data_field, btn_data, banco_dd], spacing=10),
+                    ft.Container(
+                        bgcolor="#E3F2FD", border_radius=8, padding=10,
+                        content=ft.Row([
+                            ft.Icon(ft.icons.INFO_OUTLINE, color="#1565C0", size=16),
+                            ft.Text("O banco selecionado permanece entre lançamentos. Troque quando necessário.",
+                                    size=12, color="#1565C0", italic=True),
+                        ], spacing=8)
+                    ),
+                    ft.Row([data_field, btn_data, banco_dd], spacing=10, wrap=True),
                     busca_field, sugestoes_container,
                     val, parcelas_row, cat_real_row, desc, msg,
                     ft.ElevatedButton("SALVAR LANÇAMENTO", icon=ft.icons.SAVE,
