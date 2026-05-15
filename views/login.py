@@ -48,7 +48,6 @@ def login_view(page: ft.Page):
         def ir_dashboard(e):
             dlg.open = False
             page.update()
-            page.go("/")
 
         lista_contas = ft.Column(
             controls=[
@@ -116,9 +115,19 @@ def login_view(page: ft.Page):
             page.session.set("user_id",   usuario["id"])
             page.session.set("user_nome", usuario["nome"])
             pendentes = verificar_fixas_pendentes(usuario["id"])
+
+            # ✅ Primeiro navega, depois mostra o dialog
             page.go("/")
+            page.update()
+
+            # ✅ Pequeno delay para garantir que a página carregou
             if pendentes:
-                mostrar_alerta_fixas(pendentes)
+                import threading
+                def show_after_delay():
+                    import time
+                    time.sleep(0.5)
+                    mostrar_alerta_fixas(pendentes)
+                threading.Thread(target=show_after_delay, daemon=True).start()
         else:
             erro_text.value   = "E-mail ou senha incorretos."
             senha_input.value = ""

@@ -23,21 +23,29 @@ def fixas_view(page: ft.Page):
         print(f"[fixas] carregar: {ex}")
         subs, pagos, bancos = [], set(), []
 
-    opcoes_banco = [ft.dropdown.Option("", "— Selecione o banco —")] + [
+    opcoes_banco = [ft.dropdown.Option("", "— Banco —")] + [
         ft.dropdown.Option(str(b["id"]), b["nome_banco"]) for b in bancos
     ]
+
+    # ✅ Banco único persistente para todas as contas fixas
+    banco_geral_dd = ft.Dropdown(
+        label="🏦 Banco para todas as contas",
+        width=280,
+        options=opcoes_banco,
+        value="",
+        hint_text="Selecione o banco padrão"
+    )
 
     campos = []
     for s in subs:
         if s["id"] not in pagos:
-            v_f = ft.TextField(label="Valor (ex: R$150,00)", width=150, on_blur=formatar_moeda_input)
-            d_f = ft.TextField(label="Descrição", value=s["nome"], width=250)
-            banco_dd = ft.Dropdown(label="Banco", width=180, options=opcoes_banco, value="")
+            v_f = ft.TextField(label="Valor", width=140, on_blur=formatar_moeda_input)
+            d_f = ft.TextField(label="Descrição", value=s["nome"], width=220)
             campos.append(ft.Row([
-                ft.Checkbox(label=s["nome"]),
-                v_f, d_f, banco_dd,
+                ft.Checkbox(label=s["nome"], width=200),
+                v_f, d_f,
                 ft.Text(str(s["id"]), visible=False),
-            ]))
+            ], spacing=8))
 
     msg = ft.Text("", size=13)
 
@@ -48,15 +56,17 @@ def fixas_view(page: ft.Page):
             msg.value = "⚠️ Selecione ao menos uma conta e informe o valor."
             page.update()
             return
+
+        banco_id = banco_geral_dd.value or None
+        banco_id = int(banco_id) if banco_id else None
+
         try:
             conn = get_connection()
             cur  = get_cursor(conn)
             for r in selecionados:
-                sid      = int(r.controls[4].value)
-                v        = limpar_valor(r.controls[1].value)
-                desc     = r.controls[2].value
-                banco_id = r.controls[3].value or None
-                banco_id = int(banco_id) if banco_id else None
+                sid  = int(r.controls[3].value)
+                v    = limpar_valor(r.controls[1].value)
+                desc = r.controls[2].value
                 cur.execute("""
                     SELECT c.tipo FROM categorias c
                     JOIN subcontas s ON s.categoria_id = c.id
@@ -76,7 +86,12 @@ def fixas_view(page: ft.Page):
             msg.value = "❌ Erro ao salvar. Tente novamente."
             page.update()
 
-    pendentes = ft.Column(campos) if campos else ft.Text(
+    pendentes = ft.Column(
+        campos,
+        spacing=8,
+        scroll=ft.ScrollMode.AUTO,
+        height=450,  # ✅ altura fixa com scroll
+    ) if campos else ft.Text(
         "✅ Todas as contas fixas deste mês já foram baixadas!",
         color=ft.colors.GREEN_700, size=14
     )
@@ -88,14 +103,28 @@ def fixas_view(page: ft.Page):
             ft.Divider(),
             ft.Container(
                 padding=20,
+                expand=True,
                 content=ft.Column([
                     ft.Text(f"CONTAS FIXAS — {mes}", size=18, weight="bold", color="blue"),
-                    ft.Text("Selecione as contas pagas, informe o valor e o banco:", size=13),
+                    ft.Text("Selecione as contas pagas e informe o valor:", size=13),
                     ft.Divider(),
-                    pendentes, msg,
-                    ft.ElevatedButton("BAIXAR SELECIONADAS", icon=ft.icons.CHECK_CIRCLE,
-                                      bgcolor="blue", color="white", height=45,
-                                      on_click=baixar) if campos else ft.Container(),
+                    ft.Container(
+                        bgcolor="#E3F2FD", border_radius=8, padding=10,
+                        content=ft.Row([
+                            ft.Icon(ft.icons.INFO_OUTLINE, color="#1565C0", size=16),
+                            ft.Text("Selecione o banco abaixo — ele vale para todas as contas baixadas.",
+                                    size=12, color="#1565C0", italic=True),
+                        ], spacing=8)
+                    ),
+                    banco_geral_dd,
+                    ft.Divider(),
+                    pendentes,
+                    msg,
+                    ft.ElevatedButton(
+                        "BAIXAR SELECIONADAS", icon=ft.icons.CHECK_CIRCLE,
+                        bgcolor="blue", color="white", height=45,
+                        on_click=baixar
+                    ) if campos else ft.Container(),
                 ], spacing=14)
             )
         ]

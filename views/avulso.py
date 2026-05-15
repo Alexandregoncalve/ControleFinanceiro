@@ -53,22 +53,20 @@ def avulso_view(page: ft.Page):
     date_picker = ft.DatePicker(first_date=datetime(2020, 1, 1), last_date=datetime(2030, 12, 31), on_change=ao_selecionar_data)
     page.overlay.append(date_picker)
 
-    btn_data = ft.ElevatedButton("📅 Selecionar Data", bgcolor=ft.colors.BLUE_100, color=ft.colors.BLUE_900,
+    btn_data = ft.ElevatedButton("📅 Data", bgcolor=ft.colors.BLUE_100, color=ft.colors.BLUE_900,
                                   on_click=lambda e: setattr(date_picker, "open", True) or page.update())
 
-    # ── BANCO — persiste entre lançamentos ─────────────────────────────────
-    opcoes_banco = [ft.dropdown.Option("", "— Selecione o banco —")] + [
+    opcoes_banco = [ft.dropdown.Option("", "— Banco —")] + [
         ft.dropdown.Option(str(b["id"]), b["nome_banco"]) for b in bancos
     ]
     banco_dd = ft.Dropdown(
-        label="🏦 Banco utilizado", width=220,
+        label="🏦 Banco", width=200,
         options=opcoes_banco,
         value="",
-        hint_text="Banco fica selecionado entre lançamentos"
     )
 
     parcelas_row   = ft.Row(visible=False)
-    parcelas_field = ft.Dropdown(label="Parcelas", width=150, value="1",
+    parcelas_field = ft.Dropdown(label="Parcelas", width=130, value="1",
                                   options=[ft.dropdown.Option(str(i), f"{i}x") for i in range(1, 13)])
     parcelas_info  = ft.Text("", size=12, color=ft.colors.BLUE_700, italic=True)
     parcelas_row.controls = [parcelas_field, parcelas_info]
@@ -98,23 +96,23 @@ def avulso_view(page: ft.Page):
                 dt = data_base + relativedelta(months=i)
                 datas.append(f"{data_base.day:02d}/{dt.month:02d}/{dt.year}")
             if n == 1:
-                parcelas_info.value = f"💳 À vista — vence em {datas[0]}"
+                parcelas_info.value = f"💳 Vence em {datas[0]}"
             else:
-                parcelas_info.value = f"💳 {n}x de {fmt_v(parcela)} — 1ª parcela em {datas[0]}, última em {datas[-1]}"
+                parcelas_info.value = f"💳 {n}x {fmt_v(parcela)} — 1ª {datas[0]}, última {datas[-1]}"
         except Exception:
             parcelas_info.value = ""
         page.update()
 
     parcelas_field.on_change = atualizar_info_parcelas
 
-    busca_field     = ft.TextField(label="🔍 Buscar conta (ex: cartao, combustível...)", width=400,
+    busca_field     = ft.TextField(label="🔍 Buscar conta", width=400,
                                     on_change=lambda e: filtrar_contas(e.control.value))
     lista_sugestoes = ft.Column(spacing=0, visible=False)
     sugestoes_container = ft.Container(content=lista_sugestoes, border=ft.border.all(1, "#DDD"),
                                         border_radius=8, bgcolor=ft.colors.WHITE, width=400)
 
     cat_real_row       = ft.Column(visible=False, spacing=4)
-    busca_cat_real     = ft.TextField(label="🏷️ Categoria real (ex: mercado, combustível...)", width=400,
+    busca_cat_real     = ft.TextField(label="🏷️ Categoria real do gasto no cartão", width=400,
                                        on_change=lambda e: filtrar_cat_real(e.control.value))
     lista_cat_real     = ft.Column(spacing=0, visible=False)
     cat_real_container = ft.Container(content=lista_cat_real, border=ft.border.all(1, "#DDD"),
@@ -135,7 +133,6 @@ def avulso_view(page: ft.Page):
         busca_field.value      = f"{nome} ({tipo})"
         lista_sugestoes.controls.clear()
         lista_sugestoes.visible = False
-        # ✅ Preenche descrição automaticamente com o nome da conta
         if not desc.value.strip():
             desc.value = nome
         if eh_cartao(nome):
@@ -292,7 +289,7 @@ def avulso_view(page: ft.Page):
             conn.commit()
             conn.close()
 
-            # ✅ Limpa campos MAS mantém banco e data selecionados
+            # ✅ Limpa campos mas mantém banco e data
             busca_field.value = ""
             val.value = ""
             desc.value = ""
@@ -306,12 +303,11 @@ def avulso_view(page: ft.Page):
             lista_sugestoes.visible = False
             lista_cat_real.controls.clear()
             lista_cat_real.visible = False
-            # ✅ banco_dd.value NÃO é resetado — banco persiste!
-            msg.value = f"✅ {n_parcelas}x lançamento(s) salvo(s)! Banco mantido: {banco_dd.options[[o.key for o in banco_dd.options].index(str(banco_id))].text if banco_id else '—'}"
+            msg.value = f"✅ Salvo! Banco mantido."
             page.update()
         except Exception as ex:
             print(f"[avulso] salvar: {ex}")
-            msg.value = "❌ Erro ao salvar. Tente novamente."
+            msg.value = "❌ Erro ao salvar."
             page.update()
 
     return ft.View(
@@ -327,7 +323,7 @@ def avulso_view(page: ft.Page):
                         bgcolor="#E3F2FD", border_radius=8, padding=10,
                         content=ft.Row([
                             ft.Icon(ft.icons.INFO_OUTLINE, color="#1565C0", size=16),
-                            ft.Text("O banco selecionado permanece entre lançamentos. Troque quando necessário.",
+                            ft.Text("Banco fica selecionado entre lançamentos.",
                                     size=12, color="#1565C0", italic=True),
                         ], spacing=8)
                     ),
