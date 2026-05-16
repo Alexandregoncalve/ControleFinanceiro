@@ -21,7 +21,7 @@ def bancos_view(page: ft.Page):
         label="Data Inicial (DD/MM/AAAA)", width=170,
         value=datetime.now().strftime("%d/%m/%Y")
     )
-    msg_banco = ft.Text("", size=13)
+    msg_banco = ft.Text("", size=16) ## alterei de 13 para 16
 
     # ── CAMPOS CARTÃO ──────────────────────────────────────────────────────
     nome_cartao_f = ft.TextField(label="Nome do Cartão", width=200)
