@@ -86,20 +86,20 @@ def bancos_view(page: ft.Page):
                 ft.Row([
                     ft.Icon(ft.icons.ACCOUNT_BALANCE, color="white", size=28),
                     ft.Column([
-                        ft.Text(b['nome_banco'], color="white", weight="bold", size=15, expand=True),
+                        ft.Text(b['nome_banco'], color="white", weight="bold", size=17, expand=True), ## alterei de 15 para 17
                         ft.Text(f"Banco{codigo}", color="white70", size=15), ## alterei de 11 para 15
                     ], expand=True, spacing=2),
                 ], spacing=10),
-                ft.Text(f"Ag: {b['agencia'] or '—'} | Cta: {b['numero_conta'] or '—'}", color="white", size=12),
-                ft.Divider(color=ft.colors.with_opacity(0.3, "white"), height=14),
+                ft.Text(f"Ag: {b['agencia'] or '—'} | Cta: {b['numero_conta'] or '—'}", color="white", size=14),  ## alterei de 12 para 14
+                ft.Divider(color=ft.colors.with_opacity(0.3, "white"), height=16), ## alterei de 14 para 16
                 ft.Row([
                     ft.Column([
                         ft.Text("Saldo Inicial", color=ft.colors.with_opacity(0.75, "white"), size=11),
                         ft.Text(fmt(b['saldo_inicial'] or 0), color="white", size=20, weight="bold"),
                     ]),
                     ft.Column([
-                        ft.Text("Início", color=ft.colors.with_opacity(0.75, "white"), size=11),
-                        ft.Text(b['data_criacao'] if b['data_criacao'] else "—", color="white", size=11),
+                        ft.Text("Início", color=ft.colors.with_opacity(0.75, "white"), size=11), ## alterei de 11 para 13
+                        ft.Text(b['data_criacao'] if b['data_criacao'] else "—", color="white", size=11), ## alterei de 11 para 13
                     ], horizontal_alignment=ft.CrossAxisAlignment.END)
                 ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                 ft.Row([
