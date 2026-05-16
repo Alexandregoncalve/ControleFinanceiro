@@ -1,5 +1,7 @@
 import flet as ft
 import os
+import base64
+import io
 from datetime import datetime
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
@@ -16,6 +18,7 @@ def extrato_view(page: ft.Page):
     uid   = page.session.get("user_id")
     hoje  = datetime.now()
 
+    # ── OPÇÕES DOS FILTROS ─────────────────────────────────────────────────
     def get_meses_opcoes():
         opcoes = [ft.dropdown.Option("Todos")]
         m, a = hoje.month, hoje.year
@@ -52,21 +55,13 @@ def extrato_view(page: ft.Page):
     total_text = ft.Text("", size=13, weight="bold")
     msg_pdf    = ft.Text("", size=13)
 
-    tabela = ft.DataTable(
-        columns=[
-            ft.DataColumn(ft.Text("Data")),
-            ft.DataColumn(ft.Text("Conta")),
-            ft.DataColumn(ft.Text("Valor")),
-            ft.DataColumn(ft.Text("Tipo")),
-            ft.DataColumn(ft.Text("Descrição")),
-            ft.DataColumn(ft.Text("Ações")),
-        ],
-        rows=[],
-    )
+    # ── COLUNA PRINCIPAL onde os grupos de mês são renderizados ───────────
+    lista_col = ft.Column([], spacing=0, scroll=ft.ScrollMode.AUTO, expand=True)
 
-    data_f   = ft.TextField(label="Data", width=120)
+    # ── CAMPOS DE EDIÇÃO ───────────────────────────────────────────────────
+    data_f   = ft.TextField(label="Data",              width=120)
     valor_f  = ft.TextField(label="Valor (ex: 462,00)", width=150, on_blur=formatar_moeda_input)
-    desc_f   = ft.TextField(label="Descrição", width=300)
+    desc_f   = ft.TextField(label="Descrição",          width=300)
     btn_salvar   = ft.ElevatedButton("SALVAR ALTERAÇÃO", bgcolor="blue", color="white",
                                      on_click=lambda e: salvar_edicao(e))
     btn_cancelar = ft.ElevatedButton("CANCELAR", bgcolor=ft.colors.GREY_400,
@@ -74,13 +69,108 @@ def extrato_view(page: ft.Page):
     edicao_row = ft.Row([data_f, valor_f, desc_f, btn_salvar, btn_cancelar], visible=False)
 
     def fmt(v):
-        return f"R$ {v:_.2f}".replace(".", ",").replace("_", ".")
+        try:
+            return f"R$ {float(v):_.2f}".replace(".", ",").replace("_", ".")
+        except:
+            return "R$ 0,00"
 
+    # ── MONTA LINHA DE TRANSAÇÃO ───────────────────────────────────────────
+    def linha_transacao(t):
+        cor = ft.colors.GREEN_700 if t["tipo"] == "Receita" else ft.colors.RED_700
+        tid = t["id"]
+
+        def fazer_deletar(tid=tid):
+            deletar(tid)
+
+        def ao_clicar_excluir(_, f=fazer_deletar):
+            verificar_admin(page, f)
+
+        return ft.Container(
+            border=ft.border.only(bottom=ft.BorderSide(1, "#EEEEEE")),
+            padding=ft.padding.symmetric(horizontal=16, vertical=8),
+            content=ft.Row([
+                # Data
+                ft.Container(width=100,
+                    content=ft.Text(t["data"], size=12, color="#555555")),
+                # Conta
+                ft.Container(width=200,
+                    content=ft.Text(t["nome"], size=12)),
+                # Valor
+                ft.Container(width=130,
+                    content=ft.Text(fmt(t["valor"]), size=13, weight="bold", color=cor)),
+                # Tipo
+                ft.Container(width=90,
+                    content=ft.Container(
+                        bgcolor=ft.colors.GREEN_100 if t["tipo"] == "Receita" else ft.colors.RED_100,
+                        border_radius=12, padding=ft.padding.symmetric(horizontal=8, vertical=2),
+                        content=ft.Text(t["tipo"], size=11, color=cor, weight="bold")
+                    )),
+                # Descrição
+                ft.Container(expand=True,
+                    content=ft.Text(t["descricao"] or "—", size=12, color="#666666")),
+                # Ações
+                ft.Row([
+                    ft.IconButton(icon=ft.icons.EDIT, icon_color="#1565C0",
+                                  tooltip="Alterar", icon_size=18,
+                                  on_click=lambda _, d=t: preparar_edicao(d)),
+                    ft.IconButton(icon=ft.icons.DELETE, icon_color=ft.colors.RED_700,
+                                  tooltip="Excluir", icon_size=18,
+                                  on_click=ao_clicar_excluir),
+                ], spacing=0),
+            ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
+        )
+
+    # ── MONTA CABEÇALHO DE MÊS ────────────────────────────────────────────
+    def cabecalho_mes(mes_label, rec, desp):
+        saldo    = rec - desp
+        cor_sald = ft.colors.GREEN_700 if saldo >= 0 else ft.colors.RED_700
+        return ft.Container(
+            bgcolor="#1565C0",
+            border_radius=ft.border_radius.only(top_left=8, top_right=8),
+            padding=ft.padding.symmetric(horizontal=16, vertical=10),
+            margin=ft.margin.only(top=16),
+            content=ft.Row([
+                ft.Text(mes_label, size=14, weight="bold", color="white", expand=True),
+                ft.Row([
+                    ft.Container(
+                        bgcolor=ft.colors.with_opacity(0.25, "white"),
+                        border_radius=6, padding=ft.padding.symmetric(horizontal=10, vertical=3),
+                        content=ft.Text(f"✅ {fmt(rec)}", size=12, color="white")),
+                    ft.Container(
+                        bgcolor=ft.colors.with_opacity(0.25, "white"),
+                        border_radius=6, padding=ft.padding.symmetric(horizontal=10, vertical=3),
+                        content=ft.Text(f"❌ {fmt(desp)}", size=12, color="white")),
+                    ft.Container(
+                        bgcolor=ft.colors.with_opacity(0.35, "white"),
+                        border_radius=6, padding=ft.padding.symmetric(horizontal=10, vertical=3),
+                        content=ft.Text(f"💰 {fmt(saldo)}", size=12,
+                                        color=ft.colors.GREEN_200 if saldo >= 0 else ft.colors.RED_200,
+                                        weight="bold")),
+                ], spacing=8),
+            ]),
+        )
+
+    # ── CABEÇALHO DAS COLUNAS DA TABELA ───────────────────────────────────
+    def cabecalho_colunas():
+        return ft.Container(
+            bgcolor="#E3F2FD",
+            padding=ft.padding.symmetric(horizontal=16, vertical=6),
+            content=ft.Row([
+                ft.Container(width=100, content=ft.Text("Data",      size=11, weight="bold", color="#1565C0")),
+                ft.Container(width=200, content=ft.Text("Conta",     size=11, weight="bold", color="#1565C0")),
+                ft.Container(width=130, content=ft.Text("Valor",     size=11, weight="bold", color="#1565C0")),
+                ft.Container(width=90,  content=ft.Text("Tipo",      size=11, weight="bold", color="#1565C0")),
+                ft.Container(expand=True, content=ft.Text("Descrição", size=11, weight="bold", color="#1565C0")),
+                ft.Container(width=80,  content=ft.Text("Ações",    size=11, weight="bold", color="#1565C0")),
+            ]),
+        )
+
+    # ── CARREGA E AGRUPA POR MÊS ───────────────────────────────────────────
     def carregar_tabela():
         try:
-            conn   = get_connection()
-            cur    = get_cursor(conn)
-            query  = """
+            conn  = get_connection()
+            cur   = get_cursor(conn)
+            query = """
                 SELECT t.id, t.data, s.nome, t.valor, t.tipo, t.descricao
                 FROM transacoes t
                 JOIN subcontas s ON t.subconta_id = s.id
@@ -106,54 +196,95 @@ def extrato_view(page: ft.Page):
             conn.close()
 
             state["trans"] = trans
-            tabela.rows.clear()
-            total_receita = 0.0
-            total_despesa = 0.0
+
+            # ── Agrupa transações por mês/ano ──────────────────────────────
+            grupos = {}   # { "MM/YYYY": [transações] }
+            ordem  = []   # mantém a ordem cronológica decrescente
 
             for t in trans:
-                tid = t["id"]
-                cor = ft.colors.GREEN_700 if t["tipo"] == "Receita" else ft.colors.RED_700
+                # data pode ser "DD/MM/YYYY" ou "YYYY-MM-DD" dependendo do banco
+                try:
+                    data_str = str(t["data"])
+                    if "/" in data_str:
+                        partes = data_str.split("/")
+                        chave  = f"{partes[1]}/{partes[2]}"          # MM/YYYY
+                        mes_label = _mes_label(partes[1], partes[2]) # "Maio 2026"
+                    else:
+                        partes = data_str.split("-")
+                        chave  = f"{partes[1]}/{partes[0]}"
+                        mes_label = _mes_label(partes[1], partes[0])
+                except:
+                    chave     = "??/??"
+                    mes_label = "Data inválida"
 
+                if chave not in grupos:
+                    grupos[chave] = {"label": mes_label, "trans": [], "rec": 0.0, "desp": 0.0}
+                    ordem.append(chave)
+
+                grupos[chave]["trans"].append(t)
                 if t["tipo"] == "Receita":
-                    total_receita += t["valor"]
+                    grupos[chave]["rec"]  += float(t["valor"])
                 else:
-                    total_despesa += t["valor"]
+                    grupos[chave]["desp"] += float(t["valor"])
 
-                def fazer_deletar(tid=tid):
-                    deletar(tid)
+            # ── Monta a lista visual ───────────────────────────────────────
+            lista_col.controls.clear()
 
-                def ao_clicar_excluir(_, f=fazer_deletar):
-                    verificar_admin(page, f)
+            total_rec  = 0.0
+            total_desp = 0.0
 
-                tabela.rows.append(ft.DataRow(cells=[
-                    ft.DataCell(ft.Text(t["data"])),
-                    ft.DataCell(ft.Text(t["nome"])),
-                    ft.DataCell(ft.Text(fmt(t["valor"]), color=cor, weight="bold")),
-                    ft.DataCell(ft.Text(t["tipo"], color=cor)),
-                    ft.DataCell(ft.Text(t["descricao"] or "")),
-                    ft.DataCell(ft.Row([
-                        ft.TextButton("Alterar", on_click=lambda _, d=t: preparar_edicao(d)),
-                        ft.TextButton(
-                            "Excluir",
-                            style=ft.ButtonStyle(color=ft.colors.RED_700),
-                            on_click=ao_clicar_excluir
-                        ),
-                    ])),
-                ]))
+            for chave in ordem:
+                g   = grupos[chave]
+                rec  = g["rec"]
+                desp = g["desp"]
+                total_rec  += rec
+                total_desp += desp
 
-            saldo     = total_receita - total_despesa
+                # Cabeçalho do mês (azul)
+                lista_col.controls.append(cabecalho_mes(g["label"], rec, desp))
+
+                # Cabeçalho das colunas
+                lista_col.controls.append(cabecalho_colunas())
+
+                # Linhas das transações
+                for t in g["trans"]:
+                    lista_col.controls.append(linha_transacao(t))
+
+                # Rodapé do grupo
+                lista_col.controls.append(
+                    ft.Container(
+                        bgcolor="#F5F5F5",
+                        border_radius=ft.border_radius.only(bottom_left=8, bottom_right=8),
+                        padding=ft.padding.symmetric(horizontal=16, vertical=6),
+                        content=ft.Text(
+                            f"{len(g['trans'])} lançamento(s) em {g['label']}",
+                            size=11, color="#888888", italic=True),
+                    )
+                )
+
+            # ── Totais gerais ──────────────────────────────────────────────
+            saldo     = total_rec - total_desp
             cor_saldo = ft.colors.GREEN_700 if saldo >= 0 else ft.colors.RED_700
             total_text.value = (
                 f"📋 {len(trans)} registros  |  "
-                f"✅ Receitas: {fmt(total_receita)}  |  "
-                f"❌ Despesas: {fmt(total_despesa)}  |  "
+                f"✅ Receitas: {fmt(total_rec)}  |  "
+                f"❌ Despesas: {fmt(total_desp)}  |  "
                 f"💰 Saldo: {fmt(saldo)}"
             )
             total_text.color = cor_saldo
             page.update()
 
         except Exception as ex:
+            import traceback; traceback.print_exc()
             print(f"[extrato] carregar_tabela: {ex}")
+
+    def _mes_label(mm, yyyy):
+        nomes = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho",
+                 "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"]
+        try:
+            return f"{nomes[int(mm)-1]} {yyyy}"
+        except:
+            return f"{mm}/{yyyy}"
 
     filtro_mes.on_change   = lambda e: carregar_tabela()
     filtro_tipo.on_change  = lambda e: carregar_tabela()
@@ -165,6 +296,7 @@ def extrato_view(page: ft.Page):
         filtro_conta.value = "Todas"
         carregar_tabela()
 
+    # ── CRUD ───────────────────────────────────────────────────────────────
     def deletar(tid):
         try:
             conn = get_connection()
@@ -207,6 +339,7 @@ def extrato_view(page: ft.Page):
         except Exception as ex:
             print(f"[extrato] salvar_edicao: {ex}")
 
+    # ── EXPORTAR PDF — gera em memória e abre via base64 no browser ───────
     def exportar_pdf(e):
         try:
             trans = state["trans"]
@@ -216,15 +349,15 @@ def extrato_view(page: ft.Page):
                 page.update()
                 return
 
-            pasta = "/tmp/relatorios"
-            os.makedirs(pasta, exist_ok=True)
-            mes_label    = (filtro_mes.value if filtro_mes.value != "Todos" else "completo").replace("/", "-")
-            nome_arquivo = f"extrato_{mes_label}_{datetime.now().strftime('%d%m%Y_%H%M%S')}.pdf"
-            caminho      = os.path.join(pasta, nome_arquivo)
+            msg_pdf.value = "⏳ Gerando PDF..."
+            msg_pdf.color = ft.colors.BLUE_700
+            page.update()
 
-            doc    = SimpleDocTemplate(caminho, pagesize=A4,
+            # Gera o PDF em memória (BytesIO)
+            buffer = io.BytesIO()
+            doc    = SimpleDocTemplate(buffer, pagesize=A4,
                                        leftMargin=1.5*cm, rightMargin=1.5*cm,
-                                       topMargin=2*cm, bottomMargin=2*cm)
+                                       topMargin=2*cm,    bottomMargin=2*cm)
             styles = getSampleStyleSheet()
             elems  = []
 
@@ -234,9 +367,9 @@ def extrato_view(page: ft.Page):
                 fontSize=10, textColor=colors.grey, spaceAfter=12)
 
             filtros_str = []
-            if filtro_mes.value != "Todos":   filtros_str.append(f"Mês: {filtro_mes.value}")
-            if filtro_tipo.value != "Todos":  filtros_str.append(f"Tipo: {filtro_tipo.value}")
-            if filtro_conta.value != "Todas": filtros_str.append(f"Conta: {filtro_conta.value}")
+            if filtro_mes.value   != "Todos":  filtros_str.append(f"Mês: {filtro_mes.value}")
+            if filtro_tipo.value  != "Todos":  filtros_str.append(f"Tipo: {filtro_tipo.value}")
+            if filtro_conta.value != "Todas":  filtros_str.append(f"Conta: {filtro_conta.value}")
             filtros_label = "  |  ".join(filtros_str) if filtros_str else "Todos os registros"
 
             elems += [
@@ -247,54 +380,118 @@ def extrato_view(page: ft.Page):
                 Spacer(1, 0.5*cm),
             ]
 
-            cabecalho = ["Data", "Conta", "Valor", "Tipo", "Descrição"]
-            dados_pdf = [cabecalho]
-            total_rec = total_des = 0.0
-
+            # Agrupa por mês para o PDF também
+            grupos = {}
+            ordem  = []
             for t in trans:
-                dados_pdf.append([t["data"], t["nome"], fmt(t["valor"]), t["tipo"], t["descricao"] or ""])
-                if t["tipo"] == "Receita": total_rec += t["valor"]
-                else:                      total_des += t["valor"]
+                try:
+                    data_str = str(t["data"])
+                    if "/" in data_str:
+                        partes = data_str.split("/")
+                        chave  = f"{partes[1]}/{partes[2]}"
+                        label  = _mes_label(partes[1], partes[2])
+                    else:
+                        partes = data_str.split("-")
+                        chave  = f"{partes[1]}/{partes[0]}"
+                        label  = _mes_label(partes[1], partes[0])
+                except:
+                    chave = label = "??"
+                if chave not in grupos:
+                    grupos[chave] = {"label": label, "trans": [], "rec": 0.0, "desp": 0.0}
+                    ordem.append(chave)
+                grupos[chave]["trans"].append(t)
+                if t["tipo"] == "Receita": grupos[chave]["rec"]  += float(t["valor"])
+                else:                      grupos[chave]["desp"] += float(t["valor"])
 
-            saldo   = total_rec - total_des
-            n_dados = len(dados_pdf)
-            n_total = len(trans) + 1
-            dados_pdf += [
-                ["", "TOTAL",    "",             "", ""],
-                ["", "Receitas", fmt(total_rec), "", ""],
-                ["", "Despesas", fmt(total_des), "", ""],
-                ["", "Saldo",    fmt(saldo),     "", ""],
+            total_rec_geral = total_des_geral = 0.0
+
+            for chave in ordem:
+                g    = grupos[chave]
+                rec  = g["rec"]
+                desp = g["desp"]
+                saldo_mes = rec - desp
+                total_rec_geral  += rec
+                total_des_geral  += desp
+
+                # Título do mês
+                elems.append(Paragraph(
+                    f"<b>{g['label']}</b>  —  "
+                    f"Receitas: {fmt(rec)}  |  Despesas: {fmt(desp)}  |  Saldo: {fmt(saldo_mes)}",
+                    ParagraphStyle("mes", parent=styles["Normal"],
+                        fontSize=10, textColor=colors.HexColor("#1565C0"),
+                        backColor=colors.HexColor("#E3F2FD"),
+                        spaceAfter=2, spaceBefore=10,
+                        leftIndent=0, borderPadding=4)
+                ))
+
+                cabecalho = ["Data", "Conta", "Valor", "Tipo", "Descrição"]
+                dados_pdf = [cabecalho]
+                for t in g["trans"]:
+                    dados_pdf.append([
+                        t["data"], t["nome"], fmt(t["valor"]), t["tipo"], t["descricao"] or ""
+                    ])
+
+                n_dados = len(dados_pdf)
+                dados_pdf.append(["", f"Subtotal {g['label']}",
+                                   f"R: {fmt(rec)} / D: {fmt(desp)}", fmt(saldo_mes), ""])
+
+                tabela_pdf = Table(dados_pdf, colWidths=[2.5*cm, 5*cm, 3*cm, 2.5*cm, 5*cm])
+                cor_saldo_pdf = colors.HexColor("#1B5E20") if saldo_mes >= 0 else colors.HexColor("#B71C1C")
+                tabela_pdf.setStyle(TableStyle([
+                    ("BACKGROUND",    (0, 0), (-1, 0),  colors.HexColor("#1565C0")),
+                    ("TEXTCOLOR",     (0, 0), (-1, 0),  colors.white),
+                    ("FONTNAME",      (0, 0), (-1, 0),  "Helvetica-Bold"),
+                    ("FONTSIZE",      (0, 0), (-1, -1), 8),
+                    ("ALIGN",         (0, 0), (-1, 0),  "CENTER"),
+                    ("ROWBACKGROUNDS",(0, 1), (-1, n_dados-1),
+                                               [colors.white, colors.HexColor("#F5F5F5")]),
+                    ("GRID",          (0, 0), (-1, n_dados-1), 0.5, colors.HexColor("#DDDDDD")),
+                    ("BACKGROUND",    (0, n_dados), (-1, -1), colors.HexColor("#E3F2FD")),
+                    ("FONTNAME",      (0, n_dados), (-1, -1), "Helvetica-Bold"),
+                    ("LINEABOVE",     (0, n_dados), (-1, n_dados), 1, colors.HexColor("#1565C0")),
+                    ("TEXTCOLOR",     (3, n_dados), (3, n_dados), cor_saldo_pdf),
+                    ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
+                    ("TOPPADDING",    (0, 0), (-1, -1), 3),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                    ("LEFTPADDING",   (0, 0), (-1, -1), 4),
+                ]))
+                elems.append(tabela_pdf)
+
+            # Totais gerais no final
+            saldo_geral = total_rec_geral - total_des_geral
+            elems += [
+                Spacer(1, 0.5*cm),
+                Paragraph(
+                    f"<b>TOTAL GERAL  —  "
+                    f"Receitas: {fmt(total_rec_geral)}  |  "
+                    f"Despesas: {fmt(total_des_geral)}  |  "
+                    f"Saldo: {fmt(saldo_geral)}</b>",
+                    ParagraphStyle("total", parent=styles["Normal"],
+                        fontSize=11,
+                        textColor=colors.HexColor("#1B5E20") if saldo_geral >= 0 else colors.HexColor("#B71C1C"),
+                        backColor=colors.HexColor("#E8F5E9") if saldo_geral >= 0 else colors.HexColor("#FFEBEE"),
+                        borderPadding=6)
+                )
             ]
 
-            tabela_pdf = Table(dados_pdf, colWidths=[2.5*cm, 5*cm, 3*cm, 2.5*cm, 5*cm])
-            tabela_pdf.setStyle(TableStyle([
-                ("BACKGROUND",    (0, 0), (-1, 0),  colors.HexColor("#1565C0")),
-                ("TEXTCOLOR",     (0, 0), (-1, 0),  colors.white),
-                ("FONTNAME",      (0, 0), (-1, 0),  "Helvetica-Bold"),
-                ("FONTSIZE",      (0, 0), (-1, 0),  9),
-                ("ALIGN",         (0, 0), (-1, 0),  "CENTER"),
-                ("FONTSIZE",      (0, 1), (-1, -1), 8),
-                ("ROWBACKGROUNDS",(0, 1), (-1, n_total-1), [colors.white, colors.HexColor("#F5F5F5")]),
-                ("GRID",          (0, 0), (-1, n_total-1), 0.5, colors.HexColor("#DDDDDD")),
-                ("BACKGROUND",    (0, n_total), (-1, -1), colors.HexColor("#E3F2FD")),
-                ("FONTNAME",      (0, n_total), (-1, -1), "Helvetica-Bold"),
-                ("FONTSIZE",      (0, n_total), (-1, -1), 9),
-                ("LINEABOVE",     (0, n_total), (-1, n_total), 1, colors.HexColor("#1565C0")),
-                ("TEXTCOLOR",     (2, n_dados-1), (2, n_dados-1),
-                 colors.HexColor("#1B5E20") if saldo >= 0 else colors.HexColor("#B71C1C")),
-                ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
-                ("TOPPADDING",    (0, 0), (-1, -1), 4),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-                ("LEFTPADDING",   (0, 0), (-1, -1), 4),
-            ]))
-            elems.append(tabela_pdf)
             doc.build(elems)
 
-            msg_pdf.value = f"✅ PDF gerado com sucesso!"
+            # ── Converte para base64 e abre download no browser ────────────
+            pdf_bytes  = buffer.getvalue()
+            b64        = base64.b64encode(pdf_bytes).decode("utf-8")
+            mes_label  = (filtro_mes.value if filtro_mes.value != "Todos" else "completo").replace("/", "-")
+            nome_arq   = f"extrato_{mes_label}_{datetime.now().strftime('%d%m%Y_%H%M%S')}.pdf"
+
+            # Cria um link <a download> e clica via JS
+            data_url = f"data:application/pdf;base64,{b64}"
+            page.launch_url(data_url)
+
+            msg_pdf.value = f"✅ PDF gerado: {nome_arq}"
             msg_pdf.color = ft.colors.GREEN_700
             page.update()
 
         except Exception as ex:
+            import traceback; traceback.print_exc()
             print(f"[extrato] exportar_pdf: {ex}")
             msg_pdf.value = "❌ Erro ao gerar PDF."
             msg_pdf.color = ft.colors.RED_700
@@ -302,6 +499,7 @@ def extrato_view(page: ft.Page):
 
     carregar_tabela()
 
+    # ── VIEW ───────────────────────────────────────────────────────────────
     return ft.View(
         route="/extrato",
         controls=[
@@ -311,22 +509,34 @@ def extrato_view(page: ft.Page):
                 padding=20, expand=True,
                 content=ft.Column(
                     controls=[
-                        ft.Text("EXTRATO DE TRANSAÇÕES", size=18, weight="bold", color="blue"),
+                        ft.Row([
+                            ft.Icon(ft.icons.RECEIPT_LONG, color="#1565C0", size=26),
+                            ft.Text("EXTRATO DE TRANSAÇÕES", size=18, weight="bold", color="#1565C0"),
+                        ], spacing=10),
                         edicao_row,
                         ft.Divider(),
+                        # Filtros
                         ft.Row([
                             filtro_mes, filtro_tipo, filtro_conta,
-                            ft.ElevatedButton("LIMPAR FILTROS", icon=ft.icons.FILTER_ALT_OFF,
+                            ft.ElevatedButton(
+                                "LIMPAR FILTROS", icon=ft.icons.FILTER_ALT_OFF,
                                 bgcolor=ft.colors.GREY_300, color=ft.colors.BLACK,
                                 on_click=limpar_filtros),
-                            ft.ElevatedButton("📄 EXPORTAR PDF",
+                            ft.ElevatedButton(
+                                "📄 EXPORTAR PDF",
                                 bgcolor=ft.colors.RED_700, color=ft.colors.WHITE,
                                 on_click=exportar_pdf),
                         ], spacing=12, wrap=True),
-                        total_text,
+                        # Totais
+                        ft.Container(
+                            bgcolor="#F5F5F5", border_radius=8,
+                            padding=ft.padding.symmetric(horizontal=16, vertical=10),
+                            content=total_text,
+                        ),
                         msg_pdf,
                         ft.Divider(),
-                        ft.Row(controls=[tabela], scroll=ft.ScrollMode.ALWAYS),
+                        # Lista agrupada por mês
+                        lista_col,
                     ],
                     scroll=ft.ScrollMode.ALWAYS,
                     expand=True,
