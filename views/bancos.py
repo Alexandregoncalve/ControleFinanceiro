@@ -532,34 +532,83 @@ def bancos_view(page: ft.Page):
     carregar_listas()
 
     # ── LAYOUT ─────────────────────────────────────────────────────────────
+
+    # Formulário Banco
+    form_banco = ft.Container(
+        bgcolor="#E3F2FD", border_radius=10, padding=16, expand=True,
+        content=ft.Column([
+            ft.Row([
+                ft.Icon(ft.icons.ACCOUNT_BALANCE, color="#1565C0", size=20),
+                ft.Text("Cadastrar / Editar Banco", size=14, weight="bold", color="#1565C0"),
+            ], spacing=8),
+            ft.Divider(height=8),
+            ft.Row([nome_banco_f, codigo_banco_f], wrap=True, spacing=10),
+            ft.Row([agencia_f, conta_f], wrap=True, spacing=10),
+            ft.Row([saldo_inicial_f, data_inicial_f], wrap=True, spacing=10),
+            btn_salvar_banco,
+            msg_banco,
+        ], spacing=10)
+    )
+
+    # Formulário Cartão
+    form_cartao = ft.Container(
+        bgcolor="#FFF3E0", border_radius=10, padding=16, expand=True,
+        content=ft.Column([
+            ft.Row([
+                ft.Icon(ft.icons.CREDIT_CARD, color="#E65100", size=20),
+                ft.Text("Cadastrar / Editar Cartão", size=14, weight="bold", color="#E65100"),
+            ], spacing=8),
+            ft.Divider(height=8),
+            ft.Row([nome_cartao_f, tipo_cartao_f], wrap=True, spacing=10),
+            ft.Row([limite_f, banco_dd], wrap=True, spacing=10),
+            btn_salvar_cartao,
+            msg_cartao,
+        ], spacing=10)
+    )
+
+    # Coluna de bancos cadastrados
+    col_bancos = ft.Container(
+        expand=True,
+        content=ft.Column([
+            ft.Row([
+                ft.Icon(ft.icons.ACCOUNT_BALANCE, color="#1565C0", size=18),
+                ft.Text("Bancos Cadastrados", size=14, weight="bold", color="#1565C0"),
+            ], spacing=6),
+            lista_bancos_col,
+        ], spacing=10)
+    )
+
+    # Coluna de cartões cadastrados
+    col_cartoes = ft.Container(
+        expand=True,
+        content=ft.Column([
+            ft.Row([
+                ft.Icon(ft.icons.CREDIT_CARD, color="#E65100", size=18),
+                ft.Text("Cartões Cadastrados", size=14, weight="bold", color="#E65100"),
+            ], spacing=6),
+            lista_cartoes_col,
+        ], spacing=10)
+    )
+
     conteudo = ft.Column([
+        # ── Título ────────────────────────────────────────────────────────
         ft.Row([
             ft.Icon(ft.icons.ACCOUNT_BALANCE, color="#1565C0", size=30),
             ft.Text("BANCOS E CARTÕES", size=22, weight="bold", color="#1565C0")
         ], spacing=10),
         ft.Divider(),
 
-        # ── CADASTRO BANCO ─────────────────────────────────────────────────
-        ft.Container(
-            bgcolor="#E3F2FD", border_radius=10, padding=16,
-            content=ft.Column([
-                ft.Text("🏦 Cadastrar / Editar Banco", size=15, weight="bold", color="#1565C0"),
-                # Linha 1: nome e código
-                ft.Row([nome_banco_f, codigo_banco_f], wrap=True, spacing=10),
-                # Linha 2: agência e conta
-                ft.Row([agencia_f, conta_f], wrap=True, spacing=10),
-                # Linha 3: saldo, data e botão
-                ft.Row([saldo_inicial_f, data_inicial_f, btn_salvar_banco],
-                       wrap=True, spacing=10, vertical_alignment=ft.CrossAxisAlignment.END),
-                msg_banco,
-            ], spacing=10)
-        ),
-
-        ft.Text("Bancos Cadastrados", size=15, weight="bold", color="#1565C0"),
-        lista_bancos_col,
+        # ── LINHA 1: Formulários lado a lado ──────────────────────────────
+        ft.Row([form_banco, form_cartao],
+               spacing=16, vertical_alignment=ft.CrossAxisAlignment.START),
         ft.Divider(),
 
-        # ── TRANSFERÊNCIA ENTRE BANCOS ─────────────────────────────────────
+        # ── LINHA 2: Cards lado a lado ────────────────────────────────────
+        ft.Row([col_bancos, col_cartoes],
+               spacing=16, vertical_alignment=ft.CrossAxisAlignment.START),
+        ft.Divider(),
+
+        # ── LINHA 3: Transferência entre Bancos ───────────────────────────
         ft.Container(
             bgcolor="#E8F5E9", border_radius=10, padding=16,
             content=ft.Column([
@@ -571,7 +620,7 @@ def bancos_view(page: ft.Page):
                     transf_orig_dd,
                     ft.Icon(ft.icons.ARROW_FORWARD, color="#2E7D32", size=24),
                     transf_dest_dd,
-                ], spacing=12),
+                ], spacing=12, wrap=True),
                 ft.Row([transf_valor_f, transf_data_f, btn_data_transf, transf_desc_f],
                        wrap=True, spacing=10),
                 ft.Row([btn_transferir, btn_cancelar_transf], spacing=12),
@@ -581,20 +630,6 @@ def bancos_view(page: ft.Page):
                 lista_transf,
             ], spacing=10)
         ),
-        ft.Divider(),
-
-        # ── CADASTRO CARTÃO ────────────────────────────────────────────────
-        ft.Container(
-            bgcolor="#FFF3E0", border_radius=10, padding=16,
-            content=ft.Column([
-                ft.Text("💳 Cadastrar / Editar Cartão", size=15, weight="bold", color="#E65100"),
-                ft.Row([nome_cartao_f, tipo_cartao_f], wrap=True, spacing=10),
-                ft.Row([limite_f, banco_dd, btn_salvar_cartao], wrap=True, spacing=10,
-                       vertical_alignment=ft.CrossAxisAlignment.END),
-                msg_cartao,
-            ], spacing=10)
-        ),
-        lista_cartoes_col,
     ], spacing=16, scroll=ft.ScrollMode.AUTO, expand=True)
 
     return ft.View(
