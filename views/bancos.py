@@ -540,8 +540,9 @@ def bancos_view(page: ft.Page):
                 ft.Text("Cadastrar / Editar Banco", size=15, weight="bold", color="#1565C0"),
             ], spacing=8),
             ft.Divider(color="#90CAF9", height=14),
-            ft.Row([nome_banco_f, codigo_banco_f], wrap=True, spacing=12),
-            ft.Row([agencia_f, conta_f], wrap=True, spacing=12),
+            # Linha 1: nome + código + agência + conta
+            ft.Row([nome_banco_f, codigo_banco_f, agencia_f, conta_f], wrap=True, spacing=12),
+            # Linha 2: saldo + data
             ft.Row([saldo_inicial_f, data_inicial_f], wrap=True, spacing=12),
             btn_salvar_banco,
             msg_banco,
@@ -566,32 +567,36 @@ def bancos_view(page: ft.Page):
         ], spacing=16)
     )
 
-    # Coluna de bancos cadastrados — cabeçalho azul
+    # Coluna de bancos cadastrados — fundo azul claro
     col_bancos = ft.Container(
         expand=True,
+        bgcolor="#E3F2FD",
+        border=ft.border.all(1.5, "#90CAF9"),
+        border_radius=12,
+        padding=ft.padding.all(14),
         content=ft.Column([
-            ft.Container(
-                bgcolor="#BBDEFB", border_radius=8, padding=ft.padding.symmetric(horizontal=12, vertical=8),
-                content=ft.Row([
-                    ft.Icon(ft.icons.ACCOUNT_BALANCE, color="#1565C0", size=18),
-                    ft.Text("Bancos Cadastrados", size=14, weight="bold", color="#1565C0"),
-                ], spacing=6),
-            ),
+            ft.Row([
+                ft.Icon(ft.icons.ACCOUNT_BALANCE, color="#1565C0", size=18),
+                ft.Text("Bancos Cadastrados", size=14, weight="bold", color="#1565C0"),
+            ], spacing=6),
+            ft.Divider(color="#90CAF9", height=10),
             lista_bancos_col,
         ], spacing=10)
     )
 
-    # Coluna de cartões cadastrados — cabeçalho laranja
+    # Coluna de cartões cadastrados — fundo laranja claro
     col_cartoes = ft.Container(
         expand=True,
+        bgcolor="#FFF3E0",
+        border=ft.border.all(1.5, "#FFCC80"),
+        border_radius=12,
+        padding=ft.padding.all(14),
         content=ft.Column([
-            ft.Container(
-                bgcolor="#FFE0B2", border_radius=8, padding=ft.padding.symmetric(horizontal=12, vertical=8),
-                content=ft.Row([
-                    ft.Icon(ft.icons.CREDIT_CARD, color="#E65100", size=18),
-                    ft.Text("Cartões Cadastrados", size=14, weight="bold", color="#E65100"),
-                ], spacing=6),
-            ),
+            ft.Row([
+                ft.Icon(ft.icons.CREDIT_CARD, color="#E65100", size=18),
+                ft.Text("Cartões Cadastrados", size=14, weight="bold", color="#E65100"),
+            ], spacing=6),
+            ft.Divider(color="#FFCC80", height=10),
             lista_cartoes_col,
         ], spacing=10)
     )
