@@ -301,9 +301,44 @@ def extrato_view(page: ft.Page):
         try:
             conn = get_connection()
             cur  = get_cursor(conn)
-            cur.execute("DELETE FROM transacoes WHERE id=%s AND usuario_id=%s", (tid, uid))
-            conn.commit()
-            conn.close()
+
+            # Verifica se é transação de transferência
+            cur.execute(
+                "SELECT tipo, valor, data, banco_id, descricao FROM transacoes WHERE id=%s AND usuario_id=%s",
+                (tid, uid)
+            )
+            t = cur.fetchone()
+
+            if t and t["descricao"] and ("Transf. " in str(t["descricao"])):
+                valor = t["valor"]
+                data  = t["data"]
+                tipo_par = "Receita" if t["tipo"] == "Despesa" else "Despesa"
+
+                # Exclui a transação par
+                cur.execute("""
+                    DELETE FROM transacoes
+                    WHERE usuario_id=%s AND tipo=%s AND valor=%s AND data=%s
+                      AND descricao LIKE %s
+                """, (uid, tipo_par, valor, data, "Transf.%"))
+
+                # Exclui a própria transação
+                cur.execute("DELETE FROM transacoes WHERE id=%s AND usuario_id=%s", (tid, uid))
+
+                # Exclui da tabela transferencias
+                cur.execute("""
+                    DELETE FROM transferencias
+                    WHERE usuario_id=%s AND valor=%s AND data=%s
+                """, (uid, valor, data))
+
+                conn.commit()
+                conn.close()
+                msg_pdf.value = "🔗 Transferência e lançamentos vinculados excluídos."
+                msg_pdf.color = ft.colors.ORANGE_700
+            else:
+                cur.execute("DELETE FROM transacoes WHERE id=%s AND usuario_id=%s", (tid, uid))
+                conn.commit()
+                conn.close()
+
             carregar_tabela()
         except Exception as ex:
             print(f"[extrato] deletar: {ex}")
@@ -482,9 +517,18 @@ def extrato_view(page: ft.Page):
             mes_label  = (filtro_mes.value if filtro_mes.value != "Todos" else "completo").replace("/", "-")
             nome_arq   = f"extrato_{mes_label}_{datetime.now().strftime('%d%m%Y_%H%M%S')}.pdf"
 
-            # Cria um link <a download> e clica via JS
-            data_url = f"data:application/pdf;base64,{b64}"
-            page.launch_url(data_url)
+            # Dispara download direto via JS sem abrir nova aba
+            js = (
+                "(function(){{"
+                "var a=document.createElement('a');"
+                f"a.href='data:application/pdf;base64,{b64}';"
+                f"a.download='{nome_arq}';"
+                "document.body.appendChild(a);"
+                "a.click();"
+                "document.body.removeChild(a);"
+                "}})()"
+            )
+            page.eval_javascript(js)
 
             msg_pdf.value = f"✅ PDF gerado: {nome_arq}"
             msg_pdf.color = ft.colors.GREEN_700

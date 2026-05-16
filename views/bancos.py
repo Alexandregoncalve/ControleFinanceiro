@@ -643,6 +643,22 @@ def bancos_view(page: ft.Page):
         ),
     ], spacing=16, scroll=ft.ScrollMode.AUTO, expand=True)
 
+    # ── Recarrega ao entrar na view (garante dados atualizados) ──────────
+    def on_view_appear(e=None):
+        carregar_listas()
+
+    page.on_view_pop = lambda e: None  # evita conflito
+    # Usa on_resized como gatilho de "voltou para a view"
+    # A forma mais confiável no Flet é registrar no route_change
+    def _on_route(e):
+        if page.route == "/bancos":
+            carregar_listas()
+
+    # Registra sem sobrescrever handler existente
+    _prev_route_handler = getattr(page, "_bancos_route_handler", None)
+    page._bancos_route_handler = _on_route
+    page.on_route_change = _on_route
+
     return ft.View(
         route="/bancos",
         controls=[
