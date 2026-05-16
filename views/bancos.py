@@ -87,7 +87,7 @@ def bancos_view(page: ft.Page):
                     ft.Icon(ft.icons.ACCOUNT_BALANCE, color="white", size=28),
                     ft.Column([
                         ft.Text(b['nome_banco'], color="white", weight="bold", size=15, expand=True),
-                        ft.Text(f"Banco{codigo}", color="white70", size=11),
+                        ft.Text(f"Banco{codigo}", color="white70", size=15), ## alterei de 11 para 15
                     ], expand=True, spacing=2),
                 ], spacing=10),
                 ft.Text(f"Ag: {b['agencia'] or '—'} | Cta: {b['numero_conta'] or '—'}", color="white", size=12),
