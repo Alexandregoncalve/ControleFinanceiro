@@ -12,25 +12,21 @@ def bancos_view(page: ft.Page):
     state = {"editing_banco_id": None, "editing_cartao_id": None, "editing_transf_id": None}
 
     # ── CAMPOS BANCO ───────────────────────────────────────────────────────
-    nome_banco_f    = ft.TextField(label="Nome do Banco", width=220)
-    codigo_banco_f  = ft.TextField(label="Código Banco", width=120, hint_text="Ex: 237")
-    agencia_f       = ft.TextField(label="Agência", width=130)
-    conta_f         = ft.TextField(label="Nº Conta", width=160)
-    saldo_inicial_f = ft.TextField(label="Saldo Inicial", width=160, on_blur=formatar_moeda_input)
-    data_inicial_f  = ft.TextField(
-        label="Data Inicial (DD/MM/AAAA)", width=180,
-        value=datetime.now().strftime("%d/%m/%Y")
-    )
+    nome_banco_f    = ft.TextField(label="Nome do Banco",             width=250)
+    codigo_banco_f  = ft.TextField(label="Cód. Banco",                width=130, hint_text="Ex: 237")
+    agencia_f       = ft.TextField(label="Agência",                   width=185)
+    conta_f         = ft.TextField(label="Nº Conta",                  width=185)
+    saldo_inicial_f = ft.TextField(label="Saldo Inicial",             width=185, on_blur=formatar_moeda_input)
+    data_inicial_f  = ft.TextField(label="Data Inicial (DD/MM/AAAA)", width=195,
+                                   value=datetime.now().strftime("%d/%m/%Y"))
     msg_banco = ft.Text("", size=13)
 
     # ── CAMPOS CARTÃO ──────────────────────────────────────────────────────
-    nome_cartao_f = ft.TextField(label="Nome do Cartão", width=200)
-    tipo_cartao_f = ft.Dropdown(
-        label="Tipo", width=150,
-        options=[ft.dropdown.Option("Crédito"), ft.dropdown.Option("Débito"), ft.dropdown.Option("Ambos")]
-    )
-    limite_f   = ft.TextField(label="Limite (ex: 5.000,00)", width=180, on_blur=formatar_moeda_input)
-    banco_dd   = ft.Dropdown(label="Banco vinculado", width=220, options=[])
+    nome_cartao_f = ft.TextField(label="Nome do Cartão",              width=240)
+    tipo_cartao_f = ft.Dropdown(label="Tipo", width=160,
+        options=[ft.dropdown.Option("Crédito"), ft.dropdown.Option("Débito"), ft.dropdown.Option("Ambos")])
+    limite_f   = ft.TextField(label="Limite (ex: 5.000,00)",          width=200, on_blur=formatar_moeda_input)
+    banco_dd   = ft.Dropdown(label="Banco vinculado",                 width=220, options=[])
     msg_cartao = ft.Text("", size=13)
 
     lista_bancos_col  = ft.Column([], spacing=12)
@@ -533,18 +529,6 @@ def bancos_view(page: ft.Page):
 
     # ── LAYOUT ─────────────────────────────────────────────────────────────
 
-    # Ajusta larguras dos campos para não sobrepor
-    nome_banco_f.width    = 250
-    codigo_banco_f.width  = 130
-    agencia_f.width       = 170
-    conta_f.width         = 210
-    saldo_inicial_f.width = 190
-    data_inicial_f.width  = 200
-    nome_cartao_f.width   = 240
-    tipo_cartao_f.width   = 160
-    limite_f.width        = 200
-    banco_dd.width        = 240
-
     # Formulário Banco — azul claro com borda azul
     form_banco = ft.Container(
         bgcolor="#E3F2FD",
@@ -556,12 +540,12 @@ def bancos_view(page: ft.Page):
                 ft.Text("Cadastrar / Editar Banco", size=15, weight="bold", color="#1565C0"),
             ], spacing=8),
             ft.Divider(color="#90CAF9", height=14),
-            ft.Row([nome_banco_f, codigo_banco_f], spacing=12),
-            ft.Row([agencia_f, conta_f], spacing=12),
-            ft.Row([saldo_inicial_f, data_inicial_f], spacing=12),
+            ft.Row([nome_banco_f, codigo_banco_f], wrap=True, spacing=12),
+            ft.Row([agencia_f, conta_f], wrap=True, spacing=12),
+            ft.Row([saldo_inicial_f, data_inicial_f], wrap=True, spacing=12),
             btn_salvar_banco,
             msg_banco,
-        ], spacing=14)
+        ], spacing=16)
     )
 
     # Formulário Cartão — laranja claro com borda laranja
@@ -575,11 +559,11 @@ def bancos_view(page: ft.Page):
                 ft.Text("Cadastrar / Editar Cartão", size=15, weight="bold", color="#E65100"),
             ], spacing=8),
             ft.Divider(color="#FFCC80", height=14),
-            ft.Row([nome_cartao_f, tipo_cartao_f], spacing=12),
-            ft.Row([limite_f, banco_dd], spacing=12),
+            ft.Row([nome_cartao_f, tipo_cartao_f], wrap=True, spacing=12),
+            ft.Row([limite_f, banco_dd], wrap=True, spacing=12),
             btn_salvar_cartao,
             msg_cartao,
-        ], spacing=14)
+        ], spacing=16)
     )
 
     # Coluna de bancos cadastrados — cabeçalho azul
