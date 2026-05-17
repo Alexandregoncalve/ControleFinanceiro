@@ -29,8 +29,8 @@ def bancos_view(page: ft.Page):
     banco_dd   = ft.Dropdown(label="Banco vinculado",                 width=220, options=[])
     msg_cartao = ft.Text("", size=13)
 
-    lista_bancos_col  = ft.Column([], spacing=12)
-    lista_cartoes_col = ft.Column([], spacing=12)
+    lista_bancos_col  = ft.Row([], wrap=True, spacing=16)
+    lista_cartoes_col = ft.Row([], wrap=True, spacing=16)
 
     # ── CAMPOS TRANSFERÊNCIA ───────────────────────────────────────────────
     transf_orig_dd  = ft.Dropdown(label="Banco Origem",  width=220, options=[])
@@ -251,7 +251,7 @@ def bancos_view(page: ft.Page):
                           AND data=%s AND valor=%s AND descricao LIKE %s
                     """, (uid, t['banco_dest'], t['data'], t['valor'], '%Transf.%'))
                 cur.execute("DELETE FROM transferencias WHERE id=%s AND usuario_id=%s", (tid, uid))
-            page.go("/bancos")
+            carregar_listas()
         except Exception as ex:
             print(f"[bancos] excluir_transferencia erro: {ex}")
 
@@ -285,16 +285,21 @@ def bancos_view(page: ft.Page):
             saldos_map = get_saldos_map()
             banco_map  = {int(b['id']): b['nome_banco'] for b in bancos}
 
+            # Atualiza cards diretamente nos controls (sem Row intermediária)
             lista_bancos_col.controls.clear()
-            lista_bancos_col.controls.append(ft.Row(
-                [card_banco(b, CORES_BANCO[i % len(CORES_BANCO)], saldos_map) for i, b in enumerate(bancos)]
-                if bancos else [ft.Text("Nenhum banco cadastrado.")],
-                wrap=True, spacing=16))
+            if bancos:
+                for i, b in enumerate(bancos):
+                    lista_bancos_col.controls.append(
+                        card_banco(b, CORES_BANCO[i % len(CORES_BANCO)], saldos_map))
+            else:
+                lista_bancos_col.controls.append(ft.Text("Nenhum banco cadastrado."))
 
             lista_cartoes_col.controls.clear()
-            lista_cartoes_col.controls.append(ft.Row(
-                [card_cartao(c, banco_map) for c in cartoes] if cartoes else [ft.Text("Nenhum cartão cadastrado.")],
-                wrap=True, spacing=16))
+            if cartoes:
+                for c in cartoes:
+                    lista_cartoes_col.controls.append(card_cartao(c, banco_map))
+            else:
+                lista_cartoes_col.controls.append(ft.Text("Nenhum cartão cadastrado."))
 
             carregar_banco_dds()
             carregar_transferencias()
@@ -334,7 +339,7 @@ def bancos_view(page: ft.Page):
             saldo_inicial_f.value = codigo_banco_f.value = ""
             data_inicial_f.value  = datetime.now().strftime("%d/%m/%Y")
             btn_salvar_banco.text = "SALVAR BANCO"
-            page.go("/bancos")
+            carregar_listas()
         except Exception as ex:
             msg_banco.value = f"❌ Erro: {ex}"
             msg_banco.color = ft.colors.RED_700
@@ -355,7 +360,7 @@ def bancos_view(page: ft.Page):
         try:
             with db_session() as cur:
                 cur.execute("DELETE FROM bancos WHERE id=%s AND usuario_id=%s", (bid, uid))
-            page.go("/bancos")
+            carregar_listas()
         except Exception as ex:
             print(f"[bancos] excluir_banco erro: {ex}")
 
@@ -386,7 +391,7 @@ def bancos_view(page: ft.Page):
             nome_cartao_f.value = limite_f.value = ""
             tipo_cartao_f.value = banco_dd.value = None
             btn_salvar_cartao.text = "SALVAR CARTÃO"
-            page.go("/bancos")
+            carregar_listas()
         except Exception as ex:
             msg_cartao.value = f"❌ Erro: {ex}"
             msg_cartao.color = ft.colors.RED_700
@@ -405,7 +410,7 @@ def bancos_view(page: ft.Page):
         try:
             with db_session() as cur:
                 cur.execute("DELETE FROM cartoes WHERE id=%s AND usuario_id=%s", (cid, uid))
-            page.go("/bancos")
+            carregar_listas()
         except Exception as ex:
             print(f"[bancos] excluir_cartao erro: {ex}")
 
@@ -512,7 +517,7 @@ def bancos_view(page: ft.Page):
             transf_desc_f.value  = "Transferência entre bancos"
             transf_orig_dd.value = ""
             transf_dest_dd.value = ""
-            page.go("/bancos")
+            carregar_listas()
         except Exception as ex:
             import traceback; traceback.print_exc()
             msg_transf.value = f"❌ Erro: {ex}"
@@ -613,7 +618,7 @@ def bancos_view(page: ft.Page):
             ft.Text("BANCOS E CARTÕES", size=22, weight="bold", color="#1565C0", expand=True),
             ft.ElevatedButton(
                 "🔄 Atualizar", bgcolor="#E3F2FD", color="#1565C0",
-                on_click=lambda _: page.go("/bancos"),
+                on_click=lambda _: carregar_listas(),
                 style=ft.ButtonStyle(side=ft.BorderSide(1, "#90CAF9")),
             ),
         ], spacing=10),
@@ -658,7 +663,7 @@ def bancos_view(page: ft.Page):
         icon=ft.icons.REFRESH,
         icon_color="#1565C0",
         tooltip="Atualizar saldos",
-        on_click=lambda _: page.go("/bancos")
+        on_click=lambda _: carregar_listas()
     )
 
     return ft.View(
