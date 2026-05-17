@@ -40,7 +40,9 @@ def bancos_view(page: ft.Page):
     transf_data_f   = ft.TextField(label="Data", width=140, value=datetime.now().strftime("%d/%m/%Y"), read_only=True)
     msg_transf      = ft.Text("", size=13)
     lista_transf    = ft.Column([], spacing=6, scroll=ft.ScrollMode.AUTO, height=220)
-    ref_conteudo    = ft.Ref()   # referência ao Column principal para forçar re-render
+    ref_conteudo    = ft.Ref()
+    ref_col_bancos  = ft.Ref()
+    ref_col_cartoes = ft.Ref()
 
     date_picker_transf = ft.DatePicker(
         first_date=datetime(2020, 1, 1), last_date=datetime(2030, 12, 31),
@@ -303,6 +305,14 @@ def bancos_view(page: ft.Page):
 
             carregar_banco_dds()
             carregar_transferencias()
+            # Atualiza cada container diretamente pelo ref
+            try:
+                if ref_col_bancos.current:
+                    ref_col_bancos.current.update()
+                if ref_col_cartoes.current:
+                    ref_col_cartoes.current.update()
+            except Exception:
+                pass
             page.update()
         except Exception as ex:
             print(f"[bancos] carregar_listas erro: {ex}")
@@ -584,6 +594,7 @@ def bancos_view(page: ft.Page):
         border=ft.border.all(1.5, "#90CAF9"),
         border_radius=12,
         padding=ft.padding.all(14),
+        ref=ref_col_bancos,
         content=ft.Column([
             ft.Row([
                 ft.Icon(ft.icons.ACCOUNT_BALANCE, color="#1565C0", size=18),
@@ -601,6 +612,7 @@ def bancos_view(page: ft.Page):
         border=ft.border.all(1.5, "#FFCC80"),
         border_radius=12,
         padding=ft.padding.all(14),
+        ref=ref_col_cartoes,
         content=ft.Column([
             ft.Row([
                 ft.Icon(ft.icons.CREDIT_CARD, color="#E65100", size=18),
