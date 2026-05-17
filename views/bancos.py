@@ -40,6 +40,7 @@ def bancos_view(page: ft.Page):
     transf_data_f   = ft.TextField(label="Data", width=140, value=datetime.now().strftime("%d/%m/%Y"), read_only=True)
     msg_transf      = ft.Text("", size=13)
     lista_transf    = ft.Column([], spacing=6, scroll=ft.ScrollMode.AUTO, height=220)
+    ref_conteudo    = ft.Ref()   # referência ao Column principal para forçar re-render
 
     date_picker_transf = ft.DatePicker(
         first_date=datetime(2020, 1, 1), last_date=datetime(2030, 12, 31),
@@ -210,7 +211,11 @@ def bancos_view(page: ft.Page):
                             ], alignment="spaceBetween", vertical_alignment=ft.CrossAxisAlignment.CENTER)
                         )
                     )
-            page.update()
+            # Atualiza o conteudo inteiro para garantir re-render dos cards
+            if ref_conteudo.current:
+                ref_conteudo.current.update()
+            else:
+                page.update()
         except Exception as ex:
             print(f"[bancos] carregar_transferencias erro: {ex}")
 
@@ -266,7 +271,6 @@ def bancos_view(page: ft.Page):
         transf_data_f.value  = datetime.now().strftime("%d/%m/%Y")
         btn_transferir.text   = "💸 TRANSFERIR"
         btn_transferir.bgcolor = "#2E7D32"
-        carregar_listas()   # atualiza cards imediatamente após transferência
         page.update()
 
     def carregar_listas():
@@ -301,7 +305,6 @@ def bancos_view(page: ft.Page):
 
             carregar_banco_dds()
             carregar_transferencias()
-            # page.update() já é chamado em carregar_transferencias — evita duplo update
         except Exception as ex:
             print(f"[bancos] carregar_listas erro: {ex}")
 
@@ -654,7 +657,7 @@ def bancos_view(page: ft.Page):
                 lista_transf,
             ], spacing=10)
         ),
-    ], spacing=16, scroll=ft.ScrollMode.AUTO, expand=True)
+    ], spacing=16, scroll=ft.ScrollMode.AUTO, expand=True, ref=ref_conteudo)
 
     # Adiciona botão de atualizar manual na view
     btn_atualizar = ft.IconButton(
