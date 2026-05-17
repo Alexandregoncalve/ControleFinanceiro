@@ -73,25 +73,28 @@ def bancos_view(page: ft.Page):
         except:
             pass
 
-    # ── Calcula saldo real do banco (saldo_inicial + receitas - despesas) ──
-    def saldo_real(banco_id, saldo_inicial):
+    # ── Calcula saldo real de TODOS os bancos em uma única query ──────────
+    def get_saldos_map():
         try:
             with db_session() as cur:
                 cur.execute("""
-                    SELECT
+                    SELECT banco_id,
                         COALESCE(SUM(CASE WHEN tipo='Receita' THEN valor ELSE 0 END), 0) AS total_rec,
                         COALESCE(SUM(CASE WHEN tipo='Despesa' THEN valor ELSE 0 END), 0) AS total_desp
                     FROM transacoes
-                    WHERE usuario_id=%s AND banco_id=%s
-                """, (uid, banco_id))
-                row = cur.fetchone()
-            return float(saldo_inicial or 0) + float(row['total_rec']) - float(row['total_desp'])
+                    WHERE usuario_id=%s AND banco_id IS NOT NULL
+                    GROUP BY banco_id
+                """, (uid,))
+                rows = cur.fetchall()
+            return {int(r['banco_id']): (float(r['total_rec']), float(r['total_desp'])) for r in rows}
         except:
-            return float(saldo_inicial or 0)
+            return {}
 
-    def card_banco(b, cor):
+    def card_banco(b, cor, saldos_map=None):
+        saldos_map = saldos_map or {}
         codigo  = f" ({b['codigo_banco']})" if b['codigo_banco'] else ""
-        s_real  = saldo_real(b['id'], b['saldo_inicial'])
+        rec, desp = saldos_map.get(int(b['id']), (0.0, 0.0))
+        s_real  = float(b['saldo_inicial'] or 0) + rec - desp
         s_inic  = float(b['saldo_inicial'] or 0)
         diff    = s_real - s_inic
         diff_cor = ft.colors.GREEN_200 if diff >= 0 else ft.colors.RED_200
@@ -233,12 +236,10 @@ def bancos_view(page: ft.Page):
     def excluir_transferencia(tid):
         try:
             with db_session() as cur:
-                # Remove transações vinculadas (descrição contém o ID da transferência ou pela data/valor)
                 cur.execute("SELECT banco_orig, banco_dest, valor, data, descricao FROM transferencias WHERE id=%s AND usuario_id=%s",
                             (tid, uid))
                 t = cur.fetchone()
                 if t:
-                    # Remove transações de débito na origem e crédito no destino geradas por esta transferência
                     cur.execute("""
                         DELETE FROM transacoes
                         WHERE usuario_id=%s AND banco_id=%s AND tipo='Despesa'
@@ -250,7 +251,9 @@ def bancos_view(page: ft.Page):
                           AND data=%s AND valor=%s AND descricao LIKE %s
                     """, (uid, t['banco_dest'], t['data'], t['valor'], '%Transf.%'))
                 cur.execute("DELETE FROM transferencias WHERE id=%s AND usuario_id=%s", (tid, uid))
+            # Recarrega tudo e garante atualização visual imediata
             carregar_listas()
+            page.update()
         except Exception as ex:
             print(f"[bancos] excluir_transferencia erro: {ex}")
 
@@ -263,6 +266,7 @@ def bancos_view(page: ft.Page):
         transf_data_f.value  = datetime.now().strftime("%d/%m/%Y")
         btn_transferir.text   = "💸 TRANSFERIR"
         btn_transferir.bgcolor = "#2E7D32"
+        carregar_listas()   # atualiza cards imediatamente após transferência
         page.update()
 
     def carregar_listas():
@@ -280,11 +284,15 @@ def bancos_view(page: ft.Page):
                     (uid,))
                 cartoes = cur.fetchall()
 
-            banco_map = {int(b['id']): b['nome_banco'] for b in bancos}
+            # Uma única query para todos os saldos
+            saldos_map = get_saldos_map()
+            banco_map  = {int(b['id']): b['nome_banco'] for b in bancos}
+
             lista_bancos_col.controls.clear()
             lista_bancos_col.controls.append(ft.Row(
-                [card_banco(b, CORES_BANCO[i % len(CORES_BANCO)]) for i, b in enumerate(bancos)] if bancos else [
-                    ft.Text("Nenhum banco cadastrado.")], wrap=True, spacing=16))
+                [card_banco(b, CORES_BANCO[i % len(CORES_BANCO)], saldos_map) for i, b in enumerate(bancos)]
+                if bancos else [ft.Text("Nenhum banco cadastrado.")],
+                wrap=True, spacing=16))
 
             lista_cartoes_col.controls.clear()
             lista_cartoes_col.controls.append(ft.Row(
@@ -293,7 +301,7 @@ def bancos_view(page: ft.Page):
 
             carregar_banco_dds()
             carregar_transferencias()
-            page.update()
+            # page.update() já é chamado em carregar_transferencias — evita duplo update
         except Exception as ex:
             print(f"[bancos] carregar_listas erro: {ex}")
 
