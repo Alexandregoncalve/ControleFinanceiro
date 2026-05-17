@@ -253,7 +253,7 @@ def bancos_view(page: ft.Page):
                           AND data=%s AND valor=%s AND descricao LIKE %s
                     """, (uid, t['banco_dest'], t['data'], t['valor'], '%Transf.%'))
                 cur.execute("DELETE FROM transferencias WHERE id=%s AND usuario_id=%s", (tid, uid))
-            page.go("/bancos")
+            page.reload_view()
         except Exception as ex:
             print(f"[bancos] excluir_transferencia erro: {ex}")
 
@@ -349,7 +349,7 @@ def bancos_view(page: ft.Page):
             saldo_inicial_f.value = codigo_banco_f.value = ""
             data_inicial_f.value  = datetime.now().strftime("%d/%m/%Y")
             btn_salvar_banco.text = "SALVAR BANCO"
-            page.go("/bancos")
+            page.reload_view()
         except Exception as ex:
             msg_banco.value = f"❌ Erro: {ex}"
             msg_banco.color = ft.colors.RED_700
@@ -370,7 +370,7 @@ def bancos_view(page: ft.Page):
         try:
             with db_session() as cur:
                 cur.execute("DELETE FROM bancos WHERE id=%s AND usuario_id=%s", (bid, uid))
-            page.go("/bancos")
+            page.reload_view()
         except Exception as ex:
             print(f"[bancos] excluir_banco erro: {ex}")
 
@@ -401,7 +401,7 @@ def bancos_view(page: ft.Page):
             nome_cartao_f.value = limite_f.value = ""
             tipo_cartao_f.value = banco_dd.value = None
             btn_salvar_cartao.text = "SALVAR CARTÃO"
-            page.go("/bancos")
+            page.reload_view()
         except Exception as ex:
             msg_cartao.value = f"❌ Erro: {ex}"
             msg_cartao.color = ft.colors.RED_700
@@ -420,7 +420,7 @@ def bancos_view(page: ft.Page):
         try:
             with db_session() as cur:
                 cur.execute("DELETE FROM cartoes WHERE id=%s AND usuario_id=%s", (cid, uid))
-            page.go("/bancos")
+            page.reload_view()
         except Exception as ex:
             print(f"[bancos] excluir_cartao erro: {ex}")
 
@@ -520,7 +520,7 @@ def bancos_view(page: ft.Page):
                     msg_transf.color = ft.colors.ORANGE_700
 
             page.session.set("msg_bancos", f"✅ Transferência de {fmt(valor)}: {nome_orig} → {nome_dest}")
-            page.go("/bancos")
+            page.reload_view()
         except Exception as ex:
             import traceback; traceback.print_exc()
             msg_transf.value = f"❌ Erro: {ex}"
