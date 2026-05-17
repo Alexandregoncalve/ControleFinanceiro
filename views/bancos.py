@@ -12,36 +12,35 @@ def bancos_view(page: ft.Page):
     state = {"editing_banco_id": None, "editing_cartao_id": None, "editing_transf_id": None}
 
     # ── CAMPOS BANCO ───────────────────────────────────────────────────────
-    nome_banco_f = ft.TextField(label="Nome do Banco", width=250)
-    codigo_banco_f = ft.TextField(label="Cód. Banco", width=130, hint_text="Ex: 237")
-    agencia_f = ft.TextField(label="Agência", width=185)
-    conta_f = ft.TextField(label="Nº Conta", width=185)
-    saldo_inicial_f = ft.TextField(label="Saldo Inicial", width=185, on_blur=formatar_moeda_input)
-    data_inicial_f = ft.TextField(label="Data Inicial (DD/MM/AAAA)", width=195,
-                                  value=datetime.now().strftime("%d/%m/%Y"))
+    nome_banco_f    = ft.TextField(label="Nome do Banco",             width=250)
+    codigo_banco_f  = ft.TextField(label="Cód. Banco",                width=130, hint_text="Ex: 237")
+    agencia_f       = ft.TextField(label="Agência",                   width=185)
+    conta_f         = ft.TextField(label="Nº Conta",                  width=185)
+    saldo_inicial_f = ft.TextField(label="Saldo Inicial",             width=185, on_blur=formatar_moeda_input)
+    data_inicial_f  = ft.TextField(label="Data Inicial (DD/MM/AAAA)", width=195,
+                                   value=datetime.now().strftime("%d/%m/%Y"))
     msg_banco = ft.Text("", size=13)
 
     # ── CAMPOS CARTÃO ──────────────────────────────────────────────────────
-    nome_cartao_f = ft.TextField(label="Nome do Cartão", width=240)
+    nome_cartao_f = ft.TextField(label="Nome do Cartão",              width=240)
     tipo_cartao_f = ft.Dropdown(label="Tipo", width=160,
-                                options=[ft.dropdown.Option("Crédito"), ft.dropdown.Option("Débito"),
-                                         ft.dropdown.Option("Ambos")])
-    limite_f = ft.TextField(label="Limite (ex: 5.000,00)", width=200, on_blur=formatar_moeda_input)
-    banco_dd = ft.Dropdown(label="Banco vinculado", width=220, options=[])
+        options=[ft.dropdown.Option("Crédito"), ft.dropdown.Option("Débito"), ft.dropdown.Option("Ambos")])
+    limite_f   = ft.TextField(label="Limite (ex: 5.000,00)",          width=200, on_blur=formatar_moeda_input)
+    banco_dd   = ft.Dropdown(label="Banco vinculado",                 width=220, options=[])
     msg_cartao = ft.Text("", size=13)
 
-    lista_bancos_col = ft.Column([], spacing=12)
+    lista_bancos_col  = ft.Column([], spacing=12)
     lista_cartoes_col = ft.Column([], spacing=12)
 
     # ── CAMPOS TRANSFERÊNCIA ───────────────────────────────────────────────
-    transf_orig_dd = ft.Dropdown(label="Banco Origem", width=220, options=[])
-    transf_dest_dd = ft.Dropdown(label="Banco Destino", width=220, options=[])
-    transf_valor_f = ft.TextField(label="Valor", width=160, on_blur=formatar_moeda_input)
-    transf_desc_f = ft.TextField(label="Descrição", width=280, value="Transferência entre bancos")
-    transf_data_f = ft.TextField(label="Data", width=140, value=datetime.now().strftime("%d/%m/%Y"), read_only=True)
-    msg_transf = ft.Text("", size=13)
-    lista_transf = ft.Column([], spacing=6, scroll=ft.ScrollMode.AUTO, height=220)
-    ref_conteudo = ft.Ref()  # referência ao Column principal para forçar re-render
+    transf_orig_dd  = ft.Dropdown(label="Banco Origem",  width=220, options=[])
+    transf_dest_dd  = ft.Dropdown(label="Banco Destino", width=220, options=[])
+    transf_valor_f  = ft.TextField(label="Valor", width=160, on_blur=formatar_moeda_input)
+    transf_desc_f   = ft.TextField(label="Descrição", width=280, value="Transferência entre bancos")
+    transf_data_f   = ft.TextField(label="Data", width=140, value=datetime.now().strftime("%d/%m/%Y"), read_only=True)
+    msg_transf      = ft.Text("", size=13)
+    lista_transf    = ft.Column([], spacing=6, scroll=ft.ScrollMode.AUTO, height=220)
+    ref_conteudo    = ft.Ref()   # referência ao Column principal para forçar re-render
 
     date_picker_transf = ft.DatePicker(
         first_date=datetime(2020, 1, 1), last_date=datetime(2030, 12, 31),
@@ -68,7 +67,7 @@ def bancos_view(page: ft.Page):
                 cur.execute("SELECT id, nome_banco FROM bancos WHERE usuario_id=%s ORDER BY nome_banco", (uid,))
                 bancos = cur.fetchall()
             opcoes = [ft.dropdown.Option(str(b['id']), b['nome_banco']) for b in bancos]
-            banco_dd.options = opcoes
+            banco_dd.options       = opcoes
             transf_orig_dd.options = [ft.dropdown.Option("", "— Selecione —")] + opcoes
             transf_dest_dd.options = [ft.dropdown.Option("", "— Selecione —")] + opcoes
             page.update()
@@ -94,11 +93,11 @@ def bancos_view(page: ft.Page):
 
     def card_banco(b, cor, saldos_map=None):
         saldos_map = saldos_map or {}
-        codigo = f" ({b['codigo_banco']})" if b['codigo_banco'] else ""
+        codigo  = f" ({b['codigo_banco']})" if b['codigo_banco'] else ""
         rec, desp = saldos_map.get(int(b['id']), (0.0, 0.0))
-        s_real = float(b['saldo_inicial'] or 0) + rec - desp
-        s_inic = float(b['saldo_inicial'] or 0)
-        diff = s_real - s_inic
+        s_real  = float(b['saldo_inicial'] or 0) + rec - desp
+        s_inic  = float(b['saldo_inicial'] or 0)
+        diff    = s_real - s_inic
         diff_cor = ft.colors.GREEN_200 if diff >= 0 else ft.colors.RED_200
         diff_str = f"{'▲' if diff >= 0 else '▼'} {fmt(abs(diff))}"
 
@@ -128,7 +127,7 @@ def bancos_view(page: ft.Page):
                     ], horizontal_alignment=ft.CrossAxisAlignment.END)
                 ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                 ft.Row([
-                    ft.TextButton("✏️ Editar", style=ft.ButtonStyle(color="white"),
+                    ft.TextButton("✏️ Editar",  style=ft.ButtonStyle(color="white"),
                                   on_click=lambda _, b=b: preparar_edicao_banco(b)),
                     ft.TextButton("🗑️ Excluir", style=ft.ButtonStyle(color=ft.colors.RED_200),
                                   on_click=lambda _, bid=b['id']: excluir_banco(bid)),
@@ -137,7 +136,7 @@ def bancos_view(page: ft.Page):
         )
 
     def card_cartao(c, banco_map):
-        tipo_cor = {"Crédito": "#E65100", "Débito": "#2E7D32", "Ambos": "#6A1B9A"}.get(c['tipo'], "#37474F")
+        tipo_cor   = {"Crédito": "#E65100", "Débito": "#2E7D32", "Ambos": "#6A1B9A"}.get(c['tipo'], "#37474F")
         banco_nome = banco_map.get(int(c['banco_id']) if c['banco_id'] else 0, "—")
         return ft.Container(
             width=280, border_radius=14, bgcolor=tipo_cor, padding=ft.padding.all(18),
@@ -147,9 +146,9 @@ def bancos_view(page: ft.Page):
                 ft.Text(c['tipo'], color="white", size=11),
                 ft.Divider(color=ft.colors.with_opacity(0.3, "white"), height=14),
                 ft.Row([
-                    ft.Column([ft.Text("Limite", color="white70", size=11),
+                    ft.Column([ft.Text("Limite",  color="white70", size=11),
                                ft.Text(fmt(c['limite'] or 0), color="white", size=16, weight="bold")]),
-                    ft.Column([ft.Text("Banco", color="white70", size=11),
+                    ft.Column([ft.Text("Banco",   color="white70", size=11),
                                ft.Text(banco_nome, color="white", size=13)])
                 ], spacing=30),
                 ft.Row([
@@ -212,28 +211,23 @@ def bancos_view(page: ft.Page):
                             ], alignment="spaceBetween", vertical_alignment=ft.CrossAxisAlignment.CENTER)
                         )
                     )
-
-            # ── CORREÇÃO CIRÚRGICA AQUI ──
-            # Força o Flet a reconstruir a árvore visual inteira da página, garantindo que os novos dados dos cards apareçam na hora
-            page.update()
-
         except Exception as ex:
             print(f"[bancos] carregar_transferencias erro: {ex}")
 
     def preparar_edicao_transf(r):
         state["editing_transf_id"] = r['id']
+        # Precisamos do banco_orig e banco_dest — buscar do banco
         try:
             with db_session() as cur:
-                cur.execute(
-                    "SELECT banco_orig, banco_dest, valor, descricao, data FROM transferencias WHERE id=%s AND usuario_id=%s",
-                    (r['id'], uid))
+                cur.execute("SELECT banco_orig, banco_dest, valor, descricao, data FROM transferencias WHERE id=%s AND usuario_id=%s",
+                            (r['id'], uid))
                 t = cur.fetchone()
             transf_orig_dd.value = str(t['banco_orig'])
             transf_dest_dd.value = str(t['banco_dest'])
             transf_valor_f.value = f"{float(t['valor']):_.2f}".replace(".", ",").replace("_", ".")
-            transf_desc_f.value = t['descricao'] or "Transferência entre bancos"
-            transf_data_f.value = t['data']
-            btn_transferir.text = "💾 SALVAR EDIÇÃO"
+            transf_desc_f.value  = t['descricao'] or "Transferência entre bancos"
+            transf_data_f.value  = t['data']
+            btn_transferir.text  = "💾 SALVAR EDIÇÃO"
             btn_transferir.bgcolor = "#1565C0"
         except Exception as ex:
             print(f"[bancos] preparar_edicao_transf erro: {ex}")
@@ -242,9 +236,8 @@ def bancos_view(page: ft.Page):
     def excluir_transferencia(tid):
         try:
             with db_session() as cur:
-                cur.execute(
-                    "SELECT banco_orig, banco_dest, valor, data, descricao FROM transferencias WHERE id=%s AND usuario_id=%s",
-                    (tid, uid))
+                cur.execute("SELECT banco_orig, banco_dest, valor, data, descricao FROM transferencias WHERE id=%s AND usuario_id=%s",
+                            (tid, uid))
                 t = cur.fetchone()
                 if t:
                     cur.execute("""
@@ -267,9 +260,9 @@ def bancos_view(page: ft.Page):
         transf_orig_dd.value = ""
         transf_dest_dd.value = ""
         transf_valor_f.value = ""
-        transf_desc_f.value = "Transferência entre bancos"
-        transf_data_f.value = datetime.now().strftime("%d/%m/%Y")
-        btn_transferir.text = "💸 TRANSFERIR"
+        transf_desc_f.value  = "Transferência entre bancos"
+        transf_data_f.value  = datetime.now().strftime("%d/%m/%Y")
+        btn_transferir.text   = "💸 TRANSFERIR"
         btn_transferir.bgcolor = "#2E7D32"
         page.update()
 
@@ -288,8 +281,9 @@ def bancos_view(page: ft.Page):
                     (uid,))
                 cartoes = cur.fetchall()
 
+            # Uma única query para todos os saldos
             saldos_map = get_saldos_map()
-            banco_map = {int(b['id']): b['nome_banco'] for b in bancos}
+            banco_map  = {int(b['id']): b['nome_banco'] for b in bancos}
 
             lista_bancos_col.controls.clear()
             lista_bancos_col.controls.append(ft.Row(
@@ -304,16 +298,17 @@ def bancos_view(page: ft.Page):
 
             carregar_banco_dds()
             carregar_transferencias()
+            page.update()
         except Exception as ex:
             print(f"[bancos] carregar_listas erro: {ex}")
 
     # ── BANCO CRUD ─────────────────────────────────────────────────────────
     def salvar_banco(e):
-        nome = nome_banco_f.value.strip()
-        codigo = codigo_banco_f.value.strip()
-        ag = agencia_f.value.strip()
-        cta = conta_f.value.strip()
-        saldo = limpar_valor(saldo_inicial_f.value.strip() or "0")
+        nome     = nome_banco_f.value.strip()
+        codigo   = codigo_banco_f.value.strip()
+        ag       = agencia_f.value.strip()
+        cta      = conta_f.value.strip()
+        saldo    = limpar_valor(saldo_inicial_f.value.strip() or "0")
         data_str = data_inicial_f.value.strip()
 
         if not nome:
@@ -337,7 +332,7 @@ def bancos_view(page: ft.Page):
             msg_banco.color = ft.colors.GREEN_700
             nome_banco_f.value = agencia_f.value = conta_f.value = ""
             saldo_inicial_f.value = codigo_banco_f.value = ""
-            data_inicial_f.value = datetime.now().strftime("%d/%m/%Y")
+            data_inicial_f.value  = datetime.now().strftime("%d/%m/%Y")
             btn_salvar_banco.text = "SALVAR BANCO"
             carregar_listas()
         except Exception as ex:
@@ -347,12 +342,12 @@ def bancos_view(page: ft.Page):
 
     def preparar_edicao_banco(b):
         state["editing_banco_id"] = b['id']
-        nome_banco_f.value = b['nome_banco']
-        codigo_banco_f.value = b['codigo_banco'] or ""
-        agencia_f.value = b['agencia'] or ""
-        conta_f.value = b['numero_conta'] or ""
+        nome_banco_f.value    = b['nome_banco']
+        codigo_banco_f.value  = b['codigo_banco'] or ""
+        agencia_f.value       = b['agencia'] or ""
+        conta_f.value         = b['numero_conta'] or ""
         saldo_inicial_f.value = f"{b['saldo_inicial'] or 0:_.2f}".replace(".", ",").replace("_", ".")
-        data_inicial_f.value = b['data_criacao'] if b['data_criacao'] else datetime.now().strftime("%d/%m/%Y")
+        data_inicial_f.value  = b['data_criacao'] if b['data_criacao'] else datetime.now().strftime("%d/%m/%Y")
         btn_salvar_banco.text = "ATUALIZAR BANCO"
         page.update()
 
@@ -368,8 +363,8 @@ def bancos_view(page: ft.Page):
     def salvar_cartao(e):
         nome = nome_cartao_f.value.strip()
         tipo = tipo_cartao_f.value
-        lim = limpar_valor(limite_f.value.strip() or "0")
-        bid = banco_dd.value
+        lim  = limpar_valor(limite_f.value.strip() or "0")
+        bid  = banco_dd.value
         if not nome or not tipo or not bid:
             msg_cartao.value = "⚠️ Preencha todos os campos."
             msg_cartao.color = ft.colors.ORANGE_700
@@ -401,8 +396,8 @@ def bancos_view(page: ft.Page):
         state["editing_cartao_id"] = c['id']
         nome_cartao_f.value = c['nome_cartao']
         tipo_cartao_f.value = c['tipo']
-        limite_f.value = f"{c['limite'] or 0:_.2f}".replace(".", ",").replace("_", ".")
-        banco_dd.value = str(c['banco_id'])
+        limite_f.value      = f"{c['limite'] or 0:_.2f}".replace(".", ",").replace("_", ".")
+        banco_dd.value      = str(c['banco_id'])
         btn_salvar_cartao.text = "ATUALIZAR CARTÃO"
         page.update()
 
@@ -417,32 +412,24 @@ def bancos_view(page: ft.Page):
     # ── TRANSFERÊNCIA ──────────────────────────────────────────────────────
     def realizar_transferencia(e):
         msg_transf.value = ""
-        orig = transf_orig_dd.value
-        dest = transf_dest_dd.value
+        orig  = transf_orig_dd.value
+        dest  = transf_dest_dd.value
         valor = limpar_valor(transf_valor_f.value or "0")
-        data = transf_data_f.value.strip()
-        desc = transf_desc_f.value.strip() or "Transferência entre bancos"
+        data  = transf_data_f.value.strip()
+        desc  = transf_desc_f.value.strip() or "Transferência entre bancos"
 
         if not orig or orig == "":
-            msg_transf.value = "⚠️ Selecione o banco de origem.";
-            msg_transf.color = ft.colors.ORANGE_700
-            page.update();
-            return
+            msg_transf.value = "⚠️ Selecione o banco de origem."; msg_transf.color = ft.colors.ORANGE_700
+            page.update(); return
         if not dest or dest == "":
-            msg_transf.value = "⚠️ Selecione o banco de destino.";
-            msg_transf.color = ft.colors.ORANGE_700
-            page.update();
-            return
+            msg_transf.value = "⚠️ Selecione o banco de destino."; msg_transf.color = ft.colors.ORANGE_700
+            page.update(); return
         if orig == dest:
-            msg_transf.value = "⚠️ Origem e destino não podem ser iguais.";
-            msg_transf.color = ft.colors.ORANGE_700
-            page.update();
-            return
+            msg_transf.value = "⚠️ Origem e destino não podem ser iguais."; msg_transf.color = ft.colors.ORANGE_700
+            page.update(); return
         if valor <= 0:
-            msg_transf.value = "⚠️ Informe um valor válido.";
-            msg_transf.color = ft.colors.ORANGE_700
-            page.update();
-            return
+            msg_transf.value = "⚠️ Informe um valor válido."; msg_transf.color = ft.colors.ORANGE_700
+            page.update(); return
 
         try:
             with db_session() as cur:
@@ -452,49 +439,53 @@ def bancos_view(page: ft.Page):
                 nome_dest = cur.fetchone()['nome_banco']
 
                 if state["editing_transf_id"]:
-                    cur.execute(
-                        "SELECT banco_orig, banco_dest, valor, data FROM transferencias WHERE id=%s AND usuario_id=%s",
-                        (state["editing_transf_id"], uid))
+                    # ── EDITAR: remove transações antigas e recria ──────────
+                    cur.execute("SELECT banco_orig, banco_dest, valor, data FROM transferencias WHERE id=%s AND usuario_id=%s",
+                                (state["editing_transf_id"], uid))
                     old = cur.fetchone()
                     if old:
                         cur.execute("""DELETE FROM transacoes
                             WHERE usuario_id=%s AND banco_id=%s AND tipo='Despesa'
                               AND data=%s AND valor=%s AND descricao LIKE %s""",
-                                    (uid, old['banco_orig'], old['data'], old['valor'], '%Transf.%'))
+                            (uid, old['banco_orig'], old['data'], old['valor'], '%Transf.%'))
                         cur.execute("""DELETE FROM transacoes
                             WHERE usuario_id=%s AND banco_id=%s AND tipo='Receita'
                               AND data=%s AND valor=%s AND descricao LIKE %s""",
-                                    (uid, old['banco_dest'], old['data'], old['valor'], '%Transf.%'))
+                            (uid, old['banco_dest'], old['data'], old['valor'], '%Transf.%'))
                     cur.execute("""UPDATE transferencias
                         SET banco_orig=%s, banco_dest=%s, valor=%s, data=%s, descricao=%s
                         WHERE id=%s AND usuario_id=%s""",
-                                (int(orig), int(dest), valor, data, desc, state["editing_transf_id"], uid))
+                        (int(orig), int(dest), valor, data, desc, state["editing_transf_id"], uid))
                     transf_id = state["editing_transf_id"]
                     state["editing_transf_id"] = None
-                    btn_transferir.text = "💸 TRANSFERIR"
+                    btn_transferir.text   = "💸 TRANSFERIR"
                     btn_transferir.bgcolor = "#2E7D32"
                 else:
+                    # ── NOVA transferência ──────────────────────────────────
                     cur.execute("""
                         INSERT INTO transferencias (usuario_id, data, valor, banco_orig, banco_dest, descricao)
                         VALUES (%s,%s,%s,%s,%s,%s)
                     """, (uid, data, valor, int(orig), int(dest), desc))
                     transf_id = cur.lastrowid
 
+                # ── Busca subconta de transferência (ou usa NULL) ──────────
                 cur.execute("""
                     SELECT s.id FROM subcontas s
                     JOIN categorias c ON s.categoria_id = c.id
                     WHERE s.usuario_id=%s AND UPPER(s.nome) LIKE '%%TRANSFER%%'
                     LIMIT 1
                 """, (uid,))
-                sub_row = cur.fetchone()
-                sub_id = sub_row['id'] if sub_row else None
+                sub_row   = cur.fetchone()
+                sub_id    = sub_row['id'] if sub_row else None
 
+                # ── Se não achou subconta, busca qualquer subconta do usuário ──
                 if not sub_id:
                     cur.execute("SELECT id FROM subcontas WHERE usuario_id=%s LIMIT 1", (uid,))
                     fallback = cur.fetchone()
                     sub_id = fallback['id'] if fallback else None
 
                 if sub_id:
+                    # Despesa na origem (saída de dinheiro)
                     cur.execute("""
                         INSERT INTO transacoes
                             (usuario_id, data, valor, subconta_id, tipo, descricao, banco_id)
@@ -502,6 +493,7 @@ def bancos_view(page: ft.Page):
                     """, (uid, data, valor, sub_id,
                           f"Transf. → {nome_dest} | {desc}", int(orig)))
 
+                    # Receita no destino (entrada de dinheiro)
                     cur.execute("""
                         INSERT INTO transacoes
                             (usuario_id, data, valor, subconta_id, tipo, descricao, banco_id)
@@ -517,22 +509,22 @@ def bancos_view(page: ft.Page):
                 msg_transf.color = ft.colors.GREEN_700
 
             transf_valor_f.value = ""
-            transf_desc_f.value = "Transferência entre bancos"
+            transf_desc_f.value  = "Transferência entre bancos"
             transf_orig_dd.value = ""
             transf_dest_dd.value = ""
+            # Recarrega dados e força page.update no final
             carregar_listas()
         except Exception as ex:
-            import traceback;
-            traceback.print_exc()
+            import traceback; traceback.print_exc()
             msg_transf.value = f"❌ Erro: {ex}"
             msg_transf.color = ft.colors.RED_700
             page.update()
 
     # ── BOTÕES PRINCIPAIS ──────────────────────────────────────────────────
-    btn_salvar_banco = ft.ElevatedButton("SALVAR BANCO", bgcolor="#1565C0", color="white", on_click=salvar_banco)
+    btn_salvar_banco  = ft.ElevatedButton("SALVAR BANCO",  bgcolor="#1565C0", color="white", on_click=salvar_banco)
     btn_salvar_cartao = ft.ElevatedButton("SALVAR CARTÃO", bgcolor="#E65100", color="white", on_click=salvar_cartao)
-    btn_transferir = ft.ElevatedButton("💸 TRANSFERIR", bgcolor="#2E7D32", color="white",
-                                       on_click=realizar_transferencia, height=45)
+    btn_transferir    = ft.ElevatedButton("💸 TRANSFERIR",  bgcolor="#2E7D32", color="white",
+                                          on_click=realizar_transferencia, height=45)
     btn_cancelar_transf = ft.TextButton(
         "✖ Cancelar edição",
         style=ft.ButtonStyle(color=ft.colors.RED_400),
@@ -542,6 +534,8 @@ def bancos_view(page: ft.Page):
     carregar_listas()
 
     # ── LAYOUT ─────────────────────────────────────────────────────────────
+
+    # Formulário Banco — azul claro com borda azul
     form_banco = ft.Container(
         bgcolor="#E3F2FD",
         border=ft.border.all(2, "#90CAF9"),
@@ -552,13 +546,16 @@ def bancos_view(page: ft.Page):
                 ft.Text("Cadastrar / Editar Banco", size=15, weight="bold", color="#1565C0"),
             ], spacing=8),
             ft.Divider(color="#90CAF9", height=14),
+            # Linha 1: nome + código + agência + conta
             ft.Row([nome_banco_f, codigo_banco_f, agencia_f, conta_f], wrap=True, spacing=12),
+            # Linha 2: saldo + data
             ft.Row([saldo_inicial_f, data_inicial_f], wrap=True, spacing=12),
             btn_salvar_banco,
             msg_banco,
         ], spacing=16)
     )
 
+    # Formulário Cartão — laranja claro com borda laranja
     form_cartao = ft.Container(
         bgcolor="#FFF3E0",
         border=ft.border.all(2, "#FFCC80"),
@@ -576,6 +573,7 @@ def bancos_view(page: ft.Page):
         ], spacing=16)
     )
 
+    # Coluna de bancos cadastrados — fundo azul claro
     col_bancos = ft.Container(
         expand=True,
         bgcolor="#E3F2FD",
@@ -592,6 +590,7 @@ def bancos_view(page: ft.Page):
         ], spacing=10)
     )
 
+    # Coluna de cartões cadastrados — fundo laranja claro
     col_cartoes = ft.Container(
         expand=True,
         bgcolor="#FFF3E0",
@@ -609,6 +608,7 @@ def bancos_view(page: ft.Page):
     )
 
     conteudo = ft.Column([
+        # ── Título ────────────────────────────────────────────────────────
         ft.Row([
             ft.Icon(ft.icons.ACCOUNT_BALANCE, color="#1565C0", size=30),
             ft.Text("BANCOS E CARTÕES", size=22, weight="bold", color="#1565C0", expand=True),
@@ -620,14 +620,17 @@ def bancos_view(page: ft.Page):
         ], spacing=10),
         ft.Divider(),
 
+        # ── LINHA 1: Formulários lado a lado ──────────────────────────────
         ft.Row([form_banco, form_cartao],
                spacing=16, vertical_alignment=ft.CrossAxisAlignment.START),
         ft.Divider(),
 
+        # ── LINHA 2: Cards lado a lado ────────────────────────────────────
         ft.Row([col_bancos, col_cartoes],
                spacing=16, vertical_alignment=ft.CrossAxisAlignment.START),
         ft.Divider(),
 
+        # ── LINHA 3: Transferência entre Bancos ───────────────────────────
         ft.Container(
             bgcolor="#E8F5E9", border_radius=10, padding=16,
             content=ft.Column([
@@ -651,6 +654,7 @@ def bancos_view(page: ft.Page):
         ),
     ], spacing=16, scroll=ft.ScrollMode.AUTO, expand=True, ref=ref_conteudo)
 
+    # Adiciona botão de atualizar manual na view
     btn_atualizar = ft.IconButton(
         icon=ft.icons.REFRESH,
         icon_color="#1565C0",
@@ -662,8 +666,7 @@ def bancos_view(page: ft.Page):
         route="/bancos",
         controls=[
             get_menu(page), ft.Divider(),
-            ft.Container(
-                padding=ft.padding.symmetric(horizontal=24, vertical=16),
-                expand=True, content=conteudo)
+            conteudo,
         ],
+        padding=ft.padding.symmetric(horizontal=24, vertical=16),
     )
