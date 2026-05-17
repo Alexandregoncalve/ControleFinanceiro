@@ -605,7 +605,12 @@ def bancos_view(page: ft.Page):
         # ── Título ────────────────────────────────────────────────────────
         ft.Row([
             ft.Icon(ft.icons.ACCOUNT_BALANCE, color="#1565C0", size=30),
-            ft.Text("BANCOS E CARTÕES", size=22, weight="bold", color="#1565C0")
+            ft.Text("BANCOS E CARTÕES", size=22, weight="bold", color="#1565C0", expand=True),
+            ft.ElevatedButton(
+                "🔄 Atualizar", bgcolor="#E3F2FD", color="#1565C0",
+                on_click=lambda _: carregar_listas(),
+                style=ft.ButtonStyle(side=ft.BorderSide(1, "#90CAF9")),
+            ),
         ], spacing=10),
         ft.Divider(),
 
@@ -643,21 +648,13 @@ def bancos_view(page: ft.Page):
         ),
     ], spacing=16, scroll=ft.ScrollMode.AUTO, expand=True)
 
-    # ── Recarrega ao entrar na view (garante dados atualizados) ──────────
-    def on_view_appear(e=None):
-        carregar_listas()
-
-    page.on_view_pop = lambda e: None  # evita conflito
-    # Usa on_resized como gatilho de "voltou para a view"
-    # A forma mais confiável no Flet é registrar no route_change
-    def _on_route(e):
-        if page.route == "/bancos":
-            carregar_listas()
-
-    # Registra sem sobrescrever handler existente
-    _prev_route_handler = getattr(page, "_bancos_route_handler", None)
-    page._bancos_route_handler = _on_route
-    page.on_route_change = _on_route
+    # Adiciona botão de atualizar manual na view
+    btn_atualizar = ft.IconButton(
+        icon=ft.icons.REFRESH,
+        icon_color="#1565C0",
+        tooltip="Atualizar saldos",
+        on_click=lambda _: carregar_listas()
+    )
 
     return ft.View(
         route="/bancos",
@@ -666,5 +663,5 @@ def bancos_view(page: ft.Page):
             ft.Container(
                 padding=ft.padding.symmetric(horizontal=24, vertical=16),
                 expand=True, content=conteudo)
-        ]
+        ],
     )
