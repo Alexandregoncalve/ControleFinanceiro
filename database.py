@@ -114,6 +114,7 @@ def init_db():
                 data_criacao  VARCHAR(10),
                 agencia       VARCHAR(20),
                 numero_conta  VARCHAR(30),
+                codigo_banco  VARCHAR(10),
                 FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
             )
         """)
@@ -169,7 +170,24 @@ def init_db():
                 parcela_atual     INTEGER DEFAULT 1,
                 total_parcelas    INTEGER DEFAULT 1,
                 categoria_real_id INTEGER DEFAULT NULL,
-                FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
+                banco_id          INTEGER,
+                FOREIGN KEY(usuario_id) REFERENCES usuarios(id),
+                FOREIGN KEY(banco_id)   REFERENCES bancos(id)
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS transferencias (
+                id         SERIAL PRIMARY KEY,
+                usuario_id INTEGER,
+                data       TEXT,
+                valor      REAL,
+                banco_orig INTEGER,
+                banco_dest INTEGER,
+                descricao  TEXT,
+                FOREIGN KEY(usuario_id) REFERENCES usuarios(id),
+                FOREIGN KEY(banco_orig) REFERENCES bancos(id),
+                FOREIGN KEY(banco_dest) REFERENCES bancos(id)
             )
         """)
 
@@ -184,6 +202,26 @@ def init_db():
                 FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
             )
         """)
+
+        # Migrações automáticas — roda sempre, adiciona colunas que possam faltar
+        _migrar_colunas(cursor)
+
+
+def _migrar_colunas(cursor):
+    """Adiciona colunas novas sem quebrar dados existentes."""
+    migracoes = [
+        ("transacoes", "banco_id",     "INTEGER REFERENCES bancos(id)"),
+        ("bancos",     "codigo_banco", "VARCHAR(10)"),
+    ]
+    for tabela, coluna, definicao in migracoes:
+        try:
+            cursor.execute(f"""
+                ALTER TABLE {tabela}
+                ADD COLUMN IF NOT EXISTS {coluna} {definicao}
+            """)
+            print(f"[migrate] {tabela}.{coluna} OK")
+        except Exception as ex:
+            print(f"[migrate] {tabela}.{coluna} ignorado: {ex}")
 
 
 def _criar_dados_iniciais(cursor, uid: int):
@@ -211,26 +249,33 @@ def _criar_dados_iniciais(cursor, uid: int):
     )
     id_tra = cursor.fetchone()["id"]
 
+    cursor.execute(
+        "INSERT INTO categorias (usuario_id,nome,tipo) VALUES (%s,%s,%s) RETURNING id",
+        (uid, "TRANSFERÊNCIAS", "Despesa")
+    )
+    id_transf = cursor.fetchone()["id"]
+
     subcontas = [
-        (uid, id_rec, "SALÁRIO / PRO-LABORE",  1),
-        (uid, id_rec, "ALUGUÉIS RECEBIDOS",    0),
-        (uid, id_rec, "OUTRAS RECEITAS",        0),
-        (uid, id_fix, "ALUGUEL",               1),
-        (uid, id_fix, "CONDOMINIO",            1),
-        (uid, id_fix, "ENERGIA ELÉTRICA",      1),
-        (uid, id_fix, "ÁGUA",                  1),
-        (uid, id_fix, "INTERNET",              1),
-        (uid, id_fix, "CELULAR",               1),
-        (uid, id_fix, "SEGUROS / ASSINATURAS", 1),
-        (uid, id_fix, "DAS / MEI",             1),
-        (uid, id_var, "MERCADO",               0),
-        (uid, id_var, "REFEIÇÕES / LAZER",     0),
-        (uid, id_var, "FARMÁCIA / SAÚDE",      0),
-        (uid, id_var, "ACADEMIA",              0),
-        (uid, id_var, "OUTRAS DESPESAS",       0),
-        (uid, id_tra, "COMBUSTÍVEL",           0),
-        (uid, id_tra, "MANUTENÇÃO VEÍCULO",    0),
-        (uid, id_tra, "UBER / TAXI",           0),
+        (uid, id_rec,    "SALÁRIO / PRO-LABORE",  1),
+        (uid, id_rec,    "ALUGUÉIS RECEBIDOS",    0),
+        (uid, id_rec,    "OUTRAS RECEITAS",        0),
+        (uid, id_fix,    "ALUGUEL",                1),
+        (uid, id_fix,    "CONDOMINIO",             1),
+        (uid, id_fix,    "ENERGIA ELÉTRICA",       1),
+        (uid, id_fix,    "ÁGUA",                   1),
+        (uid, id_fix,    "INTERNET",               1),
+        (uid, id_fix,    "CELULAR",                1),
+        (uid, id_fix,    "SEGUROS / ASSINATURAS",  1),
+        (uid, id_fix,    "DAS / MEI",              1),
+        (uid, id_var,    "MERCADO",                0),
+        (uid, id_var,    "REFEIÇÕES / LAZER",      0),
+        (uid, id_var,    "FARMÁCIA / SAÚDE",       0),
+        (uid, id_var,    "ACADEMIA",               0),
+        (uid, id_var,    "OUTRAS DESPESAS",        0),
+        (uid, id_tra,    "COMBUSTÍVEL",            0),
+        (uid, id_tra,    "MANUTENÇÃO VEÍCULO",     0),
+        (uid, id_tra,    "UBER / TAXI",            0),
+        (uid, id_transf, "TRANSFERÊNCIAS",         0),
     ]
     cursor.executemany(
         "INSERT INTO subcontas (usuario_id,categoria_id,nome,fixa) VALUES (%s,%s,%s,%s)",
