@@ -212,11 +212,11 @@ def bancos_view(page: ft.Page):
                             ], alignment="spaceBetween", vertical_alignment=ft.CrossAxisAlignment.CENTER)
                         )
                     )
-            # Atualiza o conteudo inteiro para garantir re-render dos cards
-            if ref_conteudo.current:
-                ref_conteudo.current.update()
-            else:
-                page.update()
+
+            # ── CORREÇÃO CIRÚRGICA AQUI ──
+            # Força o Flet a reconstruir a árvore visual inteira da página, garantindo que os novos dados dos cards apareçam na hora
+            page.update()
+
         except Exception as ex:
             print(f"[bancos] carregar_transferencias erro: {ex}")
 
@@ -258,9 +258,7 @@ def bancos_view(page: ft.Page):
                           AND data=%s AND valor=%s AND descricao LIKE %s
                     """, (uid, t['banco_dest'], t['data'], t['valor'], '%Transf.%'))
                 cur.execute("DELETE FROM transferencias WHERE id=%s AND usuario_id=%s", (tid, uid))
-            # Recarrega tudo e garante atualização visual imediata
             carregar_listas()
-            page.update()
         except Exception as ex:
             print(f"[bancos] excluir_transferencia erro: {ex}")
 
@@ -290,7 +288,6 @@ def bancos_view(page: ft.Page):
                     (uid,))
                 cartoes = cur.fetchall()
 
-            # Uma única query para todos os saldos
             saldos_map = get_saldos_map()
             banco_map = {int(b['id']): b['nome_banco'] for b in bancos}
 
@@ -455,7 +452,6 @@ def bancos_view(page: ft.Page):
                 nome_dest = cur.fetchone()['nome_banco']
 
                 if state["editing_transf_id"]:
-                    # ── EDITAR: remove transações antigas e recria ──────────
                     cur.execute(
                         "SELECT banco_orig, banco_dest, valor, data FROM transferencias WHERE id=%s AND usuario_id=%s",
                         (state["editing_transf_id"], uid))
@@ -478,14 +474,12 @@ def bancos_view(page: ft.Page):
                     btn_transferir.text = "💸 TRANSFERIR"
                     btn_transferir.bgcolor = "#2E7D32"
                 else:
-                    # ── NOVA transferência ──────────────────────────────────
                     cur.execute("""
                         INSERT INTO transferencias (usuario_id, data, valor, banco_orig, banco_dest, descricao)
                         VALUES (%s,%s,%s,%s,%s,%s)
                     """, (uid, data, valor, int(orig), int(dest), desc))
                     transf_id = cur.lastrowid
 
-                # ── Busca subconta de transferência (ou usa NULL) ──────────
                 cur.execute("""
                     SELECT s.id FROM subcontas s
                     JOIN categorias c ON s.categoria_id = c.id
@@ -495,14 +489,12 @@ def bancos_view(page: ft.Page):
                 sub_row = cur.fetchone()
                 sub_id = sub_row['id'] if sub_row else None
 
-                # ── Se não achou subconta, busca qualquer subconta do usuário ──
                 if not sub_id:
                     cur.execute("SELECT id FROM subcontas WHERE usuario_id=%s LIMIT 1", (uid,))
                     fallback = cur.fetchone()
                     sub_id = fallback['id'] if fallback else None
 
                 if sub_id:
-                    # Despesa na origem (saída de dinheiro)
                     cur.execute("""
                         INSERT INTO transacoes
                             (usuario_id, data, valor, subconta_id, tipo, descricao, banco_id)
@@ -510,7 +502,6 @@ def bancos_view(page: ft.Page):
                     """, (uid, data, valor, sub_id,
                           f"Transf. → {nome_dest} | {desc}", int(orig)))
 
-                    # Receita no destino (entrada de dinheiro)
                     cur.execute("""
                         INSERT INTO transacoes
                             (usuario_id, data, valor, subconta_id, tipo, descricao, banco_id)
@@ -529,11 +520,7 @@ def bancos_view(page: ft.Page):
             transf_desc_f.value = "Transferência entre bancos"
             transf_orig_dd.value = ""
             transf_dest_dd.value = ""
-
-            # Recarrega as listas internas e força a renderização imediata do app
             carregar_listas()
-            page.update()
-
         except Exception as ex:
             import traceback;
             traceback.print_exc()
@@ -555,8 +542,6 @@ def bancos_view(page: ft.Page):
     carregar_listas()
 
     # ── LAYOUT ─────────────────────────────────────────────────────────────
-
-    # Formulário Banco — azul claro com borda azul
     form_banco = ft.Container(
         bgcolor="#E3F2FD",
         border=ft.border.all(2, "#90CAF9"),
@@ -567,16 +552,13 @@ def bancos_view(page: ft.Page):
                 ft.Text("Cadastrar / Editar Banco", size=15, weight="bold", color="#1565C0"),
             ], spacing=8),
             ft.Divider(color="#90CAF9", height=14),
-            # Linha 1: nome + código + agência + conta
             ft.Row([nome_banco_f, codigo_banco_f, agencia_f, conta_f], wrap=True, spacing=12),
-            # Linha 2: saldo + data
             ft.Row([saldo_inicial_f, data_inicial_f], wrap=True, spacing=12),
             btn_salvar_banco,
             msg_banco,
         ], spacing=16)
     )
 
-    # Formulário Cartão — laranja claro com borda laranja
     form_cartao = ft.Container(
         bgcolor="#FFF3E0",
         border=ft.border.all(2, "#FFCC80"),
@@ -594,7 +576,6 @@ def bancos_view(page: ft.Page):
         ], spacing=16)
     )
 
-    # Coluna de bancos cadastrados — fundo azul claro
     col_bancos = ft.Container(
         expand=True,
         bgcolor="#E3F2FD",
@@ -611,7 +592,6 @@ def bancos_view(page: ft.Page):
         ], spacing=10)
     )
 
-    # Coluna de cartões cadastrados — fundo laranja claro
     col_cartoes = ft.Container(
         expand=True,
         bgcolor="#FFF3E0",
@@ -629,7 +609,6 @@ def bancos_view(page: ft.Page):
     )
 
     conteudo = ft.Column([
-        # ── Título ────────────────────────────────────────────────────────
         ft.Row([
             ft.Icon(ft.icons.ACCOUNT_BALANCE, color="#1565C0", size=30),
             ft.Text("BANCOS E CARTÕES", size=22, weight="bold", color="#1565C0", expand=True),
@@ -641,17 +620,14 @@ def bancos_view(page: ft.Page):
         ], spacing=10),
         ft.Divider(),
 
-        # ── LINHA 1: Formulários lado a lado ──────────────────────────────
         ft.Row([form_banco, form_cartao],
                spacing=16, vertical_alignment=ft.CrossAxisAlignment.START),
         ft.Divider(),
 
-        # ── LINHA 2: Cards lado a lado ────────────────────────────────────
         ft.Row([col_bancos, col_cartoes],
                spacing=16, vertical_alignment=ft.CrossAxisAlignment.START),
         ft.Divider(),
 
-        # ── LINHA 3: Transferência entre Bancos ───────────────────────────
         ft.Container(
             bgcolor="#E8F5E9", border_radius=10, padding=16,
             content=ft.Column([
@@ -675,7 +651,6 @@ def bancos_view(page: ft.Page):
         ),
     ], spacing=16, scroll=ft.ScrollMode.AUTO, expand=True, ref=ref_conteudo)
 
-    # Adiciona botão de atualizar manual na view
     btn_atualizar = ft.IconButton(
         icon=ft.icons.REFRESH,
         icon_color="#1565C0",
