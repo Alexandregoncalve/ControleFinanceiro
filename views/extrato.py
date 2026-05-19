@@ -501,19 +501,35 @@ def extrato_view(page: ft.Page):
                         leftIndent=0, borderPadding=4)
                 ))
 
+                # Larguras: Data | Conta | Valor | Tipo | Descricao
+                # Total útil A4 com margens 1.5cm cada lado = 18cm
+                col_widths = [2.3*cm, 4.5*cm, 2.8*cm, 2.0*cm, 6.4*cm]
+
+                cell_style = ParagraphStyle("cell", fontSize=8, leading=10, wordWrap="CJK")
+
                 cabecalho = ["Data", "Conta", "Valor", "Tipo", "Descricao"]
                 dados_pdf = [cabecalho]
                 for t in g["trans"]:
+                    # Descrição como Paragraph para quebrar linha automaticamente
+                    desc_p = Paragraph(safe(t["descricao"]), cell_style)
                     dados_pdf.append([
-                        safe(t["data"]), safe(t["nome"]), fmt(t["valor"]),
-                        safe(t["tipo"]), safe(t["descricao"])
+                        safe(t["data"]),
+                        Paragraph(safe(t["nome"]), cell_style),
+                        fmt(t["valor"]),
+                        safe(t["tipo"]),
+                        desc_p,
                     ])
 
                 n_dados = len(dados_pdf)
-                dados_pdf.append(["", f"Subtotal {label_safe}",
-                                   f"R: {fmt(rec)} / D: {fmt(desp)}", fmt(saldo_mes), ""])
+                # Subtotal em duas linhas para não sobrepor
+                dados_pdf.append([
+                    "", f"Subtotal {label_safe}",
+                    Paragraph(f"Rec: {fmt(rec)}<br/>Des: {fmt(desp)}", cell_style),
+                    Paragraph(f"Saldo:<br/>{fmt(saldo_mes)}", cell_style),
+                    ""
+                ])
 
-                tabela_pdf = Table(dados_pdf, colWidths=[2.5*cm, 5*cm, 3*cm, 2.5*cm, 5*cm])
+                tabela_pdf = Table(dados_pdf, colWidths=col_widths, repeatRows=1)
                 cor_saldo_pdf = colors.HexColor("#1B5E20") if saldo_mes >= 0 else colors.HexColor("#B71C1C")
                 tabela_pdf.setStyle(TableStyle([
                     ("BACKGROUND",    (0, 0), (-1, 0),  colors.HexColor("#1565C0")),
@@ -527,11 +543,12 @@ def extrato_view(page: ft.Page):
                     ("BACKGROUND",    (0, n_dados), (-1, -1), colors.HexColor("#E3F2FD")),
                     ("FONTNAME",      (0, n_dados), (-1, -1), "Helvetica-Bold"),
                     ("LINEABOVE",     (0, n_dados), (-1, n_dados), 1, colors.HexColor("#1565C0")),
-                    ("TEXTCOLOR",     (3, n_dados), (3, n_dados), cor_saldo_pdf),
-                    ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
+                    ("TEXTCOLOR",     (2, n_dados), (3, n_dados), cor_saldo_pdf),
+                    ("VALIGN",        (0, 0), (-1, -1), "TOP"),
                     ("TOPPADDING",    (0, 0), (-1, -1), 3),
                     ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
                     ("LEFTPADDING",   (0, 0), (-1, -1), 4),
+                    ("WORDWRAP",      (0, 0), (-1, -1), True),
                 ]))
                 elems.append(tabela_pdf)
 
