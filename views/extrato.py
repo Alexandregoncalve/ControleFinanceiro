@@ -586,7 +586,7 @@ def extrato_view(page: ft.Page):
 
             if base_url:
                 url_pdf = f"{base_url}/pdf/{nome_arq}"
-                page.launch_url(url_pdf, web_window_name="_blank")
+                page.launch_url(url_pdf, web_window_name="_self")
                 msg_pdf.value = f"✅ PDF gerado: {nome_arq}"
             else:
                 # Último recurso: salva localmente e mostra caminho
