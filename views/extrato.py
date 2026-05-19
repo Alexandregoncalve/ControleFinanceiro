@@ -31,17 +31,6 @@ def extrato_view(page: ft.Page):
     page.overlay.append(save_dialog)
 
     # ── OPÇÕES DOS FILTROS ─────────────────────────────────────────────────
-    def get_meses_opcoes():
-        opcoes = [ft.dropdown.Option("Todos")]
-        m, a = hoje.month, hoje.year
-        for _ in range(12):
-            opcoes.append(ft.dropdown.Option(f"{m:02d}/{a}"))
-            m -= 1
-            if m == 0:
-                m = 12
-                a -= 1
-        return opcoes
-
     def get_contas_opcoes():
         try:
             conn = get_connection()
@@ -56,7 +45,15 @@ def extrato_view(page: ft.Page):
         except Exception:
             return [ft.dropdown.Option("Todas")]
 
-    filtro_mes   = ft.Dropdown(label="Mês",   width=150, value="Todos", options=get_meses_opcoes())
+    # Data inicial = primeiro dia do mês atual, data final = hoje
+    filtro_data_ini = ft.TextField(
+        label="Data Inicial", width=140, hint_text="DD/MM/AAAA",
+        value=f"01/{hoje.month:02d}/{hoje.year}",
+    )
+    filtro_data_fim = ft.TextField(
+        label="Data Final", width=140, hint_text="DD/MM/AAAA",
+        value=f"{hoje.day:02d}/{hoje.month:02d}/{hoje.year}",
+    )
     filtro_tipo  = ft.Dropdown(label="Tipo",  width=130, value="Todos", options=[
         ft.dropdown.Option("Todos"),
         ft.dropdown.Option("Receita"),
@@ -233,12 +230,28 @@ def extrato_view(page: ft.Page):
             """
             params = [uid]
 
-            # Filtro de mês: PostgreSQL usa tipo DATE, então usa EXTRACT
-            if filtro_mes.value and filtro_mes.value != "Todos":
-                mm, aa = filtro_mes.value.split("/")  # "05/2026" → mm="05", aa="2026"
-                query += " AND EXTRACT(MONTH FROM t.data) = %s AND EXTRACT(YEAR FROM t.data) = %s"
-                params.append(int(mm))
-                params.append(int(aa))
+            # Filtro por data inicial e data final
+            def _str_to_date(s):
+                """Converte DD/MM/AAAA para objeto date."""
+                from datetime import date as ddate
+                s = (s or "").strip()
+                if not s:
+                    return None
+                try:
+                    partes = s.split("/")
+                    return ddate(int(partes[2]), int(partes[1]), int(partes[0]))
+                except Exception:
+                    return None
+
+            d_ini = _str_to_date(filtro_data_ini.value)
+            d_fim = _str_to_date(filtro_data_fim.value)
+
+            if d_ini:
+                query += " AND t.data >= %s"
+                params.append(d_ini)
+            if d_fim:
+                query += " AND t.data <= %s"
+                params.append(d_fim)
 
             if filtro_tipo.value and filtro_tipo.value != "Todos":
                 query += " AND t.tipo = %s"
@@ -325,14 +338,14 @@ def extrato_view(page: ft.Page):
             import traceback; traceback.print_exc()
             print(f"[extrato] carregar_tabela: {ex}")
 
-    filtro_mes.on_change   = lambda e: carregar_tabela()
     filtro_tipo.on_change  = lambda e: carregar_tabela()
     filtro_conta.on_change = lambda e: carregar_tabela()
 
     def limpar_filtros(e):
-        filtro_mes.value   = "Todos"
-        filtro_tipo.value  = "Todos"
-        filtro_conta.value = "Todas"
+        filtro_data_ini.value = f"01/{hoje.month:02d}/{hoje.year}"
+        filtro_data_fim.value = f"{hoje.day:02d}/{hoje.month:02d}/{hoje.year}"
+        filtro_tipo.value     = "Todos"
+        filtro_conta.value    = "Todas"
         carregar_tabela()
 
     # ── CRUD ───────────────────────────────────────────────────────────────
@@ -445,7 +458,8 @@ def extrato_view(page: ft.Page):
                 fontSize=10, textColor=colors.grey, spaceAfter=12)
 
             filtros_str = []
-            if filtro_mes.value   != "Todos":  filtros_str.append(f"Mes: {filtro_mes.value}")
+            if filtro_data_ini.value: filtros_str.append(f"De: {filtro_data_ini.value}")
+            if filtro_data_fim.value: filtros_str.append(f"Ate: {filtro_data_fim.value}")
             if filtro_tipo.value  != "Todos":  filtros_str.append(f"Tipo: {safe(filtro_tipo.value)}")
             if filtro_conta.value != "Todas":  filtros_str.append(f"Conta: {safe(filtro_conta.value)}")
             filtros_label = "  |  ".join(filtros_str) if filtros_str else "Todos os registros"
@@ -662,9 +676,16 @@ def extrato_view(page: ft.Page):
                         ft.Divider(),
                         # Filtros
                         ft.Row([
-                            filtro_mes, filtro_tipo, filtro_conta,
+                            filtro_data_ini,
+                            filtro_data_fim,
+                            filtro_tipo,
+                            filtro_conta,
                             ft.ElevatedButton(
-                                "LIMPAR FILTROS", icon=ft.icons.FILTER_ALT_OFF,
+                                "🔍 FILTRAR", icon=ft.icons.SEARCH,
+                                bgcolor=ft.colors.BLUE_700, color=ft.colors.WHITE,
+                                on_click=lambda e: carregar_tabela()),
+                            ft.ElevatedButton(
+                                "LIMPAR", icon=ft.icons.FILTER_ALT_OFF,
                                 bgcolor=ft.colors.GREY_300, color=ft.colors.BLACK,
                                 on_click=limpar_filtros),
                             ft.ElevatedButton(
