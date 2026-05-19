@@ -567,23 +567,31 @@ def extrato_view(page: ft.Page):
             with open(caminho_pdf, "wb") as fp:
                 fp.write(pdf_bytes)
 
-            # page.url retorna ws:// — converte para https://
-            host = page.url if hasattr(page, "url") and page.url else ""
-            if host:
-                from urllib.parse import urlparse
-                parsed = urlparse(host)
-                # ws -> http, wss -> https
-                scheme = "https" if parsed.scheme in ("wss", "https") else "http"
-                base_url = f"{scheme}://{parsed.netloc}"
+            # Pega domínio via variável de ambiente (Railway define RAILWAY_PUBLIC_DOMAIN)
+            # Fallback: tenta extrair do page.url convertendo ws->https
+            dominio = os.getenv("RAILWAY_PUBLIC_DOMAIN", "")
+            if dominio:
+                base_url = f"https://{dominio}"
             else:
-                base_url = ""
+                host = getattr(page, "url", "") or ""
+                if host:
+                    from urllib.parse import urlparse
+                    parsed  = urlparse(host)
+                    scheme  = "https" if parsed.scheme in ("wss", "https") else "http"
+                    base_url = f"{scheme}://{parsed.netloc}"
+                else:
+                    base_url = ""
 
-            url_pdf = f"{base_url}/pdf/{nome_arq}"
-            print(f"[extrato] page.url bruto: {host}")
-            print(f"[extrato] URL PDF gerada: {url_pdf}")
-            page.launch_url(url_pdf, web_window_name="_blank")
+            print(f"[extrato] RAILWAY_PUBLIC_DOMAIN={dominio} base_url={base_url}")
 
-            msg_pdf.value = f"✅ PDF gerado: {nome_arq}"
+            if base_url:
+                url_pdf = f"{base_url}/pdf/{nome_arq}"
+                page.launch_url(url_pdf, web_window_name="_blank")
+                msg_pdf.value = f"✅ PDF gerado: {nome_arq}"
+            else:
+                # Último recurso: salva localmente e mostra caminho
+                msg_pdf.value = f"✅ PDF salvo no servidor: {caminho_pdf}"
+
             msg_pdf.color = ft.colors.GREEN_700
             page.update()
 
