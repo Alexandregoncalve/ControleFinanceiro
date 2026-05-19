@@ -247,10 +247,10 @@ def extrato_view(page: ft.Page):
             d_fim = _str_to_date(filtro_data_fim.value)
 
             if d_ini:
-                query += " AND t.data::date >= %s"
+                query += " AND TO_DATE(t.data, 'DD/MM/YYYY') >= %s"
                 params.append(d_ini)
             if d_fim:
-                query += " AND t.data::date <= %s"
+                query += " AND TO_DATE(t.data, 'DD/MM/YYYY') <= %s"
                 params.append(d_fim)
 
             if filtro_tipo.value and filtro_tipo.value != "Todos":
