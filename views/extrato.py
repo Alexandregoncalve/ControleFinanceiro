@@ -49,14 +49,15 @@ def extrato_view(page: ft.Page):
     def mascara_data(e):
         """Aplica máscara DD/MM/AAAA automaticamente."""
         tf = e.control
-        v  = tf.value.replace("/", "").replace(" ", "")
-        v  = "".join(c for c in v if c.isdigit())[:8]
-        fmt_v = ""
-        for i, c in enumerate(v):
-            if i == 2 or i == 4:
-                fmt_v += "/"
-            fmt_v += c
-        tf.value = fmt_v
+        # Remove tudo que não é dígito
+        digits = "".join(c for c in (tf.value or "") if c.isdigit())[:8]
+        # Monta DD/MM/AAAA
+        result = digits
+        if len(digits) > 4:
+            result = digits[:2] + "/" + digits[2:4] + "/" + digits[4:]
+        elif len(digits) > 2:
+            result = digits[:2] + "/" + digits[2:]
+        tf.value = result
         tf.update()
 
     filtro_data_ini = ft.TextField(
