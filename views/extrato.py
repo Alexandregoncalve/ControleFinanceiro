@@ -586,13 +586,36 @@ def extrato_view(page: ft.Page):
 
             if base_url:
                 url_pdf = f"{base_url}/pdf/{nome_arq}"
-                page.launch_url(url_pdf, web_window_name="_self")
-                msg_pdf.value = f"✅ PDF gerado: {nome_arq}"
+                msg_pdf.value = "✅ PDF pronto! Clique no botão para baixar:"
+                msg_pdf.color  = ft.colors.GREEN_700
+                btn_pdf = ft.ElevatedButton(
+                    "⬇️ BAIXAR PDF",
+                    bgcolor=ft.colors.GREEN_700,
+                    color=ft.colors.WHITE,
+                    icon=ft.icons.PICTURE_AS_PDF,
+                    on_click=lambda _, u=url_pdf: page.launch_url(u, web_window_name="_blank"),
+                )
+                col_principal = None
+                for ctrl in page.views[-1].controls:
+                    if isinstance(ctrl, ft.Container):
+                        c = getattr(ctrl, "content", None)
+                        if isinstance(c, ft.Column):
+                            col_principal = c
+                            break
+                if col_principal:
+                    col_principal.controls = [
+                        c for c in col_principal.controls
+                        if not (isinstance(c, ft.ElevatedButton) and "BAIXAR PDF" in str(getattr(c, "text", "")))
+                    ]
+                    try:
+                        idx = col_principal.controls.index(msg_pdf)
+                        col_principal.controls.insert(idx + 1, btn_pdf)
+                    except ValueError:
+                        col_principal.controls.append(btn_pdf)
             else:
-                # Último recurso: salva localmente e mostra caminho
-                msg_pdf.value = f"✅ PDF salvo no servidor: {caminho_pdf}"
+                msg_pdf.value = f"✅ PDF salvo: {caminho_pdf}"
+                msg_pdf.color  = ft.colors.GREEN_700
 
-            msg_pdf.color = ft.colors.GREEN_700
             page.update()
 
         except Exception as ex:
