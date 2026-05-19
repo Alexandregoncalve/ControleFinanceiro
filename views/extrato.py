@@ -17,6 +17,18 @@ def extrato_view(page: ft.Page):
     state = {"editing_id": None, "trans": []}
     uid   = page.session.get("user_id")
     hoje  = datetime.now()
+    _pdf_buffer = {"bytes": None, "nome": None}
+
+    def on_save_dialog(e: ft.FilePickerResultEvent):
+        if e.path and _pdf_buffer["bytes"]:
+            with open(e.path, "wb") as f:
+                f.write(_pdf_buffer["bytes"])
+            msg_pdf.value = f"✅ PDF salvo em: {e.path}"
+            msg_pdf.color = ft.colors.GREEN_700
+            page.update()
+
+    save_dialog = ft.FilePicker(on_result=on_save_dialog)
+    page.overlay.append(save_dialog)
 
     # ── OPÇÕES DOS FILTROS ─────────────────────────────────────────────────
     def get_meses_opcoes():
@@ -546,13 +558,27 @@ def extrato_view(page: ft.Page):
             mes_label = (filtro_mes.value if filtro_mes.value != "Todos" else "completo").replace("/", "-")
             nome_arq  = f"extrato_{mes_label}_{datetime.now().strftime('%d%m%Y_%H%M%S')}.pdf"
 
-            # Abre o PDF como data URI na nova aba — funciona no Flet web sem eval_javascript
-            b64 = base64.b64encode(pdf_bytes).decode("utf-8")
-            data_uri = f"data:application/pdf;base64,{b64}"
-            page.launch_url(data_uri, web_window_name="_blank")
+            _pdf_buffer["bytes"] = pdf_bytes
+            _pdf_buffer["nome"]  = nome_arq
 
-            msg_pdf.value = f"✅ PDF gerado: {nome_arq}"
-            msg_pdf.color = ft.colors.GREEN_700
+            # Tenta download direto via FilePicker (Flet web)
+            try:
+                save_dialog.save_file(
+                    dialog_title="Salvar extrato PDF",
+                    file_name=nome_arq,
+                    allowed_extensions=["pdf"],
+                )
+                msg_pdf.value = f"✅ Escolha onde salvar: {nome_arq}"
+                msg_pdf.color = ft.colors.GREEN_700
+            except Exception:
+                # Fallback: data URI
+                b64 = base64.b64encode(pdf_bytes).decode("utf-8")
+                page.launch_url(
+                    f"data:application/pdf;base64,{b64}",
+                    web_window_name="_blank"
+                )
+                msg_pdf.value = f"✅ PDF aberto em nova aba: {nome_arq}"
+                msg_pdf.color = ft.colors.GREEN_700
             page.update()
 
         except Exception as ex:
