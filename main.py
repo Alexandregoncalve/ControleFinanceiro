@@ -35,10 +35,11 @@ ROTAS = {
 
 
 def main(page: ft.Page):
-    page.title = "FINANÇA SIMPLES - Versão Oficial"
+    page.title = "Finança Simples"
     page.window_width  = 1200
     page.window_height = 900
     page.theme_mode    = ft.ThemeMode.LIGHT
+    page.favicon       = "/icons/icon-32x32.png"
     page.locale_configuration = ft.LocaleConfiguration(
         supported_locales=[ft.Locale("pt", "BR")],
         current_locale=ft.Locale("pt", "BR"),
@@ -87,8 +88,7 @@ app = FastAPI()
 
 @app.get("/pdf/{nome_arquivo}")
 async def servir_pdf(nome_arquivo: str):
-    """Serve PDFs gerados pelo extrato."""
-    # Tenta em /tmp/pdfs/ primeiro, depois /tmp/
+    """Serve PDFs gerados pelo extrato — busca em /tmp/pdfs/ e /tmp/."""
     for pasta in [os.path.join(tempfile.gettempdir(), "pdfs"), tempfile.gettempdir()]:
         caminho = os.path.join(pasta, nome_arquivo)
         if os.path.exists(caminho):
