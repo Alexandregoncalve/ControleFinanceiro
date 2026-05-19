@@ -93,10 +93,27 @@ def extrato_view(page: ft.Page):
         except Exception:
             return [ft.dropdown.Option("Todas")]
 
-    f_ini  = ft.TextField(label="Data Inicial", width=150, hint_text="DD/MM/AAAA",
-                          value=f"01/{hoje.month:02d}/{hoje.year}")
-    f_fim  = ft.TextField(label="Data Final",   width=150, hint_text="DD/MM/AAAA",
-                          value=f"{hoje.day:02d}/{hoje.month:02d}/{hoje.year}")
+    def aplicar_mascara(e):
+        """Formata ao sair do campo: aceita 8 dígitos e monta DD/MM/AAAA."""
+        tf     = e.control
+        digits = "".join(c for c in (tf.value or "") if c.isdigit())[:8]
+        if len(digits) == 8:
+            tf.value = f"{digits[0:2]}/{digits[2:4]}/{digits[4:8]}"
+        elif len(digits) > 4:
+            tf.value = f"{digits[0:2]}/{digits[2:4]}/{digits[4:]}"
+        elif len(digits) > 2:
+            tf.value = f"{digits[0:2]}/{digits[2:]}"
+        else:
+            tf.value = digits
+        tf.update()
+        carregar_tabela()
+
+    f_ini  = ft.TextField(label="Data Inicial", width=150, hint_text="DDMMAAAA",
+                          value=f"01/{hoje.month:02d}/{hoje.year}",
+                          on_blur=aplicar_mascara, keyboard_type=ft.KeyboardType.NUMBER)
+    f_fim  = ft.TextField(label="Data Final",   width=150, hint_text="DDMMAAAA",
+                          value=f"{hoje.day:02d}/{hoje.month:02d}/{hoje.year}",
+                          on_blur=aplicar_mascara, keyboard_type=ft.KeyboardType.NUMBER)
     f_tipo = ft.Dropdown(label="Tipo", width=130, value="Todos", options=[
         ft.dropdown.Option("Todos"),
         ft.dropdown.Option("Receita"),
@@ -282,6 +299,8 @@ def extrato_view(page: ft.Page):
     def limpar_filtros(e):
         f_ini.value   = f"01/{hoje.month:02d}/{hoje.year}"
         f_fim.value   = f"{hoje.day:02d}/{hoje.month:02d}/{hoje.year}"
+        f_ini.update()
+        f_fim.update()
         f_tipo.value  = "Todos"
         f_conta.value = "Todas"
         msg_text.value = ""
