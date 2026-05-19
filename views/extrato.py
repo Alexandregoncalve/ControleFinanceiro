@@ -46,29 +46,15 @@ def extrato_view(page: ft.Page):
             return [ft.dropdown.Option("Todas")]
 
     # Data inicial = primeiro dia do mês atual, data final = hoje
-    def mascara_data(e):
-        """Aplica máscara DD/MM/AAAA automaticamente."""
-        tf = e.control
-        # Remove tudo que não é dígito
-        digits = "".join(c for c in (tf.value or "") if c.isdigit())[:8]
-        # Monta DD/MM/AAAA
-        result = digits
-        if len(digits) > 4:
-            result = digits[:2] + "/" + digits[2:4] + "/" + digits[4:]
-        elif len(digits) > 2:
-            result = digits[:2] + "/" + digits[2:]
-        tf.value = result
-        tf.update()
-
     filtro_data_ini = ft.TextField(
-        label="Data Inicial", width=140, hint_text="DD/MM/AAAA",
+        label="Data Inicial", width=150, hint_text="DD/MM/AAAA",
         value=f"01/{hoje.month:02d}/{hoje.year}",
-        on_change=mascara_data,
+        keyboard_type=ft.KeyboardType.NUMBER,
     )
     filtro_data_fim = ft.TextField(
-        label="Data Final", width=140, hint_text="DD/MM/AAAA",
+        label="Data Final", width=150, hint_text="DD/MM/AAAA",
         value=f"{hoje.day:02d}/{hoje.month:02d}/{hoje.year}",
-        on_change=mascara_data,
+        keyboard_type=ft.KeyboardType.NUMBER,
     )
     filtro_tipo  = ft.Dropdown(label="Tipo",  width=130, value="Todos", options=[
         ft.dropdown.Option("Todos"),
