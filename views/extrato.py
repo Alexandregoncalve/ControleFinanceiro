@@ -400,6 +400,15 @@ def extrato_view(page: ft.Page):
 
     # ── EXPORTAR PDF ───────────────────────────────────────────────────────
     def exportar_pdf(e):
+
+        def safe(texto):
+            """Remove acentos e caracteres especiais para o ReportLab (Helvetica)."""
+            import unicodedata
+            texto = str(texto or "")
+            # Normaliza para NFD e remove diacríticos
+            nfd = unicodedata.normalize("NFD", texto)
+            return "".join(c for c in nfd if unicodedata.category(c) != "Mn")
+
         try:
             trans = state["trans"]
             if not trans:
@@ -426,8 +435,8 @@ def extrato_view(page: ft.Page):
 
             filtros_str = []
             if filtro_mes.value   != "Todos":  filtros_str.append(f"Mes: {filtro_mes.value}")
-            if filtro_tipo.value  != "Todos":  filtros_str.append(f"Tipo: {filtro_tipo.value}")
-            if filtro_conta.value != "Todas":  filtros_str.append(f"Conta: {filtro_conta.value}")
+            if filtro_tipo.value  != "Todos":  filtros_str.append(f"Tipo: {safe(filtro_tipo.value)}")
+            if filtro_conta.value != "Todas":  filtros_str.append(f"Conta: {safe(filtro_conta.value)}")
             filtros_label = "  |  ".join(filtros_str) if filtros_str else "Todos os registros"
 
             elems += [
@@ -469,15 +478,7 @@ def extrato_view(page: ft.Page):
                 total_rec_geral  += rec
                 total_des_geral  += desp
 
-                # Remove acentos e caracteres especiais para o ReportLab
-                label_safe = (g["label"]
-                    .replace("ç","c").replace("Ç","C")
-                    .replace("ã","a").replace("â","a").replace("á","a").replace("à","a")
-                    .replace("ê","e").replace("é","e").replace("è","e")
-                    .replace("í","i").replace("î","i")
-                    .replace("ó","o").replace("ô","o").replace("õ","o")
-                    .replace("ú","u").replace("û","u")
-                )
+                label_safe = safe(g["label"])
 
                 elems.append(Paragraph(
                     f"<b>{label_safe}</b>  -  "
@@ -492,22 +493,9 @@ def extrato_view(page: ft.Page):
                 cabecalho = ["Data", "Conta", "Valor", "Tipo", "Descricao"]
                 dados_pdf = [cabecalho]
                 for t in g["trans"]:
-                    desc_safe = (str(t["descricao"] or "")
-                        .replace("ç","c").replace("Ç","C")
-                        .replace("ã","a").replace("â","a").replace("á","a")
-                        .replace("ê","e").replace("é","e")
-                        .replace("í","i").replace("ó","o").replace("ô","o")
-                        .replace("ú","u")
-                    )
-                    nome_safe = (str(t["nome"] or "")
-                        .replace("ç","c").replace("Ç","C")
-                        .replace("ã","a").replace("â","a").replace("á","a")
-                        .replace("ê","e").replace("é","e")
-                        .replace("í","i").replace("ó","o").replace("ô","o")
-                        .replace("ú","u")
-                    )
                     dados_pdf.append([
-                        str(t["data"]), nome_safe, fmt(t["valor"]), t["tipo"], desc_safe
+                        safe(t["data"]), safe(t["nome"]), fmt(t["valor"]),
+                        safe(t["tipo"]), safe(t["descricao"])
                     ])
 
                 n_dados = len(dados_pdf)
