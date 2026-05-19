@@ -68,10 +68,23 @@ def extrato_view(page: ft.Page):
                                      on_click=lambda e: cancelar_edicao(e))
     edicao_row = ft.Row([data_f, valor_f, desc_f, btn_salvar, btn_cancelar], visible=False)
 
+    # ── FORMATA VALOR — sem usar "_" como separador de milhar no f-string ──
     def fmt(v):
         try:
-            return f"R$ {float(v):_.2f}".replace(".", ",").replace("_", ".")
-        except:
+            valor = float(v)
+            # Formata manualmente para evitar erros no ReportLab
+            inteiro = int(abs(valor))
+            centavos = round((abs(valor) - inteiro) * 100)
+            # Adiciona separador de milhar
+            inteiro_str = ""
+            s = str(inteiro)
+            for i, c in enumerate(reversed(s)):
+                if i > 0 and i % 3 == 0:
+                    inteiro_str = "." + inteiro_str
+                inteiro_str = c + inteiro_str
+            sinal = "-" if valor < 0 else ""
+            return f"R$ {sinal}{inteiro_str},{centavos:02d}"
+        except Exception:
             return "R$ 0,00"
 
     # ── MONTA LINHA DE TRANSAÇÃO ───────────────────────────────────────────
@@ -89,26 +102,20 @@ def extrato_view(page: ft.Page):
             border=ft.border.only(bottom=ft.BorderSide(1, "#EEEEEE")),
             padding=ft.padding.symmetric(horizontal=16, vertical=8),
             content=ft.Row([
-                # Data
                 ft.Container(width=100,
-                    content=ft.Text(t["data"], size=12, color="#555555")),
-                # Conta
+                    content=ft.Text(t["data"], size=13, color="#555555")),
                 ft.Container(width=200,
-                    content=ft.Text(t["nome"], size=12)),
-                # Valor
+                    content=ft.Text(t["nome"], size=13)),
                 ft.Container(width=130,
-                    content=ft.Text(fmt(t["valor"]), size=13, weight="bold", color=cor)),
-                # Tipo
+                    content=ft.Text(fmt(t["valor"]), size=14, weight="bold", color=cor)),
                 ft.Container(width=90,
                     content=ft.Container(
                         bgcolor=ft.colors.GREEN_100 if t["tipo"] == "Receita" else ft.colors.RED_100,
                         border_radius=12, padding=ft.padding.symmetric(horizontal=8, vertical=2),
-                        content=ft.Text(t["tipo"], size=11, color=cor, weight="bold")
+                        content=ft.Text(t["tipo"], size=12, color=cor, weight="bold")
                     )),
-                # Descrição
                 ft.Container(expand=True,
-                    content=ft.Text(t["descricao"] or "—", size=12, color="#666666")),
-                # Ações
+                    content=ft.Text(t["descricao"] or "—", size=13, color="#666666")),
                 ft.Row([
                     ft.IconButton(icon=ft.icons.EDIT, icon_color="#1565C0",
                                   tooltip="Alterar", icon_size=18,
@@ -120,52 +127,88 @@ def extrato_view(page: ft.Page):
             ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
         )
 
-    # ── MONTA CABEÇALHO DE MÊS ────────────────────────────────────────────
+    # ── MONTA CABEÇALHO DE MÊS — letras maiores ───────────────────────────
     def cabecalho_mes(mes_label, rec, desp):
         saldo    = rec - desp
         cor_sald = ft.colors.GREEN_700 if saldo >= 0 else ft.colors.RED_700
         return ft.Container(
             bgcolor="#1565C0",
             border_radius=ft.border_radius.only(top_left=8, top_right=8),
-            padding=ft.padding.symmetric(horizontal=16, vertical=10),
-            margin=ft.margin.only(top=16),
+            padding=ft.padding.symmetric(horizontal=16, vertical=14),
+            margin=ft.margin.only(top=20),
             content=ft.Row([
-                ft.Text(mes_label, size=14, weight="bold", color="white", expand=True),
+                ft.Text(mes_label, size=18, weight="bold", color="white", expand=True),  # ← maior
                 ft.Row([
                     ft.Container(
                         bgcolor=ft.colors.with_opacity(0.25, "white"),
-                        border_radius=6, padding=ft.padding.symmetric(horizontal=10, vertical=3),
-                        content=ft.Text(f"✅ {fmt(rec)}", size=12, color="white")),
+                        border_radius=6, padding=ft.padding.symmetric(horizontal=12, vertical=4),
+                        content=ft.Text(f"✅ {fmt(rec)}", size=14, color="white")),       # ← maior
                     ft.Container(
                         bgcolor=ft.colors.with_opacity(0.25, "white"),
-                        border_radius=6, padding=ft.padding.symmetric(horizontal=10, vertical=3),
-                        content=ft.Text(f"❌ {fmt(desp)}", size=12, color="white")),
+                        border_radius=6, padding=ft.padding.symmetric(horizontal=12, vertical=4),
+                        content=ft.Text(f"❌ {fmt(desp)}", size=14, color="white")),      # ← maior
                     ft.Container(
                         bgcolor=ft.colors.with_opacity(0.35, "white"),
-                        border_radius=6, padding=ft.padding.symmetric(horizontal=10, vertical=3),
-                        content=ft.Text(f"💰 {fmt(saldo)}", size=12,
+                        border_radius=6, padding=ft.padding.symmetric(horizontal=12, vertical=4),
+                        content=ft.Text(f"💰 {fmt(saldo)}", size=14,
                                         color=ft.colors.GREEN_200 if saldo >= 0 else ft.colors.RED_200,
-                                        weight="bold")),
-                ], spacing=8),
+                                        weight="bold")),                                  # ← maior
+                ], spacing=10),
             ]),
         )
 
-    # ── CABEÇALHO DAS COLUNAS DA TABELA ───────────────────────────────────
+    # ── CABEÇALHO DAS COLUNAS DA TABELA — letras maiores ──────────────────
     def cabecalho_colunas():
         return ft.Container(
             bgcolor="#E3F2FD",
-            padding=ft.padding.symmetric(horizontal=16, vertical=6),
+            padding=ft.padding.symmetric(horizontal=16, vertical=8),
             content=ft.Row([
-                ft.Container(width=100, content=ft.Text("Data",      size=11, weight="bold", color="#1565C0")),
-                ft.Container(width=200, content=ft.Text("Conta",     size=11, weight="bold", color="#1565C0")),
-                ft.Container(width=130, content=ft.Text("Valor",     size=11, weight="bold", color="#1565C0")),
-                ft.Container(width=90,  content=ft.Text("Tipo",      size=11, weight="bold", color="#1565C0")),
-                ft.Container(expand=True, content=ft.Text("Descrição", size=11, weight="bold", color="#1565C0")),
-                ft.Container(width=80,  content=ft.Text("Ações",    size=11, weight="bold", color="#1565C0")),
+                ft.Container(width=100, content=ft.Text("Data",       size=13, weight="bold", color="#1565C0")),
+                ft.Container(width=200, content=ft.Text("Conta",      size=13, weight="bold", color="#1565C0")),
+                ft.Container(width=130, content=ft.Text("Valor",      size=13, weight="bold", color="#1565C0")),
+                ft.Container(width=90,  content=ft.Text("Tipo",       size=13, weight="bold", color="#1565C0")),
+                ft.Container(expand=True, content=ft.Text("Descrição", size=13, weight="bold", color="#1565C0")),
+                ft.Container(width=80,  content=ft.Text("Ações",      size=13, weight="bold", color="#1565C0")),
             ]),
         )
 
-    # ── CARREGA E AGRUPA POR MÊS ───────────────────────────────────────────
+    # ── HELPER: converte data do banco para (dia, mês, ano) ───────────────
+    def _parse_data(data_str):
+        """Retorna (dd, mm, yyyy) como strings a partir de DD/MM/YYYY ou YYYY-MM-DD."""
+        s = str(data_str)
+        if "/" in s:
+            partes = s.split("/")
+            # DD/MM/YYYY
+            if len(partes) == 3 and len(partes[2]) == 4:
+                return partes[0], partes[1], partes[2]
+            # MM/YYYY (sem dia)
+            if len(partes) == 2:
+                return "01", partes[0], partes[1]
+        elif "-" in s:
+            partes = s.split("-")
+            # YYYY-MM-DD
+            if len(partes[0]) == 4:
+                return partes[2], partes[1], partes[0]
+            # DD-MM-YYYY
+            return partes[0], partes[1], partes[2]
+        return "01", "01", str(s[:4]) if len(s) >= 4 else "2000"
+
+    def _chave_mes(mm, yyyy):
+        """Chave numérica para ordenação: YYYYMM (int)."""
+        try:
+            return int(yyyy) * 100 + int(mm)
+        except Exception:
+            return 0
+
+    def _mes_label(mm, yyyy):
+        nomes = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho",
+                 "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"]
+        try:
+            return f"{nomes[int(mm)-1]} {yyyy}"
+        except Exception:
+            return f"{mm}/{yyyy}"
+
+    # ── CARREGA E AGRUPA POR MÊS — ordenação DECRESCENTE corrigida ────────
     def carregar_tabela():
         try:
             conn  = get_connection()
@@ -178,9 +221,13 @@ def extrato_view(page: ft.Page):
             """
             params = [uid]
 
+            # Filtro de mês: suporta tanto DD/MM/YYYY quanto YYYY-MM-DD
             if filtro_mes.value and filtro_mes.value != "Todos":
-                query += " AND t.data LIKE %s"
-                params.append(f"%{filtro_mes.value}")
+                mm, aa = filtro_mes.value.split("/")  # "05/2026" → mm="05", aa="2026"
+                # Tenta ambos os formatos de data no banco
+                query += " AND (t.data LIKE %s OR t.data LIKE %s)"
+                params.append(f"%/{mm}/{aa}")         # DD/MM/YYYY
+                params.append(f"{aa}-{mm}-%")         # YYYY-MM-DD
 
             if filtro_tipo.value and filtro_tipo.value != "Todos":
                 query += " AND t.tipo = %s"
@@ -197,35 +244,29 @@ def extrato_view(page: ft.Page):
 
             state["trans"] = trans
 
-            # ── Agrupa transações por mês/ano ──────────────────────────────
-            grupos = {}   # { "MM/YYYY": [transações] }
-            ordem  = []   # mantém a ordem cronológica decrescente
+            # ── Agrupa por mês ─────────────────────────────────────────────
+            grupos = {}   # { chave_int: {...} }
 
             for t in trans:
-                # data pode ser "DD/MM/YYYY" ou "YYYY-MM-DD" dependendo do banco
                 try:
-                    data_str = str(t["data"])
-                    if "/" in data_str:
-                        partes = data_str.split("/")
-                        chave  = f"{partes[1]}/{partes[2]}"          # MM/YYYY
-                        mes_label = _mes_label(partes[1], partes[2]) # "Maio 2026"
-                    else:
-                        partes = data_str.split("-")
-                        chave  = f"{partes[1]}/{partes[0]}"
-                        mes_label = _mes_label(partes[1], partes[0])
-                except:
-                    chave     = "??/??"
+                    dd, mm, yyyy = _parse_data(t["data"])
+                    chave_int    = _chave_mes(mm, yyyy)
+                    mes_label    = _mes_label(mm, yyyy)
+                except Exception:
+                    chave_int = 0
                     mes_label = "Data inválida"
 
-                if chave not in grupos:
-                    grupos[chave] = {"label": mes_label, "trans": [], "rec": 0.0, "desp": 0.0}
-                    ordem.append(chave)
+                if chave_int not in grupos:
+                    grupos[chave_int] = {"label": mes_label, "trans": [], "rec": 0.0, "desp": 0.0}
 
-                grupos[chave]["trans"].append(t)
+                grupos[chave_int]["trans"].append(t)
                 if t["tipo"] == "Receita":
-                    grupos[chave]["rec"]  += float(t["valor"])
+                    grupos[chave_int]["rec"]  += float(t["valor"])
                 else:
-                    grupos[chave]["desp"] += float(t["valor"])
+                    grupos[chave_int]["desp"] += float(t["valor"])
+
+            # ── Ordena meses de forma DECRESCENTE (mais recente primeiro) ──
+            ordem = sorted(grupos.keys(), reverse=True)
 
             # ── Monta a lista visual ───────────────────────────────────────
             lista_col.controls.clear()
@@ -233,24 +274,19 @@ def extrato_view(page: ft.Page):
             total_rec  = 0.0
             total_desp = 0.0
 
-            for chave in ordem:
-                g   = grupos[chave]
+            for chave_int in ordem:
+                g    = grupos[chave_int]
                 rec  = g["rec"]
                 desp = g["desp"]
                 total_rec  += rec
                 total_desp += desp
 
-                # Cabeçalho do mês (azul)
                 lista_col.controls.append(cabecalho_mes(g["label"], rec, desp))
-
-                # Cabeçalho das colunas
                 lista_col.controls.append(cabecalho_colunas())
 
-                # Linhas das transações
                 for t in g["trans"]:
                     lista_col.controls.append(linha_transacao(t))
 
-                # Rodapé do grupo
                 lista_col.controls.append(
                     ft.Container(
                         bgcolor="#F5F5F5",
@@ -258,7 +294,7 @@ def extrato_view(page: ft.Page):
                         padding=ft.padding.symmetric(horizontal=16, vertical=6),
                         content=ft.Text(
                             f"{len(g['trans'])} lançamento(s) em {g['label']}",
-                            size=11, color="#888888", italic=True),
+                            size=12, color="#888888", italic=True),
                     )
                 )
 
@@ -278,14 +314,6 @@ def extrato_view(page: ft.Page):
             import traceback; traceback.print_exc()
             print(f"[extrato] carregar_tabela: {ex}")
 
-    def _mes_label(mm, yyyy):
-        nomes = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho",
-                 "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"]
-        try:
-            return f"{nomes[int(mm)-1]} {yyyy}"
-        except:
-            return f"{mm}/{yyyy}"
-
     filtro_mes.on_change   = lambda e: carregar_tabela()
     filtro_tipo.on_change  = lambda e: carregar_tabela()
     filtro_conta.on_change = lambda e: carregar_tabela()
@@ -302,7 +330,6 @@ def extrato_view(page: ft.Page):
             conn = get_connection()
             cur  = get_cursor(conn)
 
-            # Verifica se é transação de transferência
             cur.execute(
                 "SELECT tipo, valor, data, banco_id, descricao FROM transacoes WHERE id=%s AND usuario_id=%s",
                 (tid, uid)
@@ -314,17 +341,14 @@ def extrato_view(page: ft.Page):
                 data  = t["data"]
                 tipo_par = "Receita" if t["tipo"] == "Despesa" else "Despesa"
 
-                # Exclui a transação par
                 cur.execute("""
                     DELETE FROM transacoes
                     WHERE usuario_id=%s AND tipo=%s AND valor=%s AND data=%s
                       AND descricao LIKE %s
                 """, (uid, tipo_par, valor, data, "Transf.%"))
 
-                # Exclui a própria transação
                 cur.execute("DELETE FROM transacoes WHERE id=%s AND usuario_id=%s", (tid, uid))
 
-                # Exclui da tabela transferencias
                 cur.execute("""
                     DELETE FROM transferencias
                     WHERE usuario_id=%s AND valor=%s AND data=%s
@@ -346,7 +370,7 @@ def extrato_view(page: ft.Page):
     def preparar_edicao(t):
         state["editing_id"] = t["id"]
         data_f.value  = t["data"]
-        valor_f.value = f"{t['valor']:_.2f}".replace(".", ",").replace("_", ".")
+        valor_f.value = fmt(t["valor"]).replace("R$ ", "")
         desc_f.value  = t["descricao"] or ""
         edicao_row.visible = True
         page.update()
@@ -374,7 +398,7 @@ def extrato_view(page: ft.Page):
         except Exception as ex:
             print(f"[extrato] salvar_edicao: {ex}")
 
-    # ── EXPORTAR PDF — gera em memória e abre via base64 no browser ───────
+    # ── EXPORTAR PDF ───────────────────────────────────────────────────────
     def exportar_pdf(e):
         try:
             trans = state["trans"]
@@ -388,7 +412,6 @@ def extrato_view(page: ft.Page):
             msg_pdf.color = ft.colors.BLUE_700
             page.update()
 
-            # Gera o PDF em memória (BytesIO)
             buffer = io.BytesIO()
             doc    = SimpleDocTemplate(buffer, pagesize=A4,
                                        leftMargin=1.5*cm, rightMargin=1.5*cm,
@@ -402,55 +425,62 @@ def extrato_view(page: ft.Page):
                 fontSize=10, textColor=colors.grey, spaceAfter=12)
 
             filtros_str = []
-            if filtro_mes.value   != "Todos":  filtros_str.append(f"Mês: {filtro_mes.value}")
+            if filtro_mes.value   != "Todos":  filtros_str.append(f"Mes: {filtro_mes.value}")
             if filtro_tipo.value  != "Todos":  filtros_str.append(f"Tipo: {filtro_tipo.value}")
             if filtro_conta.value != "Todas":  filtros_str.append(f"Conta: {filtro_conta.value}")
             filtros_label = "  |  ".join(filtros_str) if filtros_str else "Todos os registros"
 
             elems += [
-                Paragraph("FINANÇA SIMPLES", titulo_style),
-                Paragraph("EXTRATO DE TRANSAÇÕES", titulo_style),
+                Paragraph("FINANCA SIMPLES", titulo_style),
+                Paragraph("EXTRATO DE TRANSACOES", titulo_style),
                 Paragraph(f"Filtros: {filtros_label}", sub_style),
                 Paragraph(f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}", sub_style),
                 Spacer(1, 0.5*cm),
             ]
 
-            # Agrupa por mês para o PDF também
+            # ── Agrupa por mês (mesmo algoritmo do carregar_tabela) ────────
             grupos = {}
-            ordem  = []
             for t in trans:
                 try:
-                    data_str = str(t["data"])
-                    if "/" in data_str:
-                        partes = data_str.split("/")
-                        chave  = f"{partes[1]}/{partes[2]}"
-                        label  = _mes_label(partes[1], partes[2])
-                    else:
-                        partes = data_str.split("-")
-                        chave  = f"{partes[1]}/{partes[0]}"
-                        label  = _mes_label(partes[1], partes[0])
-                except:
-                    chave = label = "??"
-                if chave not in grupos:
-                    grupos[chave] = {"label": label, "trans": [], "rec": 0.0, "desp": 0.0}
-                    ordem.append(chave)
-                grupos[chave]["trans"].append(t)
-                if t["tipo"] == "Receita": grupos[chave]["rec"]  += float(t["valor"])
-                else:                      grupos[chave]["desp"] += float(t["valor"])
+                    dd, mm, yyyy = _parse_data(t["data"])
+                    chave_int    = _chave_mes(mm, yyyy)
+                    label        = _mes_label(mm, yyyy)
+                except Exception:
+                    chave_int = 0
+                    label     = "Data invalida"
+
+                if chave_int not in grupos:
+                    grupos[chave_int] = {"label": label, "trans": [], "rec": 0.0, "desp": 0.0}
+                grupos[chave_int]["trans"].append(t)
+                if t["tipo"] == "Receita":
+                    grupos[chave_int]["rec"]  += float(t["valor"])
+                else:
+                    grupos[chave_int]["desp"] += float(t["valor"])
+
+            ordem = sorted(grupos.keys(), reverse=True)
 
             total_rec_geral = total_des_geral = 0.0
 
-            for chave in ordem:
-                g    = grupos[chave]
+            for chave_int in ordem:
+                g    = grupos[chave_int]
                 rec  = g["rec"]
                 desp = g["desp"]
                 saldo_mes = rec - desp
                 total_rec_geral  += rec
                 total_des_geral  += desp
 
-                # Título do mês
+                # Remove acentos e caracteres especiais para o ReportLab
+                label_safe = (g["label"]
+                    .replace("ç","c").replace("Ç","C")
+                    .replace("ã","a").replace("â","a").replace("á","a").replace("à","a")
+                    .replace("ê","e").replace("é","e").replace("è","e")
+                    .replace("í","i").replace("î","i")
+                    .replace("ó","o").replace("ô","o").replace("õ","o")
+                    .replace("ú","u").replace("û","u")
+                )
+
                 elems.append(Paragraph(
-                    f"<b>{g['label']}</b>  —  "
+                    f"<b>{label_safe}</b>  -  "
                     f"Receitas: {fmt(rec)}  |  Despesas: {fmt(desp)}  |  Saldo: {fmt(saldo_mes)}",
                     ParagraphStyle("mes", parent=styles["Normal"],
                         fontSize=10, textColor=colors.HexColor("#1565C0"),
@@ -459,15 +489,29 @@ def extrato_view(page: ft.Page):
                         leftIndent=0, borderPadding=4)
                 ))
 
-                cabecalho = ["Data", "Conta", "Valor", "Tipo", "Descrição"]
+                cabecalho = ["Data", "Conta", "Valor", "Tipo", "Descricao"]
                 dados_pdf = [cabecalho]
                 for t in g["trans"]:
+                    desc_safe = (str(t["descricao"] or "")
+                        .replace("ç","c").replace("Ç","C")
+                        .replace("ã","a").replace("â","a").replace("á","a")
+                        .replace("ê","e").replace("é","e")
+                        .replace("í","i").replace("ó","o").replace("ô","o")
+                        .replace("ú","u")
+                    )
+                    nome_safe = (str(t["nome"] or "")
+                        .replace("ç","c").replace("Ç","C")
+                        .replace("ã","a").replace("â","a").replace("á","a")
+                        .replace("ê","e").replace("é","e")
+                        .replace("í","i").replace("ó","o").replace("ô","o")
+                        .replace("ú","u")
+                    )
                     dados_pdf.append([
-                        t["data"], t["nome"], fmt(t["valor"]), t["tipo"], t["descricao"] or ""
+                        str(t["data"]), nome_safe, fmt(t["valor"]), t["tipo"], desc_safe
                     ])
 
                 n_dados = len(dados_pdf)
-                dados_pdf.append(["", f"Subtotal {g['label']}",
+                dados_pdf.append(["", f"Subtotal {label_safe}",
                                    f"R: {fmt(rec)} / D: {fmt(desp)}", fmt(saldo_mes), ""])
 
                 tabela_pdf = Table(dados_pdf, colWidths=[2.5*cm, 5*cm, 3*cm, 2.5*cm, 5*cm])
@@ -492,12 +536,12 @@ def extrato_view(page: ft.Page):
                 ]))
                 elems.append(tabela_pdf)
 
-            # Totais gerais no final
+            # ── Totais gerais ──────────────────────────────────────────────
             saldo_geral = total_rec_geral - total_des_geral
             elems += [
                 Spacer(1, 0.5*cm),
                 Paragraph(
-                    f"<b>TOTAL GERAL  —  "
+                    f"<b>TOTAL GERAL  -  "
                     f"Receitas: {fmt(total_rec_geral)}  |  "
                     f"Despesas: {fmt(total_des_geral)}  |  "
                     f"Saldo: {fmt(saldo_geral)}</b>",
@@ -511,22 +555,20 @@ def extrato_view(page: ft.Page):
 
             doc.build(elems)
 
-            # ── Converte para base64 e abre download no browser ────────────
-            pdf_bytes  = buffer.getvalue()
-            b64        = base64.b64encode(pdf_bytes).decode("utf-8")
-            mes_label  = (filtro_mes.value if filtro_mes.value != "Todos" else "completo").replace("/", "-")
-            nome_arq   = f"extrato_{mes_label}_{datetime.now().strftime('%d%m%Y_%H%M%S')}.pdf"
+            pdf_bytes = buffer.getvalue()
+            b64       = base64.b64encode(pdf_bytes).decode("utf-8")
+            mes_label = (filtro_mes.value if filtro_mes.value != "Todos" else "completo").replace("/", "-")
+            nome_arq  = f"extrato_{mes_label}_{datetime.now().strftime('%d%m%Y_%H%M%S')}.pdf"
 
-            # Dispara download direto via JS sem abrir nova aba
             js = (
-                "(function(){{"
+                "(function(){"
                 "var a=document.createElement('a');"
                 f"a.href='data:application/pdf;base64,{b64}';"
                 f"a.download='{nome_arq}';"
                 "document.body.appendChild(a);"
                 "a.click();"
                 "document.body.removeChild(a);"
-                "}})()"
+                "})()"
             )
             page.eval_javascript(js)
 
