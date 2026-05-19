@@ -1,5 +1,11 @@
 import flet as ft
+import flet.fastapi as flet_fastapi
 import os
+import tempfile
+import uvicorn
+from fastapi import FastAPI
+from fastapi.responses import FileResponse, HTMLResponse
+
 from database import init_db
 from views.dashboard import dashboard_view
 from views.contas import contas_view
@@ -44,7 +50,6 @@ def main(page: ft.Page):
         return page.session.get("user_id") is not None
 
     def carregar_rota(rota: str):
-        """Carrega uma view pelo nome da rota, sempre recriando."""
         page.views.clear()
         if rota not in ROTAS_PUBLICAS and not logado():
             page.views.append(login_view(page))
@@ -70,26 +75,32 @@ def main(page: ft.Page):
     page.on_view_pop     = view_pop
 
     def reload_view():
-        """Recria a view atual do zero — use após salvar dados."""
         rota_atual = page.route
         carregar_rota(rota_atual)
 
     page.reload_view = reload_view
-
     page.go("/login")
+
+
+# ── FastAPI com Flet montado + endpoint PDF ───────────────────────────────────
+app = FastAPI()
+
+@app.get("/pdf/{nome_arquivo}")
+async def servir_pdf(nome_arquivo: str):
+    """Serve PDFs gerados pelo extrato."""
+    caminho = os.path.join(tempfile.gettempdir(), nome_arquivo)
+    if not os.path.exists(caminho):
+        return HTMLResponse("<h2>PDF não encontrado ou expirado.</h2>", status_code=404)
+    return FileResponse(
+        caminho,
+        media_type="application/pdf",
+        filename=nome_arquivo,
+    )
+
+# Monta Flet dentro do FastAPI
+app.mount("/", flet_fastapi.app(main))
 
 
 if __name__ == "__main__":
     porta = int(os.getenv("PORT", 8080))
-
-    # Garante que a pasta assets/pdfs existe
-    assets_path = os.path.join(os.path.dirname(__file__), "assets", "pdfs")
-    os.makedirs(assets_path, exist_ok=True)
-
-    ft.app(
-        target=main,
-        view=ft.AppView.WEB_BROWSER,
-        port=porta,
-        host="0.0.0.0",
-        assets_dir="assets",   # ← serve arquivos estáticos da pasta assets/
-    )
+    uvicorn.run(app, host="0.0.0.0", port=porta)

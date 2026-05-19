@@ -561,29 +561,24 @@ def extrato_view(page: ft.Page):
             _pdf_buffer["bytes"] = pdf_bytes
             _pdf_buffer["nome"]  = nome_arq
 
-            # Flet 0.26 — download via Blob URL (único jeito confiável no browser)
-            b64 = base64.b64encode(pdf_bytes).decode("utf-8")
+            # Flet 0.26 — salva PDF em /tmp e expõe via porta 8081 (FastAPI)
+            import tempfile
+            caminho_pdf = os.path.join(tempfile.gettempdir(), nome_arq)
+            with open(caminho_pdf, "wb") as fp:
+                fp.write(pdf_bytes)
 
-            js = f"""
-(function() {{
-    var b64 = "{b64}";
-    var bin = atob(b64);
-    var arr = new Uint8Array(bin.length);
-    for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-    var blob = new Blob([arr], {{type: "application/pdf"}});
-    var url  = URL.createObjectURL(blob);
-    var a    = document.createElement("a");
-    a.href   = url;
-    a.download = "{nome_arq}";
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function() {{
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }}, 1000);
-}})();
-"""
-            page.run_javascript(js)
+            # Monta URL usando a mesma origem mas porta 8081
+            host = page.url if hasattr(page, "url") and page.url else ""
+            # Extrai domínio base (ex: https://meuapp.railway.app)
+            if host:
+                from urllib.parse import urlparse
+                parsed = urlparse(host)
+                base_url = f"{parsed.scheme}://{parsed.netloc}"
+            else:
+                base_url = ""
+
+            url_pdf = f"{base_url}/pdf/{nome_arq}"
+            page.launch_url(url_pdf, web_window_name="_blank")
 
             msg_pdf.value = f"✅ PDF gerado: {nome_arq}"
             msg_pdf.color = ft.colors.GREEN_700
