@@ -546,15 +546,10 @@ def extrato_view(page: ft.Page):
             mes_label = (filtro_mes.value if filtro_mes.value != "Todos" else "completo").replace("/", "-")
             nome_arq  = f"extrato_{mes_label}_{datetime.now().strftime('%d%m%Y_%H%M%S')}.pdf"
 
-            # Salva em pasta pública e abre via launch_url
-            pasta = os.path.join(os.path.dirname(__file__), "..", "assets", "pdfs")
-            os.makedirs(pasta, exist_ok=True)
-            caminho = os.path.join(pasta, nome_arq)
-            with open(caminho, "wb") as f_pdf:
-                f_pdf.write(pdf_bytes)
-
-            url = f"/assets/pdfs/{nome_arq}"
-            page.launch_url(url, web_window_name="_blank")
+            # Abre o PDF como data URI na nova aba — funciona no Flet web sem eval_javascript
+            b64 = base64.b64encode(pdf_bytes).decode("utf-8")
+            data_uri = f"data:application/pdf;base64,{b64}"
+            page.launch_url(data_uri, web_window_name="_blank")
 
             msg_pdf.value = f"✅ PDF gerado: {nome_arq}"
             msg_pdf.color = ft.colors.GREEN_700
