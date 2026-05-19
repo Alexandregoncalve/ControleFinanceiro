@@ -561,23 +561,37 @@ def extrato_view(page: ft.Page):
             _pdf_buffer["bytes"] = pdf_bytes
             _pdf_buffer["nome"]  = nome_arq
 
-            # Flet 0.26 web: salva em assets e abre URL direta no browser
-            raiz = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-            pasta_pdfs = os.path.join(raiz, "assets", "pdfs")
-            os.makedirs(pasta_pdfs, exist_ok=True)
+            # Flet 0.26 web: entrega PDF via data URI num botão de download
+            b64 = base64.b64encode(pdf_bytes).decode("utf-8")
+            data_uri = f"data:application/pdf;base64,{b64}"
 
-            caminho_pdf = os.path.join(pasta_pdfs, nome_arq)
-            with open(caminho_pdf, "wb") as fp:
-                fp.write(pdf_bytes)
+            msg_pdf.value = "✅ PDF pronto! Clique no botão abaixo para baixar."
+            msg_pdf.color = ft.colors.GREEN_700
 
-            # Abre o PDF direto no browser — usuário salva pelo próprio navegador
-            page.launch_url(
-                f"/assets/pdfs/{nome_arq}",
-                web_window_name="_blank"
+            # Adiciona botão de download que abre o PDF direto
+            btn_download = ft.ElevatedButton(
+                f"⬇️ BAIXAR {nome_arq}",
+                bgcolor=ft.colors.GREEN_700,
+                color=ft.colors.WHITE,
+                on_click=lambda _: page.launch_url(data_uri, web_window_name="_blank"),
             )
 
-            msg_pdf.value = f"✅ PDF gerado! Se não abrir, clique no link: /assets/pdfs/{nome_arq}"
-            msg_pdf.color = ft.colors.GREEN_700
+            # Remove botão anterior se existir e adiciona novo
+            # (usa tag no container para identificar)
+            controles = page.views[-1].controls
+            col = None
+            for ctrl in controles:
+                if isinstance(ctrl, ft.Container):
+                    if isinstance(ctrl.content, ft.Column):
+                        col = ctrl.content
+                        break
+            if col:
+                # Remove botão de download anterior se existir
+                col.controls = [c for c in col.controls
+                                 if not (isinstance(c, ft.ElevatedButton)
+                                         and "BAIXAR" in str(getattr(c, "text", "")))]
+                col.controls.append(btn_download)
+
             page.update()
 
         except Exception as ex:
