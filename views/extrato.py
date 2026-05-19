@@ -561,24 +561,22 @@ def extrato_view(page: ft.Page):
             _pdf_buffer["bytes"] = pdf_bytes
             _pdf_buffer["nome"]  = nome_arq
 
-            # Tenta download direto via FilePicker (Flet web)
-            try:
-                save_dialog.save_file(
-                    dialog_title="Salvar extrato PDF",
-                    file_name=nome_arq,
-                    allowed_extensions=["pdf"],
-                )
-                msg_pdf.value = f"✅ Escolha onde salvar: {nome_arq}"
-                msg_pdf.color = ft.colors.GREEN_700
-            except Exception:
-                # Fallback: data URI
-                b64 = base64.b64encode(pdf_bytes).decode("utf-8")
-                page.launch_url(
-                    f"data:application/pdf;base64,{b64}",
-                    web_window_name="_blank"
-                )
-                msg_pdf.value = f"✅ PDF aberto em nova aba: {nome_arq}"
-                msg_pdf.color = ft.colors.GREEN_700
+            # Flet 0.26 web: salva em assets e usa page.download(url)
+            import sys
+            # Descobre a raiz do projeto (um nível acima de views/)
+            raiz = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+            pasta_pdfs = os.path.join(raiz, "assets", "pdfs")
+            os.makedirs(pasta_pdfs, exist_ok=True)
+
+            caminho_pdf = os.path.join(pasta_pdfs, nome_arq)
+            with open(caminho_pdf, "wb") as fp:
+                fp.write(pdf_bytes)
+
+            # page.download(url) dispara download no browser
+            page.download(f"/assets/pdfs/{nome_arq}")
+
+            msg_pdf.value = f"✅ PDF gerado: {nome_arq}"
+            msg_pdf.color = ft.colors.GREEN_700
             page.update()
 
         except Exception as ex:

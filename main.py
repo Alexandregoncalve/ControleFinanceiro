@@ -56,7 +56,6 @@ def main(page: ft.Page):
 
     def route_change(route):
         rota = page.route
-        # Ignora rota interna de reload
         if rota == "/_reload":
             return
         carregar_rota(rota)
@@ -70,7 +69,6 @@ def main(page: ft.Page):
     page.on_route_change = route_change
     page.on_view_pop     = view_pop
 
-    # Disponibiliza função de reload para as views usarem
     def reload_view():
         """Recria a view atual do zero — use após salvar dados."""
         rota_atual = page.route
@@ -83,9 +81,15 @@ def main(page: ft.Page):
 
 if __name__ == "__main__":
     porta = int(os.getenv("PORT", 8080))
+
+    # Garante que a pasta assets/pdfs existe
+    assets_path = os.path.join(os.path.dirname(__file__), "assets", "pdfs")
+    os.makedirs(assets_path, exist_ok=True)
+
     ft.app(
         target=main,
         view=ft.AppView.WEB_BROWSER,
         port=porta,
-        host="0.0.0.0"
+        host="0.0.0.0",
+        assets_dir="assets",   # ← serve arquivos estáticos da pasta assets/
     )
