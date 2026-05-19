@@ -579,6 +579,8 @@ def extrato_view(page: ft.Page):
                 base_url = ""
 
             url_pdf = f"{base_url}/pdf/{nome_arq}"
+            print(f"[extrato] page.url bruto: {host}")
+            print(f"[extrato] URL PDF gerada: {url_pdf}")
             page.launch_url(url_pdf, web_window_name="_blank")
 
             msg_pdf.value = f"✅ PDF gerado: {nome_arq}"
