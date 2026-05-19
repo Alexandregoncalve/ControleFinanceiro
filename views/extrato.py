@@ -103,7 +103,7 @@ def extrato_view(page: ft.Page):
             padding=ft.padding.symmetric(horizontal=16, vertical=8),
             content=ft.Row([
                 ft.Container(width=100,
-                    content=ft.Text(t["data"], size=13, color="#555555")),
+                    content=ft.Text(t["data"].strftime("%d/%m/%Y") if hasattr(t["data"], "strftime") else str(t["data"]), size=13, color="#555555")),
                 ft.Container(width=200,
                     content=ft.Text(t["nome"], size=13)),
                 ft.Container(width=130,
@@ -173,25 +173,25 @@ def extrato_view(page: ft.Page):
         )
 
     # ── HELPER: converte data do banco para (dia, mês, ano) ───────────────
-    def _parse_data(data_str):
-        """Retorna (dd, mm, yyyy) como strings a partir de DD/MM/YYYY ou YYYY-MM-DD."""
-        s = str(data_str)
+    def _parse_data(data_val):
+        """Retorna (dd, mm, yyyy) como strings.
+        Aceita objeto date/datetime do PostgreSQL ou string YYYY-MM-DD / DD/MM/YYYY."""
+        import datetime as dt
+        if isinstance(data_val, (dt.date, dt.datetime)):
+            return f"{data_val.day:02d}", f"{data_val.month:02d}", str(data_val.year)
+        s = str(data_val)
         if "/" in s:
             partes = s.split("/")
-            # DD/MM/YYYY
             if len(partes) == 3 and len(partes[2]) == 4:
-                return partes[0], partes[1], partes[2]
-            # MM/YYYY (sem dia)
+                return partes[0], partes[1], partes[2]   # DD/MM/YYYY
             if len(partes) == 2:
-                return "01", partes[0], partes[1]
+                return "01", partes[0], partes[1]         # MM/YYYY
         elif "-" in s:
             partes = s.split("-")
-            # YYYY-MM-DD
             if len(partes[0]) == 4:
-                return partes[2], partes[1], partes[0]
-            # DD-MM-YYYY
-            return partes[0], partes[1], partes[2]
-        return "01", "01", str(s[:4]) if len(s) >= 4 else "2000"
+                return partes[2], partes[1], partes[0]   # YYYY-MM-DD
+            return partes[0], partes[1], partes[2]        # DD-MM-YYYY
+        return "01", "01", s[:4] if len(s) >= 4 else "2000"
 
     def _chave_mes(mm, yyyy):
         """Chave numérica para ordenação: YYYYMM (int)."""
@@ -221,13 +221,12 @@ def extrato_view(page: ft.Page):
             """
             params = [uid]
 
-            # Filtro de mês: suporta tanto DD/MM/YYYY quanto YYYY-MM-DD
+            # Filtro de mês: PostgreSQL usa tipo DATE, então usa EXTRACT
             if filtro_mes.value and filtro_mes.value != "Todos":
                 mm, aa = filtro_mes.value.split("/")  # "05/2026" → mm="05", aa="2026"
-                # Tenta ambos os formatos de data no banco
-                query += " AND (t.data LIKE %s OR t.data LIKE %s)"
-                params.append(f"%/{mm}/{aa}")         # DD/MM/YYYY
-                params.append(f"{aa}-{mm}-%")         # YYYY-MM-DD
+                query += " AND EXTRACT(MONTH FROM t.data) = %s AND EXTRACT(YEAR FROM t.data) = %s"
+                params.append(int(mm))
+                params.append(int(aa))
 
             if filtro_tipo.value and filtro_tipo.value != "Todos":
                 query += " AND t.tipo = %s"
