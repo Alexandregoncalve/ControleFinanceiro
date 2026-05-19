@@ -46,13 +46,28 @@ def extrato_view(page: ft.Page):
             return [ft.dropdown.Option("Todas")]
 
     # Data inicial = primeiro dia do mês atual, data final = hoje
+    def mascara_data(e):
+        """Aplica máscara DD/MM/AAAA automaticamente."""
+        tf = e.control
+        v  = tf.value.replace("/", "").replace(" ", "")
+        v  = "".join(c for c in v if c.isdigit())[:8]
+        fmt_v = ""
+        for i, c in enumerate(v):
+            if i == 2 or i == 4:
+                fmt_v += "/"
+            fmt_v += c
+        tf.value = fmt_v
+        tf.update()
+
     filtro_data_ini = ft.TextField(
         label="Data Inicial", width=140, hint_text="DD/MM/AAAA",
         value=f"01/{hoje.month:02d}/{hoje.year}",
+        on_change=mascara_data,
     )
     filtro_data_fim = ft.TextField(
         label="Data Final", width=140, hint_text="DD/MM/AAAA",
         value=f"{hoje.day:02d}/{hoje.month:02d}/{hoje.year}",
+        on_change=mascara_data,
     )
     filtro_tipo  = ft.Dropdown(label="Tipo",  width=130, value="Todos", options=[
         ft.dropdown.Option("Todos"),
@@ -338,8 +353,10 @@ def extrato_view(page: ft.Page):
             import traceback; traceback.print_exc()
             print(f"[extrato] carregar_tabela: {ex}")
 
-    filtro_tipo.on_change  = lambda e: carregar_tabela()
-    filtro_conta.on_change = lambda e: carregar_tabela()
+    filtro_data_ini.on_submit = lambda e: carregar_tabela()
+    filtro_data_fim.on_submit = lambda e: carregar_tabela()
+    filtro_tipo.on_change     = lambda e: carregar_tabela()
+    filtro_conta.on_change    = lambda e: carregar_tabela()
 
     def limpar_filtros(e):
         filtro_data_ini.value = f"01/{hoje.month:02d}/{hoje.year}"
@@ -586,7 +603,7 @@ def extrato_view(page: ft.Page):
             doc.build(elems)
 
             pdf_bytes = buffer.getvalue()
-            mes_label = (filtro_mes.value if filtro_mes.value != "Todos" else "completo").replace("/", "-")
+            mes_label = f"{filtro_data_ini.value}-{filtro_data_fim.value}".replace("/", "-") if filtro_data_ini.value else "completo"
             nome_arq  = f"extrato_{mes_label}_{datetime.now().strftime('%d%m%Y_%H%M%S')}.pdf"
 
             _pdf_buffer["bytes"] = pdf_bytes
