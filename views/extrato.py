@@ -561,19 +561,20 @@ def extrato_view(page: ft.Page):
             _pdf_buffer["bytes"] = pdf_bytes
             _pdf_buffer["nome"]  = nome_arq
 
-            # Flet 0.26 — salva PDF em /tmp e expõe via porta 8081 (FastAPI)
+            # Flet 0.26 — salva PDF em /tmp e serve via endpoint FastAPI /pdf/
             import tempfile
             caminho_pdf = os.path.join(tempfile.gettempdir(), nome_arq)
             with open(caminho_pdf, "wb") as fp:
                 fp.write(pdf_bytes)
 
-            # Monta URL usando a mesma origem mas porta 8081
+            # page.url retorna ws:// — converte para https://
             host = page.url if hasattr(page, "url") and page.url else ""
-            # Extrai domínio base (ex: https://meuapp.railway.app)
             if host:
                 from urllib.parse import urlparse
                 parsed = urlparse(host)
-                base_url = f"{parsed.scheme}://{parsed.netloc}"
+                # ws -> http, wss -> https
+                scheme = "https" if parsed.scheme in ("wss", "https") else "http"
+                base_url = f"{scheme}://{parsed.netloc}"
             else:
                 base_url = ""
 
