@@ -561,9 +561,7 @@ def extrato_view(page: ft.Page):
             _pdf_buffer["bytes"] = pdf_bytes
             _pdf_buffer["nome"]  = nome_arq
 
-            # Flet 0.26 web: salva em assets e usa page.download(url)
-            import sys
-            # Descobre a raiz do projeto (um nível acima de views/)
+            # Flet 0.26 web: salva em assets e abre URL direta no browser
             raiz = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
             pasta_pdfs = os.path.join(raiz, "assets", "pdfs")
             os.makedirs(pasta_pdfs, exist_ok=True)
@@ -572,10 +570,13 @@ def extrato_view(page: ft.Page):
             with open(caminho_pdf, "wb") as fp:
                 fp.write(pdf_bytes)
 
-            # page.download(url) dispara download no browser
-            page.download(f"/assets/pdfs/{nome_arq}")
+            # Abre o PDF direto no browser — usuário salva pelo próprio navegador
+            page.launch_url(
+                f"/assets/pdfs/{nome_arq}",
+                web_window_name="_blank"
+            )
 
-            msg_pdf.value = f"✅ PDF gerado: {nome_arq}"
+            msg_pdf.value = f"✅ PDF gerado! Se não abrir, clique no link: /assets/pdfs/{nome_arq}"
             msg_pdf.color = ft.colors.GREEN_700
             page.update()
 
