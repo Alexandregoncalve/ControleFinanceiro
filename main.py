@@ -88,14 +88,12 @@ app = FastAPI()
 @app.get("/pdf/{nome_arquivo}")
 async def servir_pdf(nome_arquivo: str):
     """Serve PDFs gerados pelo extrato."""
-    caminho = os.path.join(tempfile.gettempdir(), nome_arquivo)
-    if not os.path.exists(caminho):
-        return HTMLResponse("<h2>PDF não encontrado ou expirado.</h2>", status_code=404)
-    return FileResponse(
-        caminho,
-        media_type="application/pdf",
-        filename=nome_arquivo,
-    )
+    # Tenta em /tmp/pdfs/ primeiro, depois /tmp/
+    for pasta in [os.path.join(tempfile.gettempdir(), "pdfs"), tempfile.gettempdir()]:
+        caminho = os.path.join(pasta, nome_arquivo)
+        if os.path.exists(caminho):
+            return FileResponse(caminho, media_type="application/pdf", filename=nome_arquivo)
+    return HTMLResponse("<h2>PDF nao encontrado ou expirado.</h2>", status_code=404)
 
 # Monta Flet dentro do FastAPI
 app.mount("/", flet_fastapi.app(main))
