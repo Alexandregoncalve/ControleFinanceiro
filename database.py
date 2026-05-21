@@ -4,9 +4,10 @@ import psycopg2
 import psycopg2.extras
 from contextlib import contextmanager
 
+# PostgreSQL local — IP público com port forward na porta 5432
 DATABASE_URL = os.environ.get(
     "DATABASE_URL",
-    "postgresql://postgres:ZBWonSneazKBVaXcPMVBRPBstocpmaRI@viaduct.proxy.rlwy.net:19639/railway"
+    "postgresql://postgres:Discovery$010203@186.237.22.34:5432/financas"
 )
 
 
@@ -203,12 +204,10 @@ def init_db():
             )
         """)
 
-        # Migrações automáticas — roda sempre, adiciona colunas que possam faltar
         _migrar_colunas(cursor)
 
 
 def _migrar_colunas(cursor):
-    """Adiciona colunas novas sem quebrar dados existentes."""
     migracoes = [
         ("transacoes", "banco_id",     "INTEGER REFERENCES bancos(id)"),
         ("bancos",     "codigo_banco", "VARCHAR(10)"),
