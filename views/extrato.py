@@ -9,6 +9,9 @@ from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
 from menu import get_menu
 from database import get_connection, get_cursor
 from utils import verificar_admin, formatar_moeda_input, limpar_valor
@@ -94,7 +97,6 @@ def extrato_view(page: ft.Page):
             return [ft.dropdown.Option("Todas")]
 
     def aplicar_mascara(e):
-        """Formata ao sair do campo: aceita 8 dígitos e monta DD/MM/AAAA."""
         tf     = e.control
         digits = "".join(c for c in (tf.value or "") if c.isdigit())[:8]
         if len(digits) == 8:
@@ -108,25 +110,37 @@ def extrato_view(page: ft.Page):
         tf.update()
         carregar_tabela()
 
-    f_ini  = ft.TextField(label="Data Inicial", width=150, hint_text="DDMMAAAA",
+    is_mobile = (page.width or 1200) < 768
+    campo_w   = 130 if is_mobile else 150
+    conta_w   = 180 if is_mobile else 250
+    busca_w   = 220 if is_mobile else 300
+
+    f_ini  = ft.TextField(label="Data Inicial", width=campo_w, hint_text="DDMMAAAA",
                           value=f"01/{hoje.month:02d}/{hoje.year}",
                           on_blur=aplicar_mascara, keyboard_type=ft.KeyboardType.NUMBER)
-    f_fim  = ft.TextField(label="Data Final",   width=150, hint_text="DDMMAAAA",
+    f_fim  = ft.TextField(label="Data Final", width=campo_w, hint_text="DDMMAAAA",
                           value=f"{hoje.day:02d}/{hoje.month:02d}/{hoje.year}",
                           on_blur=aplicar_mascara, keyboard_type=ft.KeyboardType.NUMBER)
-    f_tipo = ft.Dropdown(label="Tipo", width=130, value="Todos", options=[
+    f_tipo = ft.Dropdown(label="Tipo", width=120, value="Todos", options=[
         ft.dropdown.Option("Todos"),
         ft.dropdown.Option("Receita"),
         ft.dropdown.Option("Despesa"),
     ])
-    f_conta = ft.Dropdown(label="Conta", width=250, value="Todas",
+    f_conta = ft.Dropdown(label="Conta", width=conta_w, value="Todas",
                           options=get_contas_opcoes())
+
+    f_busca = ft.TextField(
+        label="🔎 Buscar descrição ou conta",
+        width=busca_w,
+        hint_text="Digite para buscar...",
+        prefix_icon=ft.icons.SEARCH,
+        on_submit=lambda e: carregar_tabela(),
+    )
 
     total_text = ft.Text("", size=13, weight="bold")
     msg_text   = ft.Text("", size=13)
     lista_col  = ft.Column([], spacing=0, scroll=ft.ScrollMode.AUTO, expand=True)
 
-    # ── EDIÇÃO ────────────────────────────────────────────────────────────
     data_f  = ft.TextField(label="Data",               width=120)
     valor_f = ft.TextField(label="Valor (ex: 462,00)", width=150, on_blur=formatar_moeda_input)
     desc_f  = ft.TextField(label="Descrição",           width=300)
@@ -136,26 +150,30 @@ def extrato_view(page: ft.Page):
                                      on_click=lambda e: cancelar_edicao(e))
     edicao_row = ft.Row([data_f, valor_f, desc_f, btn_salvar, btn_cancelar], visible=False)
 
-    # ── LINHA DE TRANSAÇÃO ────────────────────────────────────────────────
-    def linha_transacao(t):
+    def linha_transacao(t, termo=""):
         cor = ft.colors.GREEN_700 if t["tipo"] == "Receita" else ft.colors.RED_700
         tid = t["id"]
         def fazer_deletar(tid=tid): deletar(tid)
         def ao_clicar_excluir(_, f=fazer_deletar): verificar_admin(page, f)
         data_fmt = parse_data(t["data"])
+        desc = t["descricao"] or "—"
+        nome = t["nome"] or ""
         return ft.Container(
             border=ft.border.only(bottom=ft.BorderSide(1, "#EEEEEE")),
             padding=ft.padding.symmetric(horizontal=16, vertical=8),
+            bgcolor="#FFFDE7" if termo and (
+                termo.lower() in desc.lower() or termo.lower() in nome.lower()
+            ) else None,
             content=ft.Row([
                 ft.Container(width=110, content=ft.Text(data_fmt, size=13, color="#555555")),
-                ft.Container(width=200, content=ft.Text(t["nome"], size=13)),
+                ft.Container(width=200, content=ft.Text(nome, size=13)),
                 ft.Container(width=130, content=ft.Text(fmt(t["valor"]), size=14, weight="bold", color=cor)),
                 ft.Container(width=90,  content=ft.Container(
                     bgcolor=ft.colors.GREEN_100 if t["tipo"] == "Receita" else ft.colors.RED_100,
                     border_radius=12, padding=ft.padding.symmetric(horizontal=8, vertical=2),
                     content=ft.Text(t["tipo"], size=12, color=cor, weight="bold")
                 )),
-                ft.Container(expand=True, content=ft.Text(t["descricao"] or "—", size=13, color="#666666")),
+                ft.Container(expand=True, content=ft.Text(desc, size=13, color="#666666")),
                 ft.Row([
                     ft.IconButton(icon=ft.icons.EDIT, icon_color="#1565C0", tooltip="Alterar",
                                   icon_size=18, on_click=lambda _, d=t: preparar_edicao(d)),
@@ -203,7 +221,6 @@ def extrato_view(page: ft.Page):
             ]),
         )
 
-    # ── CARREGAR TABELA ───────────────────────────────────────────────────
     def carregar_tabela():
         try:
             conn   = get_connection()
@@ -233,13 +250,18 @@ def extrato_view(page: ft.Page):
                 query += " AND s.nome = %s"
                 params.append(f_conta.value)
 
+            termo = (f_busca.value or "").strip()
+            if termo:
+                query += " AND (LOWER(t.descricao) LIKE LOWER(%s) OR LOWER(s.nome) LIKE LOWER(%s))"
+                params.append(f"%{termo}%")
+                params.append(f"%{termo}%")
+
             query += " ORDER BY TO_DATE(t.data, 'DD/MM/YYYY') DESC, t.id DESC"
             cur.execute(query, params)
             trans = cur.fetchall()
             conn.close()
             state["trans"] = trans
 
-            # Agrupa por mês
             grupos = {}
             for t in trans:
                 ds  = parse_data(t["data"])
@@ -255,7 +277,6 @@ def extrato_view(page: ft.Page):
 
             ordem = sorted(grupos.keys(), reverse=True)
 
-            # Reconstrói lista
             novos = []
             total_rec = total_desp = 0.0
             for ck in ordem:
@@ -265,7 +286,7 @@ def extrato_view(page: ft.Page):
                 novos.append(cabecalho_mes(g["label"], g["rec"], g["desp"]))
                 novos.append(cabecalho_colunas())
                 for t in g["trans"]:
-                    novos.append(linha_transacao(t))
+                    novos.append(linha_transacao(t, termo))
                 novos.append(ft.Container(
                     bgcolor="#F5F5F5",
                     border_radius=ft.border_radius.only(bottom_left=8, bottom_right=8),
@@ -275,10 +296,10 @@ def extrato_view(page: ft.Page):
                 ))
 
             lista_col.controls = novos
-
             saldo = total_rec - total_desp
+            busca_label = f"  |  🔎 \"{termo}\"" if termo else ""
             total_text.value = (
-                f"📋 {len(trans)} registros  |  "
+                f"📋 {len(trans)} registros{busca_label}  |  "
                 f"✅ Receitas: {fmt(total_rec)}  |  "
                 f"❌ Despesas: {fmt(total_desp)}  |  "
                 f"💰 Saldo: {fmt(saldo)}"
@@ -297,17 +318,18 @@ def extrato_view(page: ft.Page):
         carregar_tabela()
 
     def limpar_filtros(e):
-        f_ini.value   = f"01/{hoje.month:02d}/{hoje.year}"
-        f_fim.value   = f"{hoje.day:02d}/{hoje.month:02d}/{hoje.year}"
+        f_ini.value    = f"01/{hoje.month:02d}/{hoje.year}"
+        f_fim.value    = f"{hoje.day:02d}/{hoje.month:02d}/{hoje.year}"
+        f_busca.value  = ""
+        f_tipo.value   = "Todos"
+        f_conta.value  = "Todas"
+        msg_text.value = ""
         f_ini.update()
         f_fim.update()
-        f_tipo.value  = "Todos"
-        f_conta.value = "Todas"
-        msg_text.value = ""
+        f_busca.update()
         page.update()
         carregar_tabela()
 
-    # ── CRUD ──────────────────────────────────────────────────────────────
     def deletar(tid):
         try:
             conn = get_connection()
@@ -362,6 +384,230 @@ def extrato_view(page: ft.Page):
         except Exception as ex:
             print(f"[extrato] salvar_edicao: {ex}")
 
+    # ── EXPORTAR EXCEL ────────────────────────────────────────────────────
+    def exportar_excel(e):
+        try:
+            trans = state["trans"]
+            if not trans:
+                msg_text.value = "⚠️ Nenhum dado para exportar."
+                msg_text.color = ft.colors.ORANGE_700
+                page.update()
+                return
+
+            msg_text.value = "⏳ Gerando Excel..."
+            msg_text.color = ft.colors.BLUE_700
+            page.update()
+
+            wb = openpyxl.Workbook()
+
+            # ── Cores e estilos ───────────────────────────────────────────
+            azul_escuro  = "1565C0"
+            azul_claro   = "E3F2FD"
+            verde        = "1B5E20"
+            verde_claro  = "E8F5E9"
+            vermelho     = "B71C1C"
+            vermelho_claro = "FFEBEE"
+            cinza        = "F5F5F5"
+
+            fonte_titulo  = Font(name="Arial", bold=True, size=14, color="FFFFFF")
+            fonte_cab     = Font(name="Arial", bold=True, size=11, color=azul_escuro)
+            fonte_normal  = Font(name="Arial", size=10)
+            fonte_receita = Font(name="Arial", size=10, color=verde, bold=True)
+            fonte_despesa = Font(name="Arial", size=10, color=vermelho, bold=True)
+            fonte_subtotal= Font(name="Arial", bold=True, size=10)
+
+            borda_fina = Border(
+                left=Side(style="thin", color="DDDDDD"),
+                right=Side(style="thin", color="DDDDDD"),
+                top=Side(style="thin", color="DDDDDD"),
+                bottom=Side(style="thin", color="DDDDDD"),
+            )
+
+            # ── Agrupa por mês ────────────────────────────────────────────
+            grupos = {}
+            for t in trans:
+                ds  = parse_data(t["data"])
+                ck  = chave_mes(ds)
+                lbl = mes_label(ds)
+                if ck not in grupos:
+                    grupos[ck] = {"label": lbl, "trans": [], "rec": 0.0, "desp": 0.0}
+                grupos[ck]["trans"].append(t)
+                if t["tipo"] == "Receita":
+                    grupos[ck]["rec"]  += float(t["valor"])
+                else:
+                    grupos[ck]["desp"] += float(t["valor"])
+
+            ordem = sorted(grupos.keys(), reverse=True)
+
+            # ── Aba RESUMO ────────────────────────────────────────────────
+            ws_res = wb.active
+            ws_res.title = "Resumo"
+
+            # Título
+            ws_res.merge_cells("A1:E1")
+            ws_res["A1"] = "FINANÇA SIMPLES — RESUMO DO EXTRATO"
+            ws_res["A1"].font      = Font(name="Arial", bold=True, size=14, color=azul_escuro)
+            ws_res["A1"].fill      = PatternFill("solid", fgColor=azul_claro)
+            ws_res["A1"].alignment = Alignment(horizontal="center", vertical="center")
+            ws_res.row_dimensions[1].height = 30
+
+            ws_res["A2"] = f"Período: {f_ini.value} a {f_fim.value}"
+            ws_res["A2"].font = Font(name="Arial", size=10, italic=True, color="888888")
+            ws_res["A3"] = f"Gerado em: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+            ws_res["A3"].font = Font(name="Arial", size=10, italic=True, color="888888")
+
+            # Cabeçalho resumo
+            cabecalhos_res = ["Mês", "Receitas", "Despesas", "Saldo", "Lançamentos"]
+            for col, cab in enumerate(cabecalhos_res, 1):
+                cell = ws_res.cell(row=5, column=col, value=cab)
+                cell.font      = fonte_cab
+                cell.fill      = PatternFill("solid", fgColor=azul_claro)
+                cell.alignment = Alignment(horizontal="center")
+                cell.border    = borda_fina
+
+            total_rec_g = total_des_g = 0.0
+            for i, ck in enumerate(ordem, 6):
+                g = grupos[ck]
+                saldo_mes = g["rec"] - g["desp"]
+                total_rec_g += g["rec"]
+                total_des_g += g["desp"]
+
+                fill_linha = PatternFill("solid", fgColor="FFFFFF" if i % 2 == 0 else cinza)
+                dados_res  = [g["label"], g["rec"], g["desp"], saldo_mes, len(g["trans"])]
+
+                for col, val in enumerate(dados_res, 1):
+                    cell = ws_res.cell(row=i, column=col, value=val)
+                    cell.fill   = fill_linha
+                    cell.border = borda_fina
+                    cell.font   = fonte_normal
+                    if col == 1:
+                        cell.font = Font(name="Arial", size=10, bold=True)
+                    if col in (2, 3, 4):
+                        cell.number_format = 'R$ #,##0.00'
+                        cell.alignment = Alignment(horizontal="right")
+                    if col == 4:
+                        cell.font = Font(name="Arial", size=10, bold=True,
+                                        color=verde if saldo_mes >= 0 else vermelho)
+
+            # Linha total
+            linha_total = len(ordem) + 6
+            saldo_geral = total_rec_g - total_des_g
+            ws_res.cell(row=linha_total, column=1, value="TOTAL GERAL").font = fonte_subtotal
+            ws_res.cell(row=linha_total, column=2, value=total_rec_g).number_format = 'R$ #,##0.00'
+            ws_res.cell(row=linha_total, column=3, value=total_des_g).number_format = 'R$ #,##0.00'
+            ws_res.cell(row=linha_total, column=4, value=saldo_geral).number_format = 'R$ #,##0.00'
+            ws_res.cell(row=linha_total, column=5, value=len(trans))
+
+            for col in range(1, 6):
+                cell = ws_res.cell(row=linha_total, column=col)
+                cell.fill   = PatternFill("solid", fgColor=azul_claro)
+                cell.border = borda_fina
+                cell.font   = fonte_subtotal
+
+            ws_res.column_dimensions["A"].width = 20
+            ws_res.column_dimensions["B"].width = 18
+            ws_res.column_dimensions["C"].width = 18
+            ws_res.column_dimensions["D"].width = 18
+            ws_res.column_dimensions["E"].width = 14
+
+            # ── Aba por mês ───────────────────────────────────────────────
+            for ck in ordem:
+                g   = grupos[ck]
+                lbl = g["label"][:31]  # Excel limita nome da aba a 31 chars
+                ws  = wb.create_sheet(title=lbl)
+
+                # Título da aba
+                ws.merge_cells("A1:E1")
+                ws["A1"] = f"{g['label'].upper()} — Receitas: {fmt(g['rec'])}  |  Despesas: {fmt(g['desp'])}  |  Saldo: {fmt(g['rec']-g['desp'])}"
+                ws["A1"].font      = fonte_titulo
+                ws["A1"].fill      = PatternFill("solid", fgColor=azul_escuro)
+                ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
+                ws.row_dimensions[1].height = 28
+
+                # Cabeçalho das colunas
+                cabs = ["Data", "Conta", "Valor", "Tipo", "Descrição"]
+                for col, cab in enumerate(cabs, 1):
+                    cell = ws.cell(row=2, column=col, value=cab)
+                    cell.font      = fonte_cab
+                    cell.fill      = PatternFill("solid", fgColor=azul_claro)
+                    cell.alignment = Alignment(horizontal="center")
+                    cell.border    = borda_fina
+
+                # Dados
+                for i, t in enumerate(g["trans"], 3):
+                    fill_linha = PatternFill("solid", fgColor="FFFFFF" if i % 2 == 0 else cinza)
+                    valor_num  = float(t["valor"])
+
+                    dados = [
+                        parse_data(t["data"]),
+                        t["nome"] or "",
+                        valor_num,
+                        t["tipo"],
+                        t["descricao"] or "",
+                    ]
+                    for col, val in enumerate(dados, 1):
+                        cell = ws.cell(row=i, column=col, value=val)
+                        cell.fill   = fill_linha
+                        cell.border = borda_fina
+                        cell.font   = fonte_normal
+                        if col == 3:
+                            cell.number_format = 'R$ #,##0.00'
+                            cell.alignment = Alignment(horizontal="right")
+                            cell.font = fonte_receita if t["tipo"] == "Receita" else fonte_despesa
+                        if col == 4:
+                            cell.font = fonte_receita if t["tipo"] == "Receita" else fonte_despesa
+
+                # Linha subtotal
+                linha_sub = len(g["trans"]) + 3
+                ws.cell(row=linha_sub, column=1, value="Subtotal")
+                ws.cell(row=linha_sub, column=2, value=f"{len(g['trans'])} lançamentos")
+                ws.cell(row=linha_sub, column=3, value=g["rec"] - g["desp"]).number_format = 'R$ #,##0.00'
+                ws.cell(row=linha_sub, column=4, value=f"Rec: {fmt(g['rec'])} | Des: {fmt(g['desp'])}")
+
+                for col in range(1, 6):
+                    cell = ws.cell(row=linha_sub, column=col)
+                    cell.fill   = PatternFill("solid", fgColor=azul_claro)
+                    cell.border = borda_fina
+                    cell.font   = fonte_subtotal
+
+                ws.column_dimensions["A"].width = 14
+                ws.column_dimensions["B"].width = 28
+                ws.column_dimensions["C"].width = 16
+                ws.column_dimensions["D"].width = 12
+                ws.column_dimensions["E"].width = 40
+
+            # ── Salva em /tmp e serve via endpoint ───────────────────────
+            nome_arq   = f"extrato_{f_ini.value.replace('/','')}-{f_fim.value.replace('/','')}.xlsx"
+            pasta_tmp  = os.path.join(tempfile.gettempdir(), "exports")
+            os.makedirs(pasta_tmp, exist_ok=True)
+            caminho    = os.path.join(pasta_tmp, nome_arq)
+            wb.save(caminho)
+
+            # Monta URL baseada na URL que o usuário está usando no browser
+            # page.url retorna wss://dominio/ws — converte para https://dominio
+            try:
+                from urllib.parse import urlparse
+                raw = getattr(page, "url", "") or ""
+                parsed = urlparse(raw)
+                scheme = "https" if parsed.scheme in ("wss", "https") else "http"
+                base_url = f"{scheme}://{parsed.netloc}"
+            except Exception:
+                base_url = "http://localhost:8080"
+
+            url = f"{base_url}/export/{nome_arq}"
+            page.launch_url(url, web_window_name="_blank")
+
+            msg_text.value = f"✅ Excel gerado! Abrindo..."
+            msg_text.color = ft.colors.GREEN_700
+            page.update()
+
+        except Exception as ex:
+            import traceback; traceback.print_exc()
+            print(f"[extrato] exportar_excel: {ex}")
+            msg_text.value = "❌ Erro ao gerar Excel."
+            msg_text.color = ft.colors.RED_700
+            page.update()
+
     # ── EXPORTAR PDF ──────────────────────────────────────────────────────
     def exportar_pdf(e):
         try:
@@ -394,6 +640,7 @@ def extrato_view(page: ft.Page):
             if f_fim.value: filtros_str.append(f"Ate: {f_fim.value}")
             if f_tipo.value  != "Todos": filtros_str.append(f"Tipo: {safe(f_tipo.value)}")
             if f_conta.value != "Todas": filtros_str.append(f"Conta: {safe(f_conta.value)}")
+            if f_busca.value: filtros_str.append(f"Busca: {safe(f_busca.value)}")
             filtros_label = "  |  ".join(filtros_str) if filtros_str else "Todos os registros"
 
             elems += [
@@ -489,26 +736,28 @@ def extrato_view(page: ft.Page):
 
             pdf_bytes = buffer.getvalue()
             nome_arq  = f"extrato_{f_ini.value.replace('/','')}-{f_fim.value.replace('/','')}.pdf"
-
-            dominio  = os.getenv("RAILWAY_PUBLIC_DOMAIN", "")
-            base_url = f"https://{dominio}" if dominio else ""
-
-            pasta_pdfs = os.path.join(tempfile.gettempdir(), "pdfs")
-            os.makedirs(pasta_pdfs, exist_ok=True)
-            caminho_pdf = os.path.join(pasta_pdfs, nome_arq)
+            pasta_tmp = os.path.join(tempfile.gettempdir(), "exports")
+            os.makedirs(pasta_tmp, exist_ok=True)
+            caminho_pdf = os.path.join(pasta_tmp, nome_arq)
             with open(caminho_pdf, "wb") as fp:
                 fp.write(pdf_bytes)
 
-            if base_url:
-                url_pdf = f"{base_url}/pdf/{nome_arq}"
-                msg_text.value = "✅ PDF pronto! Clique para baixar:"
-                msg_text.color = ft.colors.GREEN_700
-                page.update()
-                page.launch_url(url_pdf, web_window_name="_blank")
-            else:
-                msg_text.value = f"✅ PDF salvo: {caminho_pdf}"
-                msg_text.color = ft.colors.GREEN_700
-                page.update()
+            # Monta URL baseada na URL que o usuário está usando no browser
+            try:
+                from urllib.parse import urlparse
+                raw = getattr(page, "url", "") or ""
+                parsed = urlparse(raw)
+                scheme = "https" if parsed.scheme in ("wss", "https") else "http"
+                base_url = f"{scheme}://{parsed.netloc}"
+            except Exception:
+                base_url = "http://localhost:8080"
+
+            url = f"{base_url}/export/{nome_arq}"
+            page.launch_url(url, web_window_name="_blank")
+
+            msg_text.value = f"✅ PDF gerado! Abrindo..."
+            msg_text.color = ft.colors.GREEN_700
+            page.update()
 
         except Exception as ex:
             import traceback; traceback.print_exc()
@@ -519,7 +768,6 @@ def extrato_view(page: ft.Page):
 
     carregar_tabela()
 
-    # ── VIEW ──────────────────────────────────────────────────────────────
     return ft.View(
         route="/extrato",
         controls=[
@@ -537,13 +785,18 @@ def extrato_view(page: ft.Page):
                         ft.Divider(),
                         ft.Row([
                             f_ini, f_fim, f_tipo, f_conta,
+                        ], spacing=12, wrap=True),
+                        ft.Row([
+                            f_busca,
                             ft.ElevatedButton("🔍 FILTRAR", bgcolor=ft.colors.BLUE_700,
                                 color=ft.colors.WHITE, icon=ft.icons.SEARCH, on_click=filtrar),
                             ft.ElevatedButton("LIMPAR", bgcolor=ft.colors.GREY_300,
                                 color=ft.colors.BLACK, icon=ft.icons.FILTER_ALT_OFF,
                                 on_click=limpar_filtros),
-                            ft.ElevatedButton("📄 EXPORTAR PDF", bgcolor=ft.colors.RED_700,
+                            ft.ElevatedButton("📄 PDF", bgcolor=ft.colors.RED_700,
                                 color=ft.colors.WHITE, on_click=exportar_pdf),
+                            ft.ElevatedButton("📊 EXCEL", bgcolor=ft.colors.GREEN_700,
+                                color=ft.colors.WHITE, on_click=exportar_excel),
                         ], spacing=12, wrap=True),
                         ft.Container(
                             bgcolor="#F5F5F5", border_radius=8,

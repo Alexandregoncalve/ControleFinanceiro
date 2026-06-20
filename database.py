@@ -4,11 +4,14 @@ import psycopg2
 import psycopg2.extras
 from contextlib import contextmanager
 
-# PostgreSQL local — IP público com port forward na porta 5432
+# Quando rodar local usa localhost, quando rodar no Railway usa a variável de ambiente
 DATABASE_URL = os.environ.get(
     "DATABASE_URL",
-    "postgresql://postgres:Discovery$010203@186.237.22.34:5432/financas"
+    "postgresql://postgres:Discovery$010203@localhost:5432/financas"
 )
+
+# URL para o Railway apontar para sua máquina (atualizar no Railway Variables)
+# DATABASE_URL = postgresql://postgres:Discovery$010203@186.237.22.34:5432/financas
 
 
 def get_connection():
@@ -201,6 +204,36 @@ def init_db():
                 meta_despesa   REAL DEFAULT 0,
                 meta_resultado REAL DEFAULT 0,
                 FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS conciliacoes (
+                id          SERIAL PRIMARY KEY,
+                usuario_id  INTEGER,
+                banco_id    INTEGER,
+                data_ini    TEXT,
+                data_fim    TEXT,
+                data_exec   TEXT,
+                total_banco INTEGER DEFAULT 0,
+                conciliados INTEGER DEFAULT 0,
+                pendentes   INTEGER DEFAULT 0,
+                extras      INTEGER DEFAULT 0,
+                FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS conciliacao_itens (
+                id              SERIAL PRIMARY KEY,
+                conciliacao_id  INTEGER,
+                status          TEXT,
+                data            TEXT,
+                descricao       TEXT,
+                valor           REAL,
+                tipo            TEXT,
+                transacao_id    INTEGER,
+                FOREIGN KEY(conciliacao_id) REFERENCES conciliacoes(id)
             )
         """)
 
