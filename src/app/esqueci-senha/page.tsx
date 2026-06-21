@@ -31,19 +31,19 @@ export default function EsqueciSenhaPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F0F4FA] px-4">
+    <div className="flex min-h-screen items-center justify-center bg-[#F4F7FB] px-4">
       <div className="flex w-full max-w-sm flex-col items-center gap-3">
-        <Landmark size={56} className="text-[#1565C0]" />
-        <h1 className="text-xl font-bold tracking-wide text-[#1565C0]">RECUPERAR SENHA</h1>
+        <Landmark size={56} className="text-[#0C447C]" />
+        <h1 className="text-xl font-bold tracking-wide text-[#0C447C]">RECUPERAR SENHA</h1>
 
         {enviado ? (
           <div className="mt-4 flex flex-col items-center gap-4 text-center">
-            <div className="rounded-lg bg-[#E8F5E9] p-4">
-              <p className="text-sm text-[#2E7D32]">{mensagem}</p>
+            <div className="rounded-lg bg-[#EAF3DE] p-4">
+              <p className="text-sm text-[#3B6D11]">{mensagem}</p>
             </div>
             <Link
               href="/login"
-              className="flex items-center gap-1.5 text-sm font-medium text-[#1565C0] hover:underline"
+              className="flex items-center gap-1.5 text-sm font-medium text-[#0C447C] hover:underline"
             >
               <ArrowLeft size={14} /> Voltar para o login
             </Link>
@@ -59,7 +59,7 @@ export default function EsqueciSenhaPage() {
               placeholder="E-mail cadastrado"
               value={login}
               onChange={(e) => setLogin(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-[#1565C0] focus:ring-1 focus:ring-[#1565C0]"
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-[#0C447C] focus:ring-1 focus:ring-[#0C447C]"
             />
 
             <div className="flex gap-2">
@@ -68,7 +68,7 @@ export default function EsqueciSenhaPage() {
                 onClick={() => setMetodo("email")}
                 className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-2.5 text-xs font-medium transition ${
                   metodo === "email"
-                    ? "border-[#1565C0] bg-[#E3F2FD] text-[#1565C0]"
+                    ? "border-[#0C447C] bg-[#E6F1FB] text-[#0C447C]"
                     : "border-gray-300 text-gray-500"
                 }`}
               >
@@ -79,7 +79,7 @@ export default function EsqueciSenhaPage() {
                 onClick={() => setMetodo("whatsapp")}
                 className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-3 py-2.5 text-xs font-medium transition ${
                   metodo === "whatsapp"
-                    ? "border-[#2E7D32] bg-[#E8F5E9] text-[#2E7D32]"
+                    ? "border-[#3B6D11] bg-[#EAF3DE] text-[#3B6D11]"
                     : "border-gray-300 text-gray-500"
                 }`}
               >
@@ -90,7 +90,7 @@ export default function EsqueciSenhaPage() {
             <button
               type="submit"
               disabled={carregando}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#1565C0] font-semibold text-white transition hover:bg-[#1257A8] disabled:opacity-60"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#0C447C] font-semibold text-white transition hover:bg-[#042C53] disabled:opacity-60"
             >
               {carregando ? <Loader2 className="animate-spin" size={18} /> : "ENVIAR INSTRUÇÕES"}
             </button>

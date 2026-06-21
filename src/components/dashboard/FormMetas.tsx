@@ -60,14 +60,14 @@ export function FormMetas({
         <button
           onClick={salvar}
           disabled={salvando}
-          className="flex h-[38px] items-center justify-center gap-2 rounded-lg bg-[#1565C0] px-5 text-xs font-semibold text-white transition hover:bg-[#1257A8] disabled:opacity-60"
+          className="flex h-[38px] items-center justify-center gap-2 rounded-lg bg-[#0C447C] px-5 text-xs font-semibold text-white transition hover:bg-[#042C53] disabled:opacity-60"
         >
           {salvando && <LoadingBotao size={14} />}
           SALVAR
         </button>
       </div>
       {metaCopiada && (
-        <p className="text-[10px] italic text-[#2E7D32]">💡 Copiada automaticamente do mês anterior</p>
+        <p className="text-[10px] italic text-[#3B6D11]">💡 Copiada automaticamente do mês anterior</p>
       )}
     </div>
   );

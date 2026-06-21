@@ -40,17 +40,17 @@ interface Divida {
 
 function statusBadge(d: Divida, hoje: Date) {
   if (d.status === "quitada" || d.saldo <= 0) {
-    return { cor: "#43A047", label: "Quitada" };
+    return { cor: "#639922", label: "Quitada" };
   }
   const datasPag = d.pagamentos.map((p) => parseDataBR(p.data));
   const ultima = datasPag.length > 0 ? new Date(Math.max(...datasPag.map((dt) => dt.getTime()))) : null;
 
   if (d.tipoControle === "parcelada" && ultima) {
     const dias = Math.floor((hoje.getTime() - ultima.getTime()) / 86400000);
-    if (dias > 35) return { cor: "#C62828", label: "Atrasado" };
+    if (dias > 35) return { cor: "#A32D2D", label: "Atrasado" };
   }
-  if (!ultima) return { cor: "#F57F17", label: "Sem pagto" };
-  return { cor: "#1565C0", label: "Em dia" };
+  if (!ultima) return { cor: "#854F0B", label: "Sem pagto" };
+  return { cor: "#0C447C", label: "Em dia" };
 }
 
 export default function DividasPage() {
@@ -219,21 +219,21 @@ export default function DividasPage() {
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-5 p-6">
       <div className="flex items-center gap-2">
-        <AlertTriangle className="text-[#C62828]" size={26} />
-        <h1 className="text-xl font-bold text-[#C62828]">CONTROLE DE DÍVIDAS</h1>
+        <AlertTriangle className="text-[#A32D2D]" size={26} />
+        <h1 className="text-xl font-bold text-[#A32D2D]">CONTROLE DE DÍVIDAS</h1>
       </div>
 
       {/* Resumo */}
       <div className="flex flex-wrap gap-3">
-        <CardResumo titulo="💸 TOTAL PAGO" valor={fmt(resumo.totalPagoGeral)} sub="soma de todos os pagamentos" cor="#C62828" />
-        <CardResumo titulo="📋 DÍVIDAS ATIVAS" valor={String(resumo.qtdAtivas)} sub="dívidas em aberto" cor="#1565C0" />
-        <CardResumo titulo="⏳ SALDO DEVEDOR" valor={fmt(resumo.saldoTotalGeral)} sub="total ainda a pagar" cor="#E65100" />
-        <CardResumo titulo="✅ QUITADAS" valor={String(resumo.qtdQuitadas)} sub="dívidas encerradas" cor="#43A047" />
+        <CardResumo titulo="💸 TOTAL PAGO" valor={fmt(resumo.totalPagoGeral)} sub="soma de todos os pagamentos" cor="#A32D2D" />
+        <CardResumo titulo="📋 DÍVIDAS ATIVAS" valor={String(resumo.qtdAtivas)} sub="dívidas em aberto" cor="#0C447C" />
+        <CardResumo titulo="⏳ SALDO DEVEDOR" valor={fmt(resumo.saldoTotalGeral)} sub="total ainda a pagar" cor="#854F0B" />
+        <CardResumo titulo="✅ QUITADAS" valor={String(resumo.qtdQuitadas)} sub="dívidas encerradas" cor="#639922" />
       </div>
 
       {/* Cadastrar nova dívida */}
       <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-        <p className="text-sm font-bold text-[#C62828]">➕ CADASTRAR NOVA DÍVIDA</p>
+        <p className="text-sm font-bold text-[#A32D2D]">➕ CADASTRAR NOVA DÍVIDA</p>
         <p className="mb-3 text-xs text-gray-400">Escolha como quer controlar essa dívida</p>
 
         <div className="mb-3 flex items-center gap-2">
@@ -241,7 +241,7 @@ export default function DividasPage() {
           <button
             onClick={() => setTipo("parcelada")}
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
-              tipo === "parcelada" ? "bg-[#1565C0] text-white" : "bg-gray-200 text-gray-600"
+              tipo === "parcelada" ? "bg-[#0C447C] text-white" : "bg-gray-200 text-gray-600"
             }`}
           >
             🔵 PARCELADA
@@ -249,16 +249,16 @@ export default function DividasPage() {
           <button
             onClick={() => setTipo("livre")}
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
-              tipo === "livre" ? "bg-[#E65100] text-white" : "bg-gray-200 text-gray-600"
+              tipo === "livre" ? "bg-[#854F0B] text-white" : "bg-gray-200 text-gray-600"
             }`}
           >
             🟠 PAGAMENTO LIVRE
           </button>
         </div>
 
-        <div className={`mb-3 flex items-start gap-2 rounded-lg p-2.5 ${tipo === "parcelada" ? "bg-[#E3F2FD]" : "bg-[#FFF3E0]"}`}>
-          <Info size={14} className={`mt-0.5 flex-shrink-0 ${tipo === "parcelada" ? "text-[#1565C0]" : "text-[#E65100]"}`} />
-          <p className={`text-xs italic ${tipo === "parcelada" ? "text-[#1565C0]" : "text-[#E65100]"}`}>
+        <div className={`mb-3 flex items-start gap-2 rounded-lg p-2.5 ${tipo === "parcelada" ? "bg-[#E6F1FB]" : "bg-[#FAEEDA]"}`}>
+          <Info size={14} className={`mt-0.5 flex-shrink-0 ${tipo === "parcelada" ? "text-[#0C447C]" : "text-[#854F0B]"}`} />
+          <p className={`text-xs italic ${tipo === "parcelada" ? "text-[#0C447C]" : "text-[#854F0B]"}`}>
             {tipo === "parcelada"
               ? "Uma conta fixa será criada automaticamente e aparecerá em Contas Fixas todo mês para você dar baixa."
               : "Sem vencimento fixo. Você registra o pagamento quando e quanto quiser, abatendo do saldo devedor."}
@@ -282,7 +282,7 @@ export default function DividasPage() {
 
         <button
           onClick={cadastrarDivida}
-          className="mt-3 flex items-center gap-2 rounded-lg bg-[#1565C0] px-5 py-2.5 text-xs font-semibold text-white"
+          className="mt-3 flex items-center gap-2 rounded-lg bg-[#0C447C] px-5 py-2.5 text-xs font-semibold text-white"
         >
           <Plus size={14} /> CADASTRAR DÍVIDA
         </button>
@@ -295,7 +295,7 @@ export default function DividasPage() {
 
       {/* Registrar pagamento avulso */}
       <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-        <p className="text-sm font-bold text-[#C62828]">💰 REGISTRAR PAGAMENTO</p>
+        <p className="text-sm font-bold text-[#A32D2D]">💰 REGISTRAR PAGAMENTO</p>
         <p className="mb-3 text-xs text-gray-400">
           Para dívidas parceladas, dê baixa diretamente em Contas Fixas. Aqui registre pagamentos avulsos.
         </p>
@@ -321,7 +321,7 @@ export default function DividasPage() {
           <CampoTexto label="Observação (opcional)" value={obsPag} onChange={setObsPag} className="w-56" />
           <button
             onClick={registrarPagamento}
-            className="flex h-[38px] items-center gap-1.5 rounded-lg bg-[#C62828] px-4 text-xs font-semibold text-white"
+            className="flex h-[38px] items-center gap-1.5 rounded-lg bg-[#A32D2D] px-4 text-xs font-semibold text-white"
           >
             <Save size={14} /> REGISTRAR
           </button>
@@ -335,7 +335,7 @@ export default function DividasPage() {
 
       {/* Lista de dívidas */}
       <div>
-        <p className="mb-2 text-sm font-bold text-[#C62828]">📋 DÍVIDAS REGISTRADAS</p>
+        <p className="mb-2 text-sm font-bold text-[#A32D2D]">📋 DÍVIDAS REGISTRADAS</p>
         {dividas.length === 0 ? (
           <p className="text-sm italic text-gray-400">Nenhuma dívida cadastrada.</p>
         ) : (
@@ -348,7 +348,7 @@ export default function DividasPage() {
                 ? 1
                 : 0;
               const expandida = expandidas.has(d.id);
-              const tipoCor = d.tipoControle === "parcelada" ? "#1565C0" : "#E65100";
+              const tipoCor = d.tipoControle === "parcelada" ? "#0C447C" : "#854F0B";
 
               const infoParts: string[] = [];
               if (d.tipoControle === "parcelada") {
@@ -385,11 +385,11 @@ export default function DividasPage() {
 
                     <div className="text-right">
                       <p className="text-[10px] text-gray-400">Total pago</p>
-                      <p className="text-sm font-bold text-[#C62828]">{fmt(d.totalPago)}</p>
+                      <p className="text-sm font-bold text-[#A32D2D]">{fmt(d.totalPago)}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-[10px] text-gray-400">Saldo devedor</p>
-                      <p className="text-sm font-bold" style={{ color: d.saldo > 0 ? "#E65100" : "#43A047" }}>
+                      <p className="text-sm font-bold" style={{ color: d.saldo > 0 ? "#854F0B" : "#639922" }}>
                         {d.saldo > 0 ? fmt(d.saldo) : "Quitado"}
                       </p>
                     </div>
@@ -401,18 +401,18 @@ export default function DividasPage() {
                     <div className="flex items-center gap-1">
                       <button onClick={() => toggleExpandida(d.id)} title="Ver pagamentos">
                         {expandida ? (
-                          <ChevronUp size={18} className="text-[#1565C0]" />
+                          <ChevronUp size={18} className="text-[#0C447C]" />
                         ) : (
-                          <ChevronDown size={18} className="text-[#1565C0]" />
+                          <ChevronDown size={18} className="text-[#0C447C]" />
                         )}
                       </button>
                       {d.status === "ativa" && (
                         <button onClick={() => quitarDivida(d.id, d.nome)} title="Marcar como quitada">
-                          <CheckCheck size={18} className="text-[#43A047]" />
+                          <CheckCheck size={18} className="text-[#639922]" />
                         </button>
                       )}
                       <button onClick={() => excluirDivida(d.id, d.nome)} title="Excluir dívida">
-                        <Trash2 size={18} className="text-[#C62828]" />
+                        <Trash2 size={18} className="text-[#A32D2D]" />
                       </button>
                     </div>
                   </div>
@@ -423,12 +423,12 @@ export default function DividasPage() {
                         ? `${d.pagamentos.length}/${d.totalParcelas} parcelas pagas`
                         : `${d.pagamentos.length} pagamento(s)`}
                     </span>
-                    <span className="text-[10px] font-bold text-[#1565C0]">{Math.round(progresso * 100)}%</span>
+                    <span className="text-[10px] font-bold text-[#0C447C]">{Math.round(progresso * 100)}%</span>
                   </div>
                   <div className="mt-1 h-1.5 rounded bg-gray-200">
                     <div
                       className="h-1.5 rounded"
-                      style={{ width: `${progresso * 100}%`, backgroundColor: progresso >= 1 ? "#43A047" : tipoCor }}
+                      style={{ width: `${progresso * 100}%`, backgroundColor: progresso >= 1 ? "#639922" : tipoCor }}
                     />
                   </div>
 
@@ -440,14 +440,14 @@ export default function DividasPage() {
                         d.pagamentos.map((p) => (
                           <div
                             key={p.id}
-                            className="flex items-center gap-2 rounded-md bg-[#F5F6FA] px-3 py-1.5"
+                            className="flex items-center gap-2 rounded-md bg-[#F4F7FB] px-3 py-1.5"
                           >
-                            <Receipt size={14} className="text-[#1565C0]" />
+                            <Receipt size={14} className="text-[#0C447C]" />
                             <span className="w-20 flex-shrink-0 text-xs text-gray-500">{p.data}</span>
                             <span className="flex-1 truncate text-xs text-gray-500">{p.observacao || ""}</span>
-                            <span className="text-xs font-bold text-[#C62828]">{fmt(p.valor)}</span>
+                            <span className="text-xs font-bold text-[#A32D2D]">{fmt(p.valor)}</span>
                             <button onClick={() => excluirPagamento(p.id, p.valor, p.data)}>
-                              <Trash2 size={13} className="text-[#C62828]" />
+                              <Trash2 size={13} className="text-[#A32D2D]" />
                             </button>
                           </div>
                         ))
@@ -494,7 +494,7 @@ function CampoTexto({
         type={tipo}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#1565C0] focus:ring-1 focus:ring-[#1565C0]"
+        className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C] focus:ring-1 focus:ring-[#0C447C]"
       />
     </label>
   );

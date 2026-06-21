@@ -18,18 +18,18 @@ export function TopGastos({ gastos, totalDespesas }: TopGastosProps) {
       {gastos.map((g, i) => {
         const pct = totalDespesas > 0 ? (g.total / totalDespesas) * 100 : 0;
         return (
-          <div key={g.nome} className="flex items-center gap-2 border-b border-[#F0F4FA] py-1.5 last:border-0">
-            <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#E3F2FD] text-[10px] font-bold text-[#1565C0]">
+          <div key={g.nome} className="flex items-center gap-2 border-b border-[#F4F7FB] py-1.5 last:border-0">
+            <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#E6F1FB] text-[10px] font-bold text-[#0C447C]">
               {i + 1}
             </div>
             <span className="w-44 flex-shrink-0 truncate text-[11px] text-gray-700">{g.nome}</span>
-            <div className="h-1.5 w-20 flex-shrink-0 rounded bg-[#F0F4FA]">
+            <div className="h-1.5 w-20 flex-shrink-0 rounded bg-[#F4F7FB]">
               <div
-                className="h-1.5 rounded bg-[#C62828]"
+                className="h-1.5 rounded bg-[#A32D2D]"
                 style={{ width: `${Math.max(3, (g.total / max) * 100)}%` }}
               />
             </div>
-            <span className="w-20 flex-shrink-0 text-right text-[11px] font-bold text-[#C62828]">
+            <span className="w-20 flex-shrink-0 text-right text-[11px] font-bold text-[#A32D2D]">
               {fmt(g.total)}
             </span>
             <span className="w-9 flex-shrink-0 text-right text-[10px] text-gray-400">{pct.toFixed(1)}%</span>

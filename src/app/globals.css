@@ -3,6 +3,23 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Identidade visual — azul escuro / azul / verde */
+  --brand-azul-escuro: #042c53;
+  --brand-azul: #0c447c;
+  --brand-azul-claro: #e6f1fb;
+  --brand-verde-escuro: #173404;
+  --brand-verde: #3b6d11;
+  --brand-verde-claro: #eaf3de;
+  --brand-alerta: #a32d2d;
+  --brand-alerta-claro: #fcebeb;
+  --brand-aviso: #854f0b;
+  --brand-aviso-claro: #faeeda;
+
+  --app-bg: #f4f7fb;
+  --app-border: #e2e8f0;
+  --app-texto: #1f2937;
+  --app-texto-secundario: #64748b;
 }
 
 @theme inline {
@@ -20,7 +37,7 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--app-bg);
+  color: var(--app-texto);
   font-family: Arial, Helvetica, sans-serif;
 }

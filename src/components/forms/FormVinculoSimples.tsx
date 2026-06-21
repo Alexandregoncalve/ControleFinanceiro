@@ -92,7 +92,7 @@ export function FormVinculoSimples({
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border border-[#CE93D8] bg-[#F3E5F5] p-4">
+    <div className="flex flex-col gap-4 rounded-xl border border-[#85B7EB] bg-[#E6F1FB] p-4">
       <div className="flex flex-wrap gap-3">
         <label className="flex w-56 flex-col gap-1">
           <span className="text-xs font-medium text-gray-600">Apelido deste vínculo</span>
@@ -101,7 +101,7 @@ export function FormVinculoSimples({
             placeholder="Ex: Minha Empresa LTDA"
             value={apelido}
             onChange={(e) => setApelido(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#6A1B9A]"
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
           />
         </label>
         <label className="flex w-56 flex-col gap-1">
@@ -110,7 +110,7 @@ export function FormVinculoSimples({
             type="text"
             value={d.razaoSocial}
             onChange={(e) => set("razaoSocial", e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#6A1B9A]"
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
           />
         </label>
         <label className="flex w-44 flex-col gap-1">
@@ -120,7 +120,7 @@ export function FormVinculoSimples({
             placeholder="00.000.000/0001-00"
             value={d.cnpj}
             onChange={(e) => set("cnpj", e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#6A1B9A]"
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
           />
         </label>
       </div>
@@ -134,7 +134,7 @@ export function FormVinculoSimples({
               onClick={() => set("anexo", a)}
               title={DESCRICAO_ANEXO[a]}
               className={`rounded-lg border px-3 py-2 text-xs font-medium ${
-                d.anexo === a ? "border-[#6A1B9A] bg-white text-[#6A1B9A]" : "border-gray-300 bg-white text-gray-500"
+                d.anexo === a ? "border-[#0C447C] bg-white text-[#0C447C]" : "border-gray-300 bg-white text-gray-500"
               }`}
             >
               Anexo {a}
@@ -173,11 +173,11 @@ export function FormVinculoSimples({
           {d.faturamento12meses > 0 && (
             <div
               className={`mt-2 flex items-start gap-2 rounded-md p-2.5 ${
-                beneficiadoPeloFatorR ? "bg-[#E8F5E9]" : "bg-[#F5F5F5]"
+                beneficiadoPeloFatorR ? "bg-[#EAF3DE]" : "bg-[#F5F5F5]"
               }`}
             >
-              {beneficiadoPeloFatorR && <TrendingDown size={14} className="mt-0.5 flex-shrink-0 text-[#2E7D32]" />}
-              <p className={`text-xs ${beneficiadoPeloFatorR ? "text-[#2E7D32]" : "text-gray-600"}`}>
+              {beneficiadoPeloFatorR && <TrendingDown size={14} className="mt-0.5 flex-shrink-0 text-[#3B6D11]" />}
+              <p className={`text-xs ${beneficiadoPeloFatorR ? "text-[#3B6D11]" : "text-gray-600"}`}>
                 Fator R: <strong>{fmtPct(fatorR * 100)}</strong>
                 {beneficiadoPeloFatorR
                   ? " — acima de 28%! Sua empresa será tributada pelo Anexo III (alíquotas menores)."
@@ -191,10 +191,10 @@ export function FormVinculoSimples({
       {d.faturamento12meses > 0 && (
         <div className="rounded-md bg-white p-3">
           <div className="flex items-center gap-2">
-            <Info size={14} className="text-[#1565C0]" />
+            <Info size={14} className="text-[#0C447C]" />
             <p className="text-xs text-gray-600">
-              Alíquota efetiva: <strong className="text-[#1565C0]">{fmtPct(aliquotaEfetiva * 100)}</strong> ·
-              DAS estimado do mês: <strong className="text-[#1565C0]">{fmt(dasEstimado)}</strong>
+              Alíquota efetiva: <strong className="text-[#0C447C]">{fmtPct(aliquotaEfetiva * 100)}</strong> ·
+              DAS estimado do mês: <strong className="text-[#0C447C]">{fmt(dasEstimado)}</strong>
             </p>
           </div>
         </div>
@@ -202,14 +202,14 @@ export function FormVinculoSimples({
 
       {d.faturamento12meses > 0 && (
         <div
-          className={`flex items-start gap-2 rounded-md p-2.5 ${proximoDoLimite ? "bg-[#FFEBEE]" : "bg-[#E8F5E9]"}`}
+          className={`flex items-start gap-2 rounded-md p-2.5 ${proximoDoLimite ? "bg-[#FCEBEB]" : "bg-[#EAF3DE]"}`}
         >
           {proximoDoLimite ? (
-            <AlertTriangle size={14} className="mt-0.5 flex-shrink-0 text-[#C62828]" />
+            <AlertTriangle size={14} className="mt-0.5 flex-shrink-0 text-[#A32D2D]" />
           ) : (
-            <Info size={14} className="mt-0.5 flex-shrink-0 text-[#2E7D32]" />
+            <Info size={14} className="mt-0.5 flex-shrink-0 text-[#3B6D11]" />
           )}
-          <p className={`text-xs ${proximoDoLimite ? "text-[#C62828]" : "text-[#2E7D32]"}`}>
+          <p className={`text-xs ${proximoDoLimite ? "text-[#A32D2D]" : "text-[#3B6D11]"}`}>
             {pctLimite.toFixed(0)}% do limite anual do Simples ({fmt(LIMITE_FATURAMENTO_SIMPLES_ANUAL)}).
             {proximoDoLimite && " Você está próximo do limite — considere planejamento tributário."}
           </p>
@@ -222,7 +222,7 @@ export function FormVinculoSimples({
         <button
           onClick={salvar}
           disabled={salvando}
-          className="flex h-10 items-center gap-2 rounded-lg bg-[#6A1B9A] px-5 text-xs font-semibold text-white disabled:opacity-60"
+          className="flex h-10 items-center gap-2 rounded-lg bg-[#0C447C] px-5 text-xs font-semibold text-white disabled:opacity-60"
         >
           {salvando && <LoadingBotao size={14} />}
           {vinculoId ? "ATUALIZAR VÍNCULO" : "SALVAR VÍNCULO"}

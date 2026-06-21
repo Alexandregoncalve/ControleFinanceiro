@@ -73,25 +73,25 @@ function RedefinirSenhaConteudo() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F0F4FA] px-4">
+    <div className="flex min-h-screen items-center justify-center bg-[#F4F7FB] px-4">
       <div className="flex w-full max-w-sm flex-col items-center gap-3">
-        <Landmark size={56} className="text-[#1565C0]" />
-        <h1 className="text-xl font-bold tracking-wide text-[#1565C0]">NOVA SENHA</h1>
+        <Landmark size={56} className="text-[#0C447C]" />
+        <h1 className="text-xl font-bold tracking-wide text-[#0C447C]">NOVA SENHA</h1>
 
         {verificando ? (
           <div className="mt-6">
-            <Loader2 className="animate-spin text-[#1565C0]" size={28} />
+            <Loader2 className="animate-spin text-[#0C447C]" size={28} />
           </div>
         ) : sucesso ? (
           <div className="mt-4 flex flex-col items-center gap-3 text-center">
-            <CheckCircle2 size={40} className="text-[#2E7D32]" />
+            <CheckCircle2 size={40} className="text-[#3B6D11]" />
             <p className="text-sm text-gray-600">Senha redefinida com sucesso! Redirecionando para o login...</p>
           </div>
         ) : !tokenValido ? (
           <div className="mt-4 flex flex-col items-center gap-4 text-center">
-            <XCircle size={40} className="text-[#C62828]" />
+            <XCircle size={40} className="text-[#A32D2D]" />
             <p className="text-sm text-gray-600">{motivoInvalido}</p>
-            <Link href="/esqueci-senha" className="text-sm font-medium text-[#1565C0] hover:underline">
+            <Link href="/esqueci-senha" className="text-sm font-medium text-[#0C447C] hover:underline">
               Solicitar um novo link
             </Link>
           </div>
@@ -102,14 +102,14 @@ function RedefinirSenhaConteudo() {
               placeholder="Nova senha"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-[#1565C0] focus:ring-1 focus:ring-[#1565C0]"
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-[#0C447C] focus:ring-1 focus:ring-[#0C447C]"
             />
             <input
               type="password"
               placeholder="Confirmar nova senha"
               value={senha2}
               onChange={(e) => setSenha2(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-[#1565C0] focus:ring-1 focus:ring-[#1565C0]"
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-[#0C447C] focus:ring-1 focus:ring-[#0C447C]"
             />
 
             {erro && <p className="text-sm text-red-600">{erro}</p>}
@@ -117,7 +117,7 @@ function RedefinirSenhaConteudo() {
             <button
               type="submit"
               disabled={salvando}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#1565C0] font-semibold text-white transition hover:bg-[#1257A8] disabled:opacity-60"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#0C447C] font-semibold text-white transition hover:bg-[#042C53] disabled:opacity-60"
             >
               {salvando ? <Loader2 className="animate-spin" size={18} /> : "REDEFINIR SENHA"}
             </button>
@@ -130,7 +130,7 @@ function RedefinirSenhaConteudo() {
 
 export default function RedefinirSenhaPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><Loader2 className="animate-spin text-[#1565C0]" size={28} /></div>}>
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><Loader2 className="animate-spin text-[#0C447C]" size={28} /></div>}>
       <RedefinirSenhaConteudo />
     </Suspense>
   );

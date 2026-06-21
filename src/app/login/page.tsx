@@ -46,10 +46,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F0F4FA] px-4">
+    <div className="flex min-h-screen items-center justify-center bg-[#F4F7FB] px-4">
       <div className="flex w-full max-w-sm flex-col items-center gap-3">
-        <Landmark size={64} className="text-[#1565C0]" />
-        <h1 className="text-2xl font-bold tracking-wide text-[#1565C0]">
+        <Landmark size={64} className="text-[#0C447C]" />
+        <h1 className="text-2xl font-bold tracking-wide text-[#0C447C]">
           FINANÇA SIMPLES
         </h1>
         <p className="text-sm text-gray-500">Acesse sua conta</p>
@@ -60,20 +60,20 @@ export default function LoginPage() {
             placeholder="E-mail ou usuário"
             value={login}
             onChange={(e) => setLogin(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-[#1565C0] focus:ring-1 focus:ring-[#1565C0]"
+            className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-[#0C447C] focus:ring-1 focus:ring-[#0C447C]"
           />
           <input
             type="password"
             placeholder="Senha"
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-[#1565C0] focus:ring-1 focus:ring-[#1565C0]"
+            className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-[#0C447C] focus:ring-1 focus:ring-[#0C447C]"
           />
 
           {erro && <p className="text-sm text-red-600">{erro}</p>}
 
           <div className="flex justify-end">
-            <Link href="/esqueci-senha" className="text-xs text-[#1565C0] hover:underline">
+            <Link href="/esqueci-senha" className="text-xs text-[#0C447C] hover:underline">
               Esqueci minha senha
             </Link>
           </div>
@@ -81,7 +81,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={carregando}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#1565C0] font-semibold text-white transition hover:bg-[#1257A8] disabled:opacity-60"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#0C447C] font-semibold text-white transition hover:bg-[#042C53] disabled:opacity-60"
           >
             {carregando ? <Loader2 className="animate-spin" size={18} /> : "ENTRAR"}
           </button>
@@ -89,7 +89,7 @@ export default function LoginPage() {
 
         <p className="mt-2 text-sm text-gray-500">
           Não tem conta?{" "}
-          <Link href="/cadastro" className="font-medium text-[#1565C0] hover:underline">
+          <Link href="/cadastro" className="font-medium text-[#0C447C] hover:underline">
             Criar conta
           </Link>
         </p>

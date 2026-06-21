@@ -202,14 +202,14 @@ export function FormularioCadastro({ novoUsuario, perfilInicial }: FormularioCad
 
   return (
     <div className="flex flex-col gap-4 p-6">
-      <h1 className="text-xl font-bold text-[#1565C0]">
+      <h1 className="text-xl font-bold text-[#0C447C]">
         {novoUsuario ? "CRIAR CONTA" : "MEU CADASTRO"}
       </h1>
       <hr />
 
       {novoUsuario && (
-        <section className="rounded-xl bg-[#E8F5E9] p-4">
-          <h2 className="mb-3 text-sm font-bold text-[#2E7D32]">🔐 DADOS DE ACESSO</h2>
+        <section className="rounded-xl bg-[#EAF3DE] p-4">
+          <h2 className="mb-3 text-sm font-bold text-[#3B6D11]">🔐 DADOS DE ACESSO</h2>
           <div className="flex flex-wrap gap-3">
             <CampoValidado
               label="E-mail (será seu login)"
@@ -251,8 +251,8 @@ export function FormularioCadastro({ novoUsuario, perfilInicial }: FormularioCad
         </section>
       )}
 
-      <section className="rounded-xl bg-[#E3F2FD] p-4">
-        <h2 className="mb-3 text-sm font-bold text-[#1565C0]">👤 1. IDENTIFICAÇÃO E CONTATO</h2>
+      <section className="rounded-xl bg-[#E6F1FB] p-4">
+        <h2 className="mb-3 text-sm font-bold text-[#0C447C]">👤 1. IDENTIFICAÇÃO E CONTATO</h2>
         <div className="flex flex-wrap gap-3">
           <CampoValidado
             label="Nome Completo"
@@ -269,7 +269,7 @@ export function FormularioCadastro({ novoUsuario, perfilInicial }: FormularioCad
                 type="email"
                 value={dados.email}
                 disabled
-                className="w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500"
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 outline-none"
               />
               <span className="text-[10px] text-gray-400">
                 Para alterar o e-mail de login, entre em contato com o suporte.
@@ -317,8 +317,8 @@ export function FormularioCadastro({ novoUsuario, perfilInicial }: FormularioCad
         </div>
       </section>
 
-      <section className="rounded-xl bg-[#FFF3E0] p-4">
-        <h2 className="mb-1 text-sm font-bold text-[#E65100]">🏠 2. ENDEREÇO RESIDENCIAL</h2>
+      <section className="rounded-xl bg-[#FAEEDA] p-4">
+        <h2 className="mb-1 text-sm font-bold text-[#854F0B]">🏠 2. ENDEREÇO RESIDENCIAL</h2>
         <p className="mb-3 text-[11px] italic text-gray-500">💡 Preencha o endereço manualmente.</p>
         <div className="flex flex-wrap gap-3">
           <CampoValidado
@@ -375,9 +375,9 @@ export function FormularioCadastro({ novoUsuario, perfilInicial }: FormularioCad
         </div>
       </section>
 
-      <div className="flex items-center gap-2 rounded-lg bg-[#FFF3E0] px-3 py-2.5">
-        <Briefcase size={16} className="flex-shrink-0 text-[#E65100]" />
-        <p className="text-xs text-[#E65100]">
+      <div className="flex items-center gap-2 rounded-lg bg-[#FAEEDA] px-3 py-2.5">
+        <Briefcase size={16} className="flex-shrink-0 text-[#854F0B]" />
+        <p className="text-xs text-[#854F0B]">
           Salário, vale-transporte, vale-alimentação e outros vínculos de renda agora ficam em{" "}
           <Link href="/vinculos-renda" className="font-semibold underline">
             Vínculos de Renda
@@ -389,7 +389,7 @@ export function FormularioCadastro({ novoUsuario, perfilInicial }: FormularioCad
       {msg && (
         <div
           className={`rounded-lg p-3 text-sm font-medium ${
-            msg.cor === "red" ? "bg-[#FFEBEE] text-red-700" : "bg-[#E8F5E9] text-green-700"
+            msg.cor === "red" ? "bg-[#FCEBEB] text-red-700" : "bg-[#EAF3DE] text-green-700"
           }`}
         >
           {msg.texto}
@@ -400,7 +400,7 @@ export function FormularioCadastro({ novoUsuario, perfilInicial }: FormularioCad
         <button
           onClick={salvar}
           disabled={salvando}
-          className="flex h-12 items-center gap-2 rounded-lg bg-[#1565C0] px-8 font-semibold text-white transition hover:bg-[#1257A8] disabled:opacity-60"
+          className="flex h-12 items-center gap-2 rounded-lg bg-[#0C447C] px-8 font-semibold text-white transition hover:bg-[#042C53] disabled:opacity-60"
         >
           {novoUsuario ? <UserPlus size={18} /> : <Save size={18} />}
           {novoUsuario ? "CRIAR CONTA" : "SALVAR ALTERAÇÕES"}

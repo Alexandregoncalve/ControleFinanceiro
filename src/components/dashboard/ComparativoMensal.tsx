@@ -84,10 +84,10 @@ export function ComparativoMensal() {
   function corCelula(conta: ContaComparativo, idx: number): string {
     const atual = conta.valores[idx].valor;
     if (atual === null) return "#9CA3AF";
-    if (idx === 0) return "#1565C0";
+    if (idx === 0) return "#0C447C";
     const anterior = conta.valores[idx - 1].valor;
-    if (anterior === null || anterior === 0) return "#1565C0";
-    return atual > anterior ? "#C62828" : "#2E7D32";
+    if (anterior === null || anterior === 0) return "#0C447C";
+    return atual > anterior ? "#A32D2D" : "#3B6D11";
   }
 
   return (
@@ -98,7 +98,7 @@ export function ComparativoMensal() {
           <select
             value={inicio}
             onChange={(e) => setInicio(e.target.value)}
-            className="rounded-lg border border-gray-300 px-2 py-1.5 text-xs outline-none focus:border-[#1565C0]"
+            className="rounded-lg border border-gray-300 px-2 py-1.5 text-xs outline-none focus:border-[#0C447C]"
           >
             {opcoesMeses
               .slice()
@@ -115,7 +115,7 @@ export function ComparativoMensal() {
           <select
             value={fim}
             onChange={(e) => setFim(e.target.value)}
-            className="rounded-lg border border-gray-300 px-2 py-1.5 text-xs outline-none focus:border-[#1565C0]"
+            className="rounded-lg border border-gray-300 px-2 py-1.5 text-xs outline-none focus:border-[#0C447C]"
           >
             {opcoesMeses
               .slice()
@@ -132,10 +132,10 @@ export function ComparativoMensal() {
 
       <div className="flex items-center gap-2 text-[10px] text-gray-500">
         <span className="inline-flex items-center gap-1">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#2E7D32]" /> diminuiu
+          <span className="h-2.5 w-2.5 rounded-full bg-[#3B6D11]" /> diminuiu
         </span>
         <span className="inline-flex items-center gap-1">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#C62828]" /> aumentou em relação ao mês anterior
+          <span className="h-2.5 w-2.5 rounded-full bg-[#A32D2D]" /> aumentou em relação ao mês anterior
         </span>
       </div>
 

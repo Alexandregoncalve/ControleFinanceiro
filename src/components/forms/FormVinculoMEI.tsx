@@ -74,7 +74,7 @@ export function FormVinculoMEI({
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border border-[#FFCC80] bg-[#FFF3E0] p-4">
+    <div className="flex flex-col gap-4 rounded-xl border border-[#FAC775] bg-[#FAEEDA] p-4">
       <div className="flex flex-wrap gap-3">
         <label className="flex w-56 flex-col gap-1">
           <span className="text-xs font-medium text-gray-600">Apelido deste vínculo</span>
@@ -83,7 +83,7 @@ export function FormVinculoMEI({
             placeholder="Ex: Minha Loja MEI"
             value={apelido}
             onChange={(e) => setApelido(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#E65100]"
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#854F0B]"
           />
         </label>
         <label className="flex w-56 flex-col gap-1">
@@ -92,7 +92,7 @@ export function FormVinculoMEI({
             type="text"
             value={d.nomeFantasia}
             onChange={(e) => set("nomeFantasia", e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#E65100]"
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#854F0B]"
           />
         </label>
         <label className="flex w-44 flex-col gap-1">
@@ -102,7 +102,7 @@ export function FormVinculoMEI({
             placeholder="00.000.000/0001-00"
             value={d.cnpj}
             onChange={(e) => set("cnpj", e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#E65100]"
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#854F0B]"
           />
         </label>
       </div>
@@ -116,7 +116,7 @@ export function FormVinculoMEI({
               onClick={() => set("atividade", o.value)}
               className={`rounded-lg border px-3 py-2 text-xs font-medium ${
                 d.atividade === o.value
-                  ? "border-[#E65100] bg-white text-[#E65100]"
+                  ? "border-[#854F0B] bg-white text-[#854F0B]"
                   : "border-gray-300 bg-white text-gray-500"
               }`}
             >
@@ -128,9 +128,9 @@ export function FormVinculoMEI({
 
       <div className="rounded-md bg-white p-3">
         <div className="flex items-center gap-2">
-          <Info size={14} className="text-[#1565C0]" />
+          <Info size={14} className="text-[#0C447C]" />
           <p className="text-xs text-gray-600">
-            DAS calculado automaticamente: <strong className="text-[#1565C0]">{fmt(dasValor)}</strong>/mês
+            DAS calculado automaticamente: <strong className="text-[#0C447C]">{fmt(dasValor)}</strong>/mês
             (INSS + {d.atividade === "comercio" ? "ICMS" : d.atividade === "servico" ? "ISS" : "ICMS + ISS"}),
             vencimento dia <strong>{d.diaVencimentoDAS}</strong>.
           </p>
@@ -147,15 +147,15 @@ export function FormVinculoMEI({
       {d.faturamentoMedioMensal > 0 && (
         <div
           className={`flex items-start gap-2 rounded-md p-2.5 ${
-            proximoDoLimite ? "bg-[#FFEBEE]" : "bg-[#E8F5E9]"
+            proximoDoLimite ? "bg-[#FCEBEB]" : "bg-[#EAF3DE]"
           }`}
         >
           {proximoDoLimite ? (
-            <AlertTriangle size={14} className="mt-0.5 flex-shrink-0 text-[#C62828]" />
+            <AlertTriangle size={14} className="mt-0.5 flex-shrink-0 text-[#A32D2D]" />
           ) : (
-            <Info size={14} className="mt-0.5 flex-shrink-0 text-[#2E7D32]" />
+            <Info size={14} className="mt-0.5 flex-shrink-0 text-[#3B6D11]" />
           )}
-          <p className={`text-xs ${proximoDoLimite ? "text-[#C62828]" : "text-[#2E7D32]"}`}>
+          <p className={`text-xs ${proximoDoLimite ? "text-[#A32D2D]" : "text-[#3B6D11]"}`}>
             Projeção anual: <strong>{fmt(faturamentoAnualProjetado)}</strong> ({pctLimite.toFixed(0)}% do
             limite de {fmt(LIMITE_FATURAMENTO_MEI_ANUAL)}/ano).
             {proximoDoLimite && " Você está perto do limite do MEI — considere migrar para Simples Nacional."}
@@ -169,7 +169,7 @@ export function FormVinculoMEI({
         <button
           onClick={salvar}
           disabled={salvando}
-          className="flex h-10 items-center gap-2 rounded-lg bg-[#E65100] px-5 text-xs font-semibold text-white disabled:opacity-60"
+          className="flex h-10 items-center gap-2 rounded-lg bg-[#854F0B] px-5 text-xs font-semibold text-white disabled:opacity-60"
         >
           {salvando && <LoadingBotao size={14} />}
           {vinculoId ? "ATUALIZAR VÍNCULO" : "SALVAR VÍNCULO"}

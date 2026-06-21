@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Landmark, CreditCard, ArrowLeftRight, Pencil, Trash2, RefreshCw } from "lucide-react";
 import { InputMoeda } from "@/components/ui/InputMoeda";
+import { CartaoBanco } from "@/components/ui/CartaoBanco";
+import { CartaoCredito } from "@/components/ui/CartaoCredito";
 import { useBancos } from "@/hooks/useBancos";
 import { fmt, formatarDataBR } from "@/lib/utils";
 
@@ -25,9 +27,6 @@ interface Transferencia {
   bancoDestNome?: string;
   descricao: string | null;
 }
-
-const CORES_BANCO = ["#1565C0", "#2E7D32", "#6A1B9A", "#00838F", "#E65100", "#AD1457", "#4527A0", "#37474F"];
-const TIPO_CORES: Record<string, string> = { Crédito: "#E65100", Débito: "#2E7D32", Ambos: "#6A1B9A" };
 
 export default function BancosPage() {
   const { bancos, recarregar: recarregarBancos } = useBancos();
@@ -270,12 +269,12 @@ export default function BancosPage() {
     <div className="flex flex-col gap-5 p-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Landmark className="text-[#1565C0]" size={26} />
-          <h1 className="text-xl font-bold text-[#1565C0]">BANCOS E CARTÕES</h1>
+          <Landmark className="text-[#0C447C]" size={26} />
+          <h1 className="text-xl font-bold text-[#0C447C]">BANCOS E CARTÕES</h1>
         </div>
         <button
           onClick={carregarTudo}
-          className="flex items-center gap-1.5 rounded-lg border border-[#90CAF9] bg-[#E3F2FD] px-3 py-1.5 text-xs font-medium text-[#1565C0]"
+          className="flex items-center gap-1.5 rounded-lg border border-[#85B7EB] bg-[#E6F1FB] px-3 py-1.5 text-xs font-medium text-[#0C447C]"
         >
           <RefreshCw size={13} /> Atualizar
         </button>
@@ -284,10 +283,10 @@ export default function BancosPage() {
       {/* Formulários lado a lado */}
       <div className="flex flex-col gap-4 lg:flex-row">
         {/* Form Banco */}
-        <div className="flex-1 rounded-xl border-2 border-[#90CAF9] bg-[#E3F2FD] p-4">
+        <div className="flex-1 rounded-xl border-2 border-[#85B7EB] bg-[#E6F1FB] p-4">
           <div className="mb-3 flex items-center gap-2">
-            <Landmark size={18} className="text-[#1565C0]" />
-            <span className="text-sm font-bold text-[#1565C0]">Cadastrar / Editar Banco</span>
+            <Landmark size={18} className="text-[#0C447C]" />
+            <span className="text-sm font-bold text-[#0C447C]">Cadastrar / Editar Banco</span>
           </div>
           <div className="flex flex-wrap gap-2.5">
             <CampoSimples label="Nome do Banco" value={nomeBanco} onChange={setNomeBanco} className="w-48" />
@@ -302,7 +301,7 @@ export default function BancosPage() {
           <div className="mt-3 flex items-center gap-3">
             <button
               onClick={salvarBanco}
-              className="rounded-lg bg-[#1565C0] px-5 py-2 text-xs font-semibold text-white"
+              className="rounded-lg bg-[#0C447C] px-5 py-2 text-xs font-semibold text-white"
             >
               {editandoBanco ? "ATUALIZAR BANCO" : "SALVAR BANCO"}
             </button>
@@ -316,10 +315,10 @@ export default function BancosPage() {
         </div>
 
         {/* Form Cartão */}
-        <div className="flex-1 rounded-xl border-2 border-[#FFCC80] bg-[#FFF3E0] p-4">
+        <div className="flex-1 rounded-xl border-2 border-[#FAC775] bg-[#FAEEDA] p-4">
           <div className="mb-3 flex items-center gap-2">
-            <CreditCard size={18} className="text-[#E65100]" />
-            <span className="text-sm font-bold text-[#E65100]">Cadastrar / Editar Cartão</span>
+            <CreditCard size={18} className="text-[#854F0B]" />
+            <span className="text-sm font-bold text-[#854F0B]">Cadastrar / Editar Cartão</span>
           </div>
           <div className="flex flex-wrap gap-2.5">
             <CampoSimples label="Nome do Cartão" value={nomeCartao} onChange={setNomeCartao} className="w-48" />
@@ -358,7 +357,7 @@ export default function BancosPage() {
           <div className="mt-3 flex items-center gap-3">
             <button
               onClick={salvarCartao}
-              className="rounded-lg bg-[#E65100] px-5 py-2 text-xs font-semibold text-white"
+              className="rounded-lg bg-[#854F0B] px-5 py-2 text-xs font-semibold text-white"
             >
               {editandoCartao ? "ATUALIZAR CARTÃO" : "SALVAR CARTÃO"}
             </button>
@@ -374,41 +373,30 @@ export default function BancosPage() {
 
       {/* Listas lado a lado */}
       <div className="flex flex-col gap-4 lg:flex-row">
-        <div className="flex-1 rounded-xl border border-[#90CAF9] bg-[#E3F2FD] p-3.5">
+        <div className="flex-1 rounded-xl border border-[#85B7EB] bg-[#E6F1FB] p-3.5">
           <div className="mb-2 flex items-center gap-2">
-            <Landmark size={16} className="text-[#1565C0]" />
-            <span className="text-sm font-bold text-[#1565C0]">Bancos Cadastrados</span>
+            <Landmark size={16} className="text-[#0C447C]" />
+            <span className="text-sm font-bold text-[#0C447C]">Bancos Cadastrados</span>
           </div>
-          <div className="flex flex-wrap gap-2.5">
+          <div className="flex flex-wrap gap-3">
             {bancos.length === 0 ? (
               <p className="text-xs text-gray-500">Nenhum banco cadastrado.</p>
             ) : (
               bancos.map((b, i) => (
-                <div
-                  key={b.id}
-                  className="w-[270px] rounded-xl p-3.5 text-white shadow"
-                  style={{ backgroundColor: CORES_BANCO[i % CORES_BANCO.length] }}
-                >
-                  <div className="flex items-center gap-2">
-                    <Landmark size={20} />
-                    <div>
-                      <p className="text-sm font-bold">{b.nomeBanco}</p>
-                      <p className="text-[10px] text-white/70">Banco {b.codigoBanco ? `(${b.codigoBanco})` : ""}</p>
-                    </div>
-                  </div>
-                  <p className="mt-1.5 text-xs">
-                    Ag: {b.agencia || "—"} | Cta: {b.numeroConta || "—"}
-                  </p>
-                  <hr className="my-2 border-white/30" />
-                  <p className="text-[10px] text-white/70">Saldo Atual</p>
-                  <p className="text-lg font-bold">{fmt(b.saldoAtual ?? b.saldoInicial)}</p>
-                  <p className="text-[10px] text-white/80">Inicial: {fmt(b.saldoInicial)}</p>
-                  <div className="mt-2 flex justify-end gap-3">
-                    <button onClick={() => prepararEdicaoBanco(b)}>
-                      <Pencil size={14} className="text-white" />
+                <div key={b.id} className="relative w-[270px]">
+                  <CartaoBanco
+                    nomeBanco={b.nomeBanco}
+                    saldo={b.saldoAtual ?? b.saldoInicial}
+                    agencia={b.agencia}
+                    numeroConta={b.numeroConta}
+                    variante={i % 2 === 0 ? "azul" : "verde"}
+                  />
+                  <div className="absolute right-3 top-3 flex gap-2">
+                    <button onClick={() => prepararEdicaoBanco(b)} className="text-white/80 hover:text-white">
+                      <Pencil size={14} />
                     </button>
-                    <button onClick={() => excluirBanco(b.id)}>
-                      <Trash2 size={14} className="text-red-200" />
+                    <button onClick={() => excluirBanco(b.id)} className="text-white/80 hover:text-red-200">
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 </div>
@@ -417,43 +405,32 @@ export default function BancosPage() {
           </div>
         </div>
 
-        <div className="flex-1 rounded-xl border border-[#FFCC80] bg-[#FFF3E0] p-3.5">
+        <div className="flex-1 rounded-xl border border-[#FAC775] bg-[#FAEEDA] p-3.5">
           <div className="mb-2 flex items-center gap-2">
-            <CreditCard size={16} className="text-[#E65100]" />
-            <span className="text-sm font-bold text-[#E65100]">Cartões Cadastrados</span>
+            <CreditCard size={16} className="text-[#854F0B]" />
+            <span className="text-sm font-bold text-[#854F0B]">Cartões Cadastrados</span>
           </div>
-          <div className="flex flex-wrap gap-2.5">
+          <div className="flex flex-wrap gap-3">
             {cartoes.length === 0 ? (
               <p className="text-xs text-gray-500">Nenhum cartão cadastrado.</p>
             ) : (
               cartoes.map((c) => (
-                <div
-                  key={c.id}
-                  className="w-[250px] rounded-xl p-3.5 text-white shadow"
-                  style={{ backgroundColor: TIPO_CORES[c.tipo ?? ""] ?? "#37474F" }}
-                >
-                  <div className="flex items-center gap-2">
-                    <CreditCard size={20} />
-                    <p className="text-sm font-bold">{c.nomeCartao}</p>
+                <div key={c.id} className="relative w-[250px]">
+                  <CartaoCredito
+                    nomeCartao={c.nomeCartao}
+                    nomeBanco={c.bancoNome}
+                    titular={c.tipo ?? ""}
+                  />
+                  <div className="mt-1.5 flex items-center justify-between px-1 text-[11px] text-gray-500">
+                    <span>Limite: <strong className="text-gray-700">{fmt(c.limite)}</strong></span>
+                    <span>{c.bancoNome || "—"}</span>
                   </div>
-                  <p className="text-[10px] text-white/70">{c.tipo}</p>
-                  <hr className="my-2 border-white/30" />
-                  <div className="flex justify-between gap-3">
-                    <div>
-                      <p className="text-[10px] text-white/70">Limite</p>
-                      <p className="text-sm font-bold">{fmt(c.limite)}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] text-white/70">Banco</p>
-                      <p className="text-xs">{c.bancoNome || "—"}</p>
-                    </div>
-                  </div>
-                  <div className="mt-2 flex justify-end gap-3">
-                    <button onClick={() => prepararEdicaoCartao(c)}>
-                      <Pencil size={14} className="text-white" />
+                  <div className="absolute right-3 top-3 flex gap-2">
+                    <button onClick={() => prepararEdicaoCartao(c)} className="text-white/80 hover:text-white">
+                      <Pencil size={14} />
                     </button>
-                    <button onClick={() => excluirCartao(c.id)}>
-                      <Trash2 size={14} className="text-red-200" />
+                    <button onClick={() => excluirCartao(c.id)} className="text-white/80 hover:text-red-200">
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 </div>
@@ -464,15 +441,15 @@ export default function BancosPage() {
       </div>
 
       {/* Transferências */}
-      <div className="rounded-xl bg-[#E8F5E9] p-4">
+      <div className="rounded-xl bg-[#EAF3DE] p-4">
         <div className="mb-3 flex items-center gap-2">
-          <ArrowLeftRight size={20} className="text-[#2E7D32]" />
-          <span className="text-sm font-bold text-[#2E7D32]">💸 Transferência entre Bancos</span>
+          <ArrowLeftRight size={20} className="text-[#3B6D11]" />
+          <span className="text-sm font-bold text-[#3B6D11]">💸 Transferência entre Bancos</span>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <SeletorBanco label="Banco Origem" bancos={bancos} value={transfOrig} onChange={setTransfOrig} />
-          <ArrowLeftRight size={18} className="text-[#2E7D32]" />
+          <ArrowLeftRight size={18} className="text-[#3B6D11]" />
           <SeletorBanco label="Banco Destino" bancos={bancos} value={transfDest} onChange={setTransfDest} />
         </div>
 
@@ -485,7 +462,7 @@ export default function BancosPage() {
         <div className="mt-3 flex items-center gap-3">
           <button
             onClick={realizarTransferencia}
-            className="h-11 rounded-lg bg-[#2E7D32] px-6 text-sm font-semibold text-white"
+            className="h-11 rounded-lg bg-[#3B6D11] px-6 text-sm font-semibold text-white"
           >
             💸 {editandoTransf ? "SALVAR EDIÇÃO" : "TRANSFERIR"}
           </button>
@@ -497,8 +474,8 @@ export default function BancosPage() {
         </div>
         {msgTransf && <p className="mt-2 text-xs font-medium">{msgTransf}</p>}
 
-        <hr className="my-3 border-[#A5D6A7]" />
-        <p className="mb-2 text-xs font-bold text-[#2E7D32]">Últimas transferências:</p>
+        <hr className="my-3 border-[#97C459]" />
+        <p className="mb-2 text-xs font-bold text-[#3B6D11]">Últimas transferências:</p>
         <div className="flex max-h-56 flex-col gap-1.5 overflow-y-auto">
           {transferencias.length === 0 ? (
             <p className="text-xs italic text-gray-500">Nenhuma transferência realizada.</p>
@@ -506,21 +483,21 @@ export default function BancosPage() {
             transferencias.map((t) => (
               <div
                 key={t.id}
-                className="flex items-center justify-between gap-2 rounded-lg border border-[#C8E6C9] bg-white p-2.5"
+                className="flex items-center justify-between gap-2 rounded-lg border border-[#C0DD97] bg-white p-2.5"
               >
                 <div className="flex-1">
                   <p className="text-[10px] text-gray-400">{t.data}</p>
                   <p className="text-xs text-gray-700">{t.descricao || "Transferência"}</p>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs">
-                  <span className="text-[#C62828]">{t.bancoOrigNome}</span>
+                  <span className="text-[#A32D2D]">{t.bancoOrigNome}</span>
                   <ArrowLeftRight size={12} className="text-gray-400" />
-                  <span className="text-[#2E7D32]">{t.bancoDestNome}</span>
+                  <span className="text-[#3B6D11]">{t.bancoDestNome}</span>
                 </div>
-                <span className="w-24 text-right text-sm font-bold text-[#1565C0]">{fmt(t.valor)}</span>
+                <span className="w-24 text-right text-sm font-bold text-[#0C447C]">{fmt(t.valor)}</span>
                 <div className="flex gap-1.5">
                   <button onClick={() => prepararEdicaoTransf(t)}>
-                    <Pencil size={14} className="text-[#1565C0]" />
+                    <Pencil size={14} className="text-[#0C447C]" />
                   </button>
                   <button onClick={() => excluirTransferencia(t.id)}>
                     <Trash2 size={14} className="text-red-500" />
@@ -553,7 +530,7 @@ function CampoSimples({
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#1565C0] focus:ring-1 focus:ring-[#1565C0]"
+        className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C] focus:ring-1 focus:ring-[#0C447C]"
       />
     </label>
   );
@@ -576,7 +553,7 @@ function SeletorBanco({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value ? Number(e.target.value) : "")}
-        className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#2E7D32]"
+        className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#3B6D11]"
       >
         <option value="">— Selecione —</option>
         {bancos.map((b) => (

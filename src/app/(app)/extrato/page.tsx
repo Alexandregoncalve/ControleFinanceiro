@@ -103,8 +103,8 @@ export default function ExtratoPage() {
     <div className="flex flex-col gap-4 p-6">
       <div className="flex items-end justify-between">
         <div className="flex items-center gap-2">
-          <List className="text-[#1565C0]" size={24} />
-          <h1 className="text-xl font-bold text-[#1565C0]">EXTRATO</h1>
+          <List className="text-[#0C447C]" size={24} />
+          <h1 className="text-xl font-bold text-[#0C447C]">EXTRATO</h1>
         </div>
         <SeletorMes mes={mes} onChange={setMes} />
       </div>
@@ -117,13 +117,13 @@ export default function ExtratoPage() {
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Buscar por descrição..."
-            className="w-full rounded-lg border border-gray-300 py-2 pl-8 pr-3 text-sm outline-none focus:border-[#1565C0]"
+            className="w-full rounded-lg border border-gray-300 py-2 pl-8 pr-3 text-sm outline-none focus:border-[#0C447C]"
           />
         </div>
         <select
           value={tipo}
           onChange={(e) => setTipo(e.target.value as "" | "Receita" | "Despesa")}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#1565C0]"
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
         >
           <option value="">Todos os tipos</option>
           <option value="Receita">Receitas</option>
@@ -132,23 +132,23 @@ export default function ExtratoPage() {
       </div>
 
       <div className="flex gap-3">
-        <div className="flex-1 rounded-lg bg-[#E8F5E9] p-3 text-center">
-          <p className="text-[10px] font-bold text-[#2E7D32]">RECEITAS</p>
-          <p className="text-base font-bold text-[#2E7D32]">{fmt(totalReceitas)}</p>
+        <div className="flex-1 rounded-lg bg-[#EAF3DE] p-3 text-center">
+          <p className="text-[10px] font-bold text-[#3B6D11]">RECEITAS</p>
+          <p className="text-base font-bold text-[#3B6D11]">{fmt(totalReceitas)}</p>
         </div>
-        <div className="flex-1 rounded-lg bg-[#FFEBEE] p-3 text-center">
-          <p className="text-[10px] font-bold text-[#C62828]">DESPESAS</p>
-          <p className="text-base font-bold text-[#C62828]">{fmt(totalDespesas)}</p>
+        <div className="flex-1 rounded-lg bg-[#FCEBEB] p-3 text-center">
+          <p className="text-[10px] font-bold text-[#A32D2D]">DESPESAS</p>
+          <p className="text-base font-bold text-[#A32D2D]">{fmt(totalDespesas)}</p>
         </div>
-        <div className="flex-1 rounded-lg bg-[#E3F2FD] p-3 text-center">
-          <p className="text-[10px] font-bold text-[#1565C0]">SALDO</p>
-          <p className="text-base font-bold text-[#1565C0]">{fmt(totalReceitas - totalDespesas)}</p>
+        <div className="flex-1 rounded-lg bg-[#E6F1FB] p-3 text-center">
+          <p className="text-[10px] font-bold text-[#0C447C]">SALDO</p>
+          <p className="text-base font-bold text-[#0C447C]">{fmt(totalReceitas - totalDespesas)}</p>
         </div>
       </div>
 
       {carregando ? (
         <div className="flex justify-center py-10">
-          <Loader2 className="animate-spin text-[#1565C0]" size={24} />
+          <Loader2 className="animate-spin text-[#0C447C]" size={24} />
         </div>
       ) : transacoes.length === 0 ? (
         <p className="py-8 text-center text-sm italic text-gray-400">Nenhuma transação encontrada.</p>
@@ -172,7 +172,7 @@ export default function ExtratoPage() {
                   <td className="px-3 py-2 text-gray-700">
                     {t.descricao || "—"}
                     {t.totalParcelas > 1 && (
-                      <span className="ml-1.5 rounded bg-[#E3F2FD] px-1.5 py-0.5 text-[9px] font-bold text-[#1565C0]">
+                      <span className="ml-1.5 rounded bg-[#E6F1FB] px-1.5 py-0.5 text-[9px] font-bold text-[#0C447C]">
                         {t.parcelaAtual}/{t.totalParcelas}x
                       </span>
                     )}
@@ -181,7 +181,7 @@ export default function ExtratoPage() {
                   <td className="px-3 py-2 text-gray-500">{t.bancoNome || "—"}</td>
                   <td
                     className={`px-3 py-2 text-right font-bold ${
-                      t.tipo === "Receita" ? "text-[#2E7D32]" : "text-[#C62828]"
+                      t.tipo === "Receita" ? "text-[#3B6D11]" : "text-[#A32D2D]"
                     }`}
                   >
                     {t.tipo === "Despesa" && "-"}
@@ -190,7 +190,7 @@ export default function ExtratoPage() {
                   <td className="px-3 py-2">
                     <div className="flex justify-center gap-2">
                       <button onClick={() => iniciarEdicao(t)}>
-                        <Pencil size={13} className="text-[#1565C0]" />
+                        <Pencil size={13} className="text-[#0C447C]" />
                       </button>
                       <button onClick={() => excluir(t.id)}>
                         <Trash2 size={13} className="text-red-500" />
@@ -208,7 +208,7 @@ export default function ExtratoPage() {
       {editando && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-xl bg-white p-5">
-            <p className="mb-3 text-sm font-bold text-[#1565C0]">Editar transação</p>
+            <p className="mb-3 text-sm font-bold text-[#0C447C]">Editar transação</p>
             <div className="flex flex-col gap-3">
               <label className="flex flex-col gap-1">
                 <span className="text-xs font-medium text-gray-600">Data</span>
@@ -268,7 +268,7 @@ export default function ExtratoPage() {
               </button>
               <button
                 onClick={salvarEdicao}
-                className="rounded-lg bg-[#1565C0] px-4 py-2 text-xs font-semibold text-white"
+                className="rounded-lg bg-[#0C447C] px-4 py-2 text-xs font-semibold text-white"
               >
                 Salvar
               </button>

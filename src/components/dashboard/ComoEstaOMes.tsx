@@ -18,7 +18,7 @@ export function ComoEstaOMes({ resumo, historico }: ComoEstaOMesProps) {
     <div className="flex flex-col gap-3">
       <div
         className={`rounded-md px-3 py-2 text-xs font-bold ${
-          positivo ? "bg-[#E8F5E9] text-[#2E7D32]" : "bg-[#FFEBEE] text-[#C62828]"
+          positivo ? "bg-[#EAF3DE] text-[#3B6D11]" : "bg-[#FCEBEB] text-[#A32D2D]"
         }`}
       >
         {positivo ? "✅" : "❌"}{" "}
@@ -27,16 +27,16 @@ export function ComoEstaOMes({ resumo, historico }: ComoEstaOMesProps) {
           : `Gastou ${fmt(Math.abs(resultado))} a mais do que recebeu`}
       </div>
 
-      <BarraComparativa label="Receita" valor={receitas} max={maxAtual} cor="#2E7D32" />
-      <BarraComparativa label="Despesa" valor={despesas} max={maxAtual} cor="#C62828" />
+      <BarraComparativa label="Receita" valor={receitas} max={maxAtual} cor="#3B6D11" />
+      <BarraComparativa label="Despesa" valor={despesas} max={maxAtual} cor="#A32D2D" />
 
-      <hr className="border-[#E8EEF7]" />
+      <hr className="border-[#E2E8F0]" />
       <p className="text-[10px] text-gray-400">Histórico dos últimos meses</p>
 
       <div className="flex flex-col gap-1.5">
         {historico.map((h) => {
           const saldo = h.receita - h.despesa;
-          const corSaldo = saldo >= 0 ? "#2E7D32" : "#C62828";
+          const corSaldo = saldo >= 0 ? "#3B6D11" : "#A32D2D";
           return (
             <div
               key={h.mes}
@@ -44,7 +44,7 @@ export function ComoEstaOMes({ resumo, historico }: ComoEstaOMesProps) {
             >
               <span
                 className={`w-14 flex-shrink-0 text-[10px] font-bold ${
-                  h.ehAtual ? "text-[#1565C0]" : "text-gray-500"
+                  h.ehAtual ? "text-[#0C447C]" : "text-gray-500"
                 }`}
               >
                 {h.mes}
@@ -52,11 +52,11 @@ export function ComoEstaOMes({ resumo, historico }: ComoEstaOMesProps) {
               </span>
               <div className="flex flex-1 flex-col gap-0.5">
                 <div
-                  className="h-2 rounded bg-[#2E7D32]"
+                  className="h-2 rounded bg-[#3B6D11]"
                   style={{ width: `${Math.max(3, (h.receita / maxHist) * 100)}%` }}
                 />
                 <div
-                  className="h-2 rounded bg-[#C62828]"
+                  className="h-2 rounded bg-[#A32D2D]"
                   style={{ width: `${Math.max(3, (h.despesa / maxHist) * 100)}%` }}
                 />
               </div>
@@ -88,7 +88,7 @@ function BarraComparativa({
       <span className="w-14 flex-shrink-0 text-[11px] font-bold" style={{ color: cor }}>
         {label}
       </span>
-      <div className="h-5 flex-1 rounded bg-[#F0F4FA]">
+      <div className="h-5 flex-1 rounded bg-[#F4F7FB]">
         <div
           className="h-5 rounded transition-all"
           style={{ width: `${(valor / max) * 100}%`, backgroundColor: cor }}

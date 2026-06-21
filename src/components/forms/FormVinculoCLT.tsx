@@ -82,7 +82,7 @@ export function FormVinculoCLT({
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border border-[#90CAF9] bg-[#E3F2FD] p-4">
+    <div className="flex flex-col gap-4 rounded-xl border border-[#85B7EB] bg-[#E6F1FB] p-4">
       <div className="flex flex-wrap gap-3">
         <label className="flex w-60 flex-col gap-1">
           <span className="text-xs font-medium text-gray-600">Apelido deste vínculo</span>
@@ -91,7 +91,7 @@ export function FormVinculoCLT({
             placeholder="Ex: Emprego Principal"
             value={apelido}
             onChange={(e) => setApelido(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#1565C0]"
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
           />
         </label>
         <label className="flex w-56 flex-col gap-1">
@@ -100,7 +100,7 @@ export function FormVinculoCLT({
             type="text"
             value={d.empresa}
             onChange={(e) => set("empresa", e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#1565C0]"
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
           />
         </label>
         <label className="flex w-44 flex-col gap-1">
@@ -109,7 +109,7 @@ export function FormVinculoCLT({
             type="text"
             value={d.cargo}
             onChange={(e) => set("cargo", e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#1565C0]"
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
           />
         </label>
       </div>
@@ -130,7 +130,7 @@ export function FormVinculoCLT({
             placeholder="Auto (5º dia útil)"
             value={d.diaPagamento ?? ""}
             onChange={(e) => set("diaPagamento", e.target.value ? parseInt(e.target.value) : null)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#1565C0]"
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
           />
           <span className="text-[10px] text-gray-400">
             Em branco, considera o prazo legal: até o 5º dia útil (CLT art. 459).
@@ -150,9 +150,9 @@ export function FormVinculoCLT({
           <span className="text-sm font-medium text-gray-700">Recebo vale-transporte</span>
         </label>
         {d.recebeValeTransporte && (
-          <div className="mt-2 flex items-start gap-2 rounded-md bg-[#E8F5E9] p-2.5">
-            <Info size={14} className="mt-0.5 flex-shrink-0 text-[#2E7D32]" />
-            <p className="text-xs text-[#2E7D32]">
+          <div className="mt-2 flex items-start gap-2 rounded-md bg-[#EAF3DE] p-2.5">
+            <Info size={14} className="mt-0.5 flex-shrink-0 text-[#3B6D11]" />
+            <p className="text-xs text-[#3B6D11]">
               Desconto calculado automaticamente: <strong>{fmt(descontoVT)}</strong> (6% do salário bruto,
               teto máximo conforme Lei 7.418/85).
             </p>
@@ -204,7 +204,7 @@ export function FormVinculoCLT({
                 max={100}
                 value={d.percentualAdiantamento}
                 onChange={(e) => set("percentualAdiantamento", Number(e.target.value))}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#1565C0]"
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
               />
             </label>
             <label className="flex w-36 flex-col gap-1">
@@ -215,11 +215,11 @@ export function FormVinculoCLT({
                 max={31}
                 value={d.diaAdiantamento ?? ""}
                 onChange={(e) => set("diaAdiantamento", e.target.value ? parseInt(e.target.value) : null)}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#1565C0]"
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
               />
             </label>
             <p className="pb-2 text-xs text-gray-500">
-              Valor estimado: <strong className="text-[#1565C0]">{fmt(valorAdiantamento)}</strong>
+              Valor estimado: <strong className="text-[#0C447C]">{fmt(valorAdiantamento)}</strong>
               <span className="block text-[10px] text-gray-400">(sugestão de mercado, não é definido em lei)</span>
             </p>
           </div>
@@ -232,7 +232,7 @@ export function FormVinculoCLT({
         <button
           onClick={salvar}
           disabled={salvando}
-          className="flex h-10 items-center gap-2 rounded-lg bg-[#1565C0] px-5 text-xs font-semibold text-white disabled:opacity-60"
+          className="flex h-10 items-center gap-2 rounded-lg bg-[#0C447C] px-5 text-xs font-semibold text-white disabled:opacity-60"
         >
           {salvando && <LoadingBotao size={14} />}
           {vinculoId ? "ATUALIZAR VÍNCULO" : "SALVAR VÍNCULO"}

@@ -113,32 +113,32 @@ export default function FixasPage() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 p-6">
       <div className="flex items-end justify-between">
-        <h1 className="text-xl font-bold text-[#1565C0]">CONTAS FIXAS</h1>
+        <h1 className="text-xl font-bold text-[#0C447C]">CONTAS FIXAS</h1>
         <SeletorMes mes={mes} onChange={setMes} />
       </div>
 
       <div className="flex gap-3">
-        <div className="flex-1 rounded-lg bg-[#E3F2FD] p-3 text-center">
-          <p className="text-[10px] font-bold text-[#1565C0]">TOTAL DE FIXAS</p>
-          <p className="text-lg font-bold text-[#1565C0]">{resumo.total}</p>
+        <div className="flex-1 rounded-lg bg-[#E6F1FB] p-3 text-center">
+          <p className="text-[10px] font-bold text-[#0C447C]">TOTAL DE FIXAS</p>
+          <p className="text-lg font-bold text-[#0C447C]">{resumo.total}</p>
         </div>
-        <div className="flex-1 rounded-lg bg-[#E8F5E9] p-3 text-center">
-          <p className="text-[10px] font-bold text-[#2E7D32]">JÁ LANÇADAS</p>
-          <p className="text-lg font-bold text-[#2E7D32]">{resumo.lancadas}</p>
+        <div className="flex-1 rounded-lg bg-[#EAF3DE] p-3 text-center">
+          <p className="text-[10px] font-bold text-[#3B6D11]">JÁ LANÇADAS</p>
+          <p className="text-lg font-bold text-[#3B6D11]">{resumo.lancadas}</p>
         </div>
-        <div className="flex-1 rounded-lg bg-[#FFEBEE] p-3 text-center">
-          <p className="text-[10px] font-bold text-[#C62828]">PENDENTES</p>
-          <p className="text-lg font-bold text-[#C62828]">{pendentes.length}</p>
+        <div className="flex-1 rounded-lg bg-[#FCEBEB] p-3 text-center">
+          <p className="text-[10px] font-bold text-[#A32D2D]">PENDENTES</p>
+          <p className="text-lg font-bold text-[#A32D2D]">{pendentes.length}</p>
         </div>
       </div>
 
       {carregando ? (
         <div className="flex justify-center py-8">
-          <Loader2 className="animate-spin text-[#1565C0]" size={24} />
+          <Loader2 className="animate-spin text-[#0C447C]" size={24} />
         </div>
       ) : pendentes.length === 0 ? (
-        <div className="rounded-lg bg-[#E8F5E9] p-6 text-center">
-          <p className="text-sm font-medium text-[#2E7D32]">✅ Todas as contas fixas já foram lançadas neste mês!</p>
+        <div className="rounded-lg bg-[#EAF3DE] p-6 text-center">
+          <p className="text-sm font-medium text-[#3B6D11]">✅ Todas as contas fixas já foram lançadas neste mês!</p>
         </div>
       ) : (
         <>
@@ -147,7 +147,7 @@ export default function FixasPage() {
             <select
               value={bancoId}
               onChange={(e) => setBancoId(e.target.value ? Number(e.target.value) : "")}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#1565C0]"
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
             >
               <option value="">— Selecione —</option>
               {bancos.map((b) => (
@@ -166,7 +166,7 @@ export default function FixasPage() {
               >
                 <button onClick={() => toggleItem(item.subcontaId)} className="flex-shrink-0">
                   {item.selecionado ? (
-                    <CheckSquare size={18} className="text-[#1565C0]" />
+                    <CheckSquare size={18} className="text-[#0C447C]" />
                   ) : (
                     <Square size={18} className="text-gray-300" />
                   )}
@@ -182,11 +182,11 @@ export default function FixasPage() {
             ))}
           </div>
 
-          <div className="flex items-center justify-between rounded-lg bg-[#F0F4FA] p-3">
+          <div className="flex items-center justify-between rounded-lg bg-[#F4F7FB] p-3">
             <span className="text-sm font-medium text-gray-600">
               {selecionados.length} conta(s) selecionada(s)
             </span>
-            <span className="text-lg font-bold text-[#1565C0]">{fmt(totalSelecionado)}</span>
+            <span className="text-lg font-bold text-[#0C447C]">{fmt(totalSelecionado)}</span>
           </div>
 
           {msg && (
@@ -198,7 +198,7 @@ export default function FixasPage() {
           <button
             onClick={baixarSelecionados}
             disabled={salvando || selecionados.length === 0}
-            className="h-11 rounded-lg bg-[#1565C0] font-semibold text-white transition hover:bg-[#1257A8] disabled:opacity-60"
+            className="h-11 rounded-lg bg-[#0C447C] font-semibold text-white transition hover:bg-[#042C53] disabled:opacity-60"
           >
             {salvando ? "Lançando..." : `LANÇAR ${selecionados.length} CONTA(S)`}
           </button>

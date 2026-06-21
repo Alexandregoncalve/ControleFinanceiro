@@ -1,10 +1,11 @@
-import { Landmark } from "lucide-react";
-import { fmt } from "@/lib/utils";
+import { CartaoBanco } from "@/components/ui/CartaoBanco";
 import { DashboardData } from "@/types/dashboard";
 
 interface CardsBancosProps {
   bancos: DashboardData["bancos"];
 }
+
+const VARIANTES: ("azul" | "verde")[] = ["azul", "verde"];
 
 export function CardsBancos({ bancos }: CardsBancosProps) {
   if (bancos.length === 0) {
@@ -12,18 +13,16 @@ export function CardsBancos({ bancos }: CardsBancosProps) {
   }
 
   return (
-    <div className="flex flex-wrap gap-2.5">
-      {bancos.map((b) => (
-        <div key={b.id} className="min-w-[170px] flex-1 rounded-xl bg-[#37474F] p-3">
-          <div className="mb-1.5 flex items-center gap-1.5">
-            <Landmark size={14} className="text-white" />
-            <span className="text-[11px] font-bold text-white">{b.nomeBanco}</span>
-          </div>
-          <span className="text-base font-bold text-white">{fmt(b.saldoAtual)}</span>
-          <p className="mt-0.5 text-[9px] text-white/60">
-            Ag: {b.agencia || "—"} | Cta: {b.numeroConta || "—"}
-          </p>
-        </div>
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {bancos.map((b, i) => (
+        <CartaoBanco
+          key={b.id}
+          nomeBanco={b.nomeBanco}
+          saldo={b.saldoAtual}
+          agencia={b.agencia}
+          numeroConta={b.numeroConta}
+          variante={VARIANTES[i % VARIANTES.length]}
+        />
       ))}
     </div>
   );

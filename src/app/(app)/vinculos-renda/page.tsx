@@ -21,10 +21,10 @@ import {
 } from "@/types/vinculo-renda";
 
 const TIPOS_INFO: Record<TipoVinculo, { label: string; icon: React.ElementType; cor: string }> = {
-  CLT: { label: "CLT", icon: Briefcase, cor: "#1565C0" },
-  AUTONOMO: { label: "Autônomo", icon: Landmark, cor: "#2E7D32" },
-  MEI: { label: "MEI", icon: Building2, cor: "#E65100" },
-  SIMPLES_NACIONAL: { label: "Simples Nacional", icon: FileText, cor: "#6A1B9A" },
+  CLT: { label: "CLT", icon: Briefcase, cor: "#0C447C" },
+  AUTONOMO: { label: "Autônomo", icon: Landmark, cor: "#3B6D11" },
+  MEI: { label: "MEI", icon: Building2, cor: "#854F0B" },
+  SIMPLES_NACIONAL: { label: "Simples Nacional", icon: FileText, cor: "#0C447C" },
 };
 
 export default function VinculosRendaPage() {
@@ -80,18 +80,18 @@ export default function VinculosRendaPage() {
   function resumoFinanceiro(v: VinculoRendaDTO): { label: string; valor: number; cor: string }[] {
     if (v.tipo === "CLT") {
       const d = v.detalhes as DetalhesCLT;
-      const itens = [{ label: "Salário bruto", valor: d.salarioBruto, cor: "#2E7D32" }];
+      const itens = [{ label: "Salário bruto", valor: d.salarioBruto, cor: "#3B6D11" }];
       if (d.recebeValeTransporte) {
-        itens.push({ label: "Vale-transporte", valor: -calcularDescontoValeTransporte(d.salarioBruto), cor: "#C62828" });
+        itens.push({ label: "Vale-transporte", valor: -calcularDescontoValeTransporte(d.salarioBruto), cor: "#A32D2D" });
       }
       if (d.recebeValeAlimentacao) {
-        itens.push({ label: "Vale-alimentação", valor: d.valorValeAlimentacao, cor: "#2E7D32" });
+        itens.push({ label: "Vale-alimentação", valor: d.valorValeAlimentacao, cor: "#3B6D11" });
       }
       if (d.recebeAdiantamento) {
         itens.push({
           label: `Adiantamento (${d.percentualAdiantamento}%)`,
           valor: Math.round(((d.salarioBruto * d.percentualAdiantamento) / 100) * 100) / 100,
-          cor: "#1565C0",
+          cor: "#0C447C",
         });
       }
       return itens;
@@ -99,15 +99,15 @@ export default function VinculosRendaPage() {
     if (v.tipo === "AUTONOMO") {
       const d = v.detalhes as DetalhesAutonomo;
       return [
-        { label: "Renda média", valor: d.rendaMediaMensal, cor: "#2E7D32" },
-        { label: "INSS estimado", valor: -calcularINSSAutonomo(d.planoINSS, d.rendaMediaMensal), cor: "#C62828" },
+        { label: "Renda média", valor: d.rendaMediaMensal, cor: "#3B6D11" },
+        { label: "INSS estimado", valor: -calcularINSSAutonomo(d.planoINSS, d.rendaMediaMensal), cor: "#A32D2D" },
       ];
     }
     if (v.tipo === "MEI") {
       const d = v.detalhes as DetalhesMEI;
       return [
-        { label: "Faturamento médio", valor: d.faturamentoMedioMensal, cor: "#2E7D32" },
-        { label: "DAS MEI", valor: -calcularDASMEI(d.atividade), cor: "#C62828" },
+        { label: "Faturamento médio", valor: d.faturamentoMedioMensal, cor: "#3B6D11" },
+        { label: "DAS MEI", valor: -calcularDASMEI(d.atividade), cor: "#A32D2D" },
       ];
     }
     if (v.tipo === "SIMPLES_NACIONAL") {
@@ -115,11 +115,11 @@ export default function VinculosRendaPage() {
       const fatorR = calcularFatorR(d.folhaPagamento12meses, d.faturamento12meses);
       const anexoEf = anexoEfetivoComFatorR(d.anexo, fatorR);
       return [
-        { label: "Faturamento médio", valor: d.faturamentoMedioMensal, cor: "#2E7D32" },
+        { label: "Faturamento médio", valor: d.faturamentoMedioMensal, cor: "#3B6D11" },
         {
           label: "DAS estimado",
           valor: -calcularDASSimplesNacional(anexoEf, d.faturamento12meses, d.faturamentoMedioMensal),
-          cor: "#C62828",
+          cor: "#A32D2D",
         },
       ];
     }
@@ -130,13 +130,13 @@ export default function VinculosRendaPage() {
     <div className="mx-auto flex max-w-3xl flex-col gap-5 p-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Briefcase className="text-[#1565C0]" size={26} />
-          <h1 className="text-xl font-bold text-[#1565C0]">VÍNCULOS DE RENDA</h1>
+          <Briefcase className="text-[#0C447C]" size={26} />
+          <h1 className="text-xl font-bold text-[#0C447C]">VÍNCULOS DE RENDA</h1>
         </div>
         {!criandoTipo && !escolhendoTipo && !editandoId && (
           <button
             onClick={() => setEscolhendoTipo(true)}
-            className="flex items-center gap-1.5 rounded-lg bg-[#1565C0] px-4 py-2 text-xs font-semibold text-white"
+            className="flex items-center gap-1.5 rounded-lg bg-[#0C447C] px-4 py-2 text-xs font-semibold text-white"
           >
             <Plus size={14} /> NOVO VÍNCULO
           </button>
@@ -260,10 +260,10 @@ export default function VinculosRendaPage() {
                     </div>
                     <div className="flex gap-2">
                       <button onClick={() => setEditandoId(v.id)} title="Editar">
-                        <Pencil size={15} className="text-[#1565C0]" />
+                        <Pencil size={15} className="text-[#0C447C]" />
                       </button>
                       <button onClick={() => alternarAtivo(v)} title={v.ativo ? "Desativar" : "Reativar"}>
-                        <Power size={15} className={v.ativo ? "text-[#F57F17]" : "text-[#2E7D32]"} />
+                        <Power size={15} className={v.ativo ? "text-[#854F0B]" : "text-[#3B6D11]"} />
                       </button>
                       <button onClick={() => excluir(v.id, v.apelido)} title="Excluir">
                         <Trash2 size={15} className="text-red-500" />

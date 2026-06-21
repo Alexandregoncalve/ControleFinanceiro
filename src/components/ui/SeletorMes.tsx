@@ -31,7 +31,7 @@ export function SeletorMes({ mes, onChange }: SeletorMesProps) {
       <select
         value={mes}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 outline-none focus:border-[#1565C0]"
+        className="rounded-md border border-gray-300 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 outline-none focus:border-[#0C447C]"
       >
         {opcoes.map((o) => (
           <option key={o} value={o}>

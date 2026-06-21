@@ -144,13 +144,13 @@ export default function ContasPage() {
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-5 p-6">
       <div className="flex items-center gap-2">
-        <Wallet className="text-[#1565C0]" size={26} />
-        <h1 className="text-xl font-bold text-[#1565C0]">CADASTRO DE CONTAS</h1>
+        <Wallet className="text-[#0C447C]" size={26} />
+        <h1 className="text-xl font-bold text-[#0C447C]">CADASTRO DE CONTAS</h1>
       </div>
 
       {/* Conta pai (categoria) */}
-      <div className="rounded-xl border-2 border-[#90CAF9] bg-[#E3F2FD] p-4">
-        <p className="mb-3 text-sm font-bold text-[#1565C0]">Nova conta pai (categoria)</p>
+      <div className="rounded-xl border-2 border-[#85B7EB] bg-[#E6F1FB] p-4">
+        <p className="mb-3 text-sm font-bold text-[#0C447C]">Nova conta pai (categoria)</p>
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex w-56 flex-col gap-1">
             <span className="text-xs font-medium text-gray-600">Nome</span>
@@ -158,7 +158,7 @@ export default function ContasPage() {
               type="text"
               value={nomeCategoria}
               onChange={(e) => setNomeCategoria(e.target.value)}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#1565C0]"
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
             />
           </label>
           <label className="flex w-36 flex-col gap-1">
@@ -166,7 +166,7 @@ export default function ContasPage() {
             <select
               value={tipoCategoria}
               onChange={(e) => setTipoCategoria(e.target.value as "Receita" | "Despesa")}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#1565C0]"
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
             >
               <option value="Receita">Receita</option>
               <option value="Despesa">Despesa</option>
@@ -174,7 +174,7 @@ export default function ContasPage() {
           </label>
           <button
             onClick={salvarCategoria}
-            className="flex h-10 items-center gap-1.5 rounded-lg bg-[#1565C0] px-4 text-xs font-semibold text-white"
+            className="flex h-10 items-center gap-1.5 rounded-lg bg-[#0C447C] px-4 text-xs font-semibold text-white"
           >
             <Plus size={14} /> Criar
           </button>
@@ -183,8 +183,8 @@ export default function ContasPage() {
       </div>
 
       {/* Subconta */}
-      <div className="rounded-xl border-2 border-[#A5D6A7] bg-[#E8F5E9] p-4">
-        <p className="mb-3 text-sm font-bold text-[#2E7D32]">
+      <div className="rounded-xl border-2 border-[#97C459] bg-[#EAF3DE] p-4">
+        <p className="mb-3 text-sm font-bold text-[#3B6D11]">
           {editandoSubconta ? "Editar subconta" : "Nova subconta"}
         </p>
         <div className="flex flex-wrap gap-3">
@@ -193,7 +193,7 @@ export default function ContasPage() {
             <select
               value={categoriaIdSel}
               onChange={(e) => setCategoriaIdSel(e.target.value ? Number(e.target.value) : "")}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#2E7D32]"
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#3B6D11]"
             >
               <option value="">— Selecione —</option>
               {categorias.map((c) => (
@@ -209,7 +209,7 @@ export default function ContasPage() {
               type="text"
               value={nomeSubconta}
               onChange={(e) => setNomeSubconta(e.target.value)}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#2E7D32]"
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#3B6D11]"
             />
           </label>
         </div>
@@ -221,9 +221,22 @@ export default function ContasPage() {
               type="number"
               min={1}
               max={31}
+              placeholder="1 a 31"
               value={diaVenc}
-              onChange={(e) => setDiaVenc(e.target.value ? Number(e.target.value) : "")}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#2E7D32]"
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === "") {
+                  setDiaVenc("");
+                  return;
+                }
+                const n = Number(v);
+                if (Number.isInteger(n) && n >= 1 && n <= 31) {
+                  setDiaVenc(n);
+                }
+                // valores fora de 1-31 (ou com mais dígitos) são ignorados silenciosamente,
+                // o campo simplesmente não atualiza além do último valor válido
+              }}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#3B6D11]"
             />
           </label>
           <label className="flex items-center gap-2 pb-2">
@@ -234,7 +247,7 @@ export default function ContasPage() {
         <div className="mt-3 flex items-center gap-3">
           <button
             onClick={salvarSubconta}
-            className="h-10 rounded-lg bg-[#2E7D32] px-5 text-xs font-semibold text-white"
+            className="h-10 rounded-lg bg-[#3B6D11] px-5 text-xs font-semibold text-white"
           >
             {editandoSubconta ? "ATUALIZAR SUBCONTA" : "SALVAR SUBCONTA"}
           </button>
@@ -254,7 +267,7 @@ export default function ContasPage() {
             <div className="mb-2 flex items-center gap-2 border-b border-gray-100 pb-2">
               <span
                 className={`rounded px-2 py-0.5 text-[10px] font-bold ${
-                  categoria.tipo === "Receita" ? "bg-[#E8F5E9] text-[#2E7D32]" : "bg-[#FFEBEE] text-[#C62828]"
+                  categoria.tipo === "Receita" ? "bg-[#EAF3DE] text-[#3B6D11]" : "bg-[#FCEBEB] text-[#A32D2D]"
                 }`}
               >
                 {categoria.tipo}
@@ -272,8 +285,13 @@ export default function ContasPage() {
                   >
                     <span className="flex-1 text-gray-700">{s.nome}</span>
                     {s.fixa === 1 && (
-                      <span className="rounded bg-[#E3F2FD] px-1.5 py-0.5 text-[9px] font-bold text-[#1565C0]">
+                      <span className="rounded bg-[#E6F1FB] px-1.5 py-0.5 text-[9px] font-bold text-[#0C447C]">
                         FIXA
+                      </span>
+                    )}
+                    {s.diaVencimento && (
+                      <span className="rounded bg-[#FAEEDA] px-1.5 py-0.5 text-[9px] font-bold text-[#854F0B]">
+                        Dia {s.diaVencimento}
                       </span>
                     )}
                     {s.orcamento > 0 && (
@@ -282,7 +300,7 @@ export default function ContasPage() {
                       </span>
                     )}
                     <button onClick={() => prepararEdicaoSubconta(s)}>
-                      <Pencil size={13} className="text-[#1565C0]" />
+                      <Pencil size={13} className="text-[#0C447C]" />
                     </button>
                     <button onClick={() => excluirSubconta(s.id)}>
                       <Trash2 size={13} className="text-red-500" />

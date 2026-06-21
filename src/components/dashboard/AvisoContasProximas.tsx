@@ -48,7 +48,7 @@ export function AvisoContasProximas() {
       <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-gray-100 p-4">
           <div className="flex items-center gap-2">
-            <AlertCircle size={20} className="text-[#F57F17]" />
+            <AlertCircle size={20} className="text-[#854F0B]" />
             <h2 className="text-sm font-bold text-gray-800">Contas vencendo em breve</h2>
           </div>
           <button onClick={() => setAberto(false)} className="text-gray-400 hover:text-gray-600">
@@ -66,12 +66,12 @@ export function AvisoContasProximas() {
             {contas.map((c) => (
               <div
                 key={c.id}
-                className="flex items-center justify-between rounded-lg bg-[#FFF8E1] px-3 py-2"
+                className="flex items-center justify-between rounded-lg bg-[#FAEEDA] px-3 py-2"
               >
                 <span className="text-xs font-medium text-gray-700">{c.nome}</span>
                 <div className="flex items-center gap-2">
                   {c.diaVencimento && (
-                    <span className="text-[10px] font-bold text-[#F57F17]">Dia {c.diaVencimento}</span>
+                    <span className="text-[10px] font-bold text-[#854F0B]">Dia {c.diaVencimento}</span>
                   )}
                   {c.orcamento ? (
                     <span className="text-xs font-bold text-gray-600">{fmt(c.orcamento)}</span>
@@ -83,7 +83,7 @@ export function AvisoContasProximas() {
           {total > 0 && (
             <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-3">
               <span className="text-xs text-gray-500">Total estimado</span>
-              <span className="text-sm font-bold text-[#1565C0]">{fmt(total)}</span>
+              <span className="text-sm font-bold text-[#0C447C]">{fmt(total)}</span>
             </div>
           )}
         </div>
@@ -100,7 +100,7 @@ export function AvisoContasProximas() {
               setAberto(false);
               router.push("/fixas");
             }}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#1565C0] px-4 py-2.5 text-xs font-semibold text-white"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#0C447C] px-4 py-2.5 text-xs font-semibold text-white"
           >
             Ir pagar agora <ArrowRight size={14} />
           </button>

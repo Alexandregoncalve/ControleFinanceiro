@@ -32,7 +32,7 @@ export function CampoValidado({
       ? "border-green-500 focus:ring-green-500"
       : validacao?.valido === false
       ? "border-red-500 focus:ring-red-500"
-      : "border-gray-300 focus:ring-[#1565C0]";
+      : "border-gray-300 focus:ring-[#0C447C]";
 
   return (
     <label className={`flex flex-col gap-1 ${className}`}>

@@ -68,10 +68,10 @@ export function FormVinculoAutonomo({
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border border-[#A5D6A7] bg-[#E8F5E9] p-4">
+    <div className="flex flex-col gap-4 rounded-xl border border-[#97C459] bg-[#EAF3DE] p-4">
       <div className="flex items-start gap-2 rounded-md bg-white p-2.5">
-        <Info size={14} className="mt-0.5 flex-shrink-0 text-[#2E7D32]" />
-        <p className="text-xs text-[#2E7D32]">
+        <Info size={14} className="mt-0.5 flex-shrink-0 text-[#3B6D11]" />
+        <p className="text-xs text-[#3B6D11]">
           Renda autônoma é variável — não criamos uma conta fixa de salário. Lance cada recebimento
           normalmente em <strong>Avulso</strong>. Aqui você só guarda os dados para referência e para os
           futuros módulos de Imposto de Renda.
@@ -86,7 +86,7 @@ export function FormVinculoAutonomo({
             placeholder="Ex: Freelas de Design"
             value={apelido}
             onChange={(e) => setApelido(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#2E7D32]"
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#3B6D11]"
           />
         </label>
         <label className="flex w-60 flex-col gap-1">
@@ -96,7 +96,7 @@ export function FormVinculoAutonomo({
             placeholder="Ex: Designer, Consultor, Motorista"
             value={d.atividade}
             onChange={(e) => set("atividade", e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#2E7D32]"
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#3B6D11]"
           />
         </label>
       </div>
@@ -137,9 +137,9 @@ export function FormVinculoAutonomo({
           ))}
         </div>
         {d.rendaMediaMensal > 0 && (
-          <div className="mt-2 flex items-center gap-2 rounded-md bg-[#E8F5E9] px-3 py-2">
-            <span className="text-xs text-[#2E7D32]">INSS estimado por mês:</span>
-            <strong className="text-sm text-[#2E7D32]">{fmt(inssEstimado)}</strong>
+          <div className="mt-2 flex items-center gap-2 rounded-md bg-[#EAF3DE] px-3 py-2">
+            <span className="text-xs text-[#3B6D11]">INSS estimado por mês:</span>
+            <strong className="text-sm text-[#3B6D11]">{fmt(inssEstimado)}</strong>
           </div>
         )}
       </div>
@@ -150,7 +150,7 @@ export function FormVinculoAutonomo({
         <button
           onClick={salvar}
           disabled={salvando}
-          className="flex h-10 items-center gap-2 rounded-lg bg-[#2E7D32] px-5 text-xs font-semibold text-white disabled:opacity-60"
+          className="flex h-10 items-center gap-2 rounded-lg bg-[#3B6D11] px-5 text-xs font-semibold text-white disabled:opacity-60"
         >
           {salvando && <LoadingBotao size={14} />}
           {vinculoId ? "ATUALIZAR VÍNCULO" : "SALVAR VÍNCULO"}

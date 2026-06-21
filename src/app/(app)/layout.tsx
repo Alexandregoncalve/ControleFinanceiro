@@ -18,7 +18,7 @@ export default async function AppLayout({
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-[#F0F4FA] lg:flex-row">
+    <div className="flex h-screen flex-col overflow-hidden bg-[#F4F7FB] lg:flex-row">
       <Sidebar nomeUsuario={sessao.nome} />
       <main className="flex-1 overflow-y-auto">{children}</main>
       <AvisoContasProximas />

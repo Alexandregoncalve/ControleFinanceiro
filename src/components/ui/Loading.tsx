@@ -4,7 +4,7 @@ import { Loader2 } from "lucide-react";
 export function LoadingPagina({ texto }: { texto?: string }) {
   return (
     <div className="flex h-full min-h-[300px] flex-col items-center justify-center gap-3">
-      <Loader2 className="animate-spin text-[#1565C0]" size={28} />
+      <Loader2 className="animate-spin text-[#0C447C]" size={28} />
       {texto && <p className="text-sm text-gray-400">{texto}</p>}
     </div>
   );

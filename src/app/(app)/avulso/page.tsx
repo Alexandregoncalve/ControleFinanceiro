@@ -109,11 +109,11 @@ export default function AvulsoPage() {
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4 p-6">
-      <h1 className="text-xl font-bold text-[#1565C0]">LANÇAMENTO AVULSO</h1>
+      <h1 className="text-xl font-bold text-[#0C447C]">LANÇAMENTO AVULSO</h1>
 
-      <div className="flex items-center gap-2 rounded-lg bg-[#E3F2FD] px-3 py-2.5">
-        <Info size={16} className="flex-shrink-0 text-[#1565C0]" />
-        <p className="text-xs italic text-[#1565C0]">Banco fica selecionado entre lançamentos.</p>
+      <div className="flex items-center gap-2 rounded-lg bg-[#E6F1FB] px-3 py-2.5">
+        <Info size={16} className="flex-shrink-0 text-[#0C447C]" />
+        <p className="text-xs italic text-[#0C447C]">Banco fica selecionado entre lançamentos.</p>
       </div>
 
       <div className="flex flex-wrap gap-3">
@@ -136,7 +136,7 @@ export default function AvulsoPage() {
           <select
             value={bancoId}
             onChange={(e) => setBancoId(e.target.value ? Number(e.target.value) : "")}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#1565C0]"
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
           >
             <option value="">— Banco —</option>
             {bancos.map((b) => (
@@ -171,7 +171,7 @@ export default function AvulsoPage() {
             <select
               value={parcelas}
               onChange={(e) => setParcelas(Number(e.target.value))}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#1565C0]"
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
             >
               {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
                 <option key={n} value={n}>
@@ -180,13 +180,13 @@ export default function AvulsoPage() {
               ))}
             </select>
           </label>
-          {infoParcelas && <p className="pb-2 text-xs italic text-[#1565C0]">{infoParcelas}</p>}
+          {infoParcelas && <p className="pb-2 text-xs italic text-[#0C447C]">{infoParcelas}</p>}
         </div>
       )}
 
       {ehCartaoSelecionado && (
-        <div className="flex flex-col gap-2 rounded-lg bg-[#FFF3E0] p-3">
-          <p className="text-xs font-bold text-[#E65100]">💡 Onde foi gasto no cartão?</p>
+        <div className="flex flex-col gap-2 rounded-lg bg-[#FAEEDA] p-3">
+          <p className="text-xs font-bold text-[#854F0B]">💡 Onde foi gasto no cartão?</p>
           <BuscaSubconta
             label="Categoria real do gasto"
             subcontas={subcontas.filter((s) => !ehCartao(s.nome))}
@@ -202,7 +202,7 @@ export default function AvulsoPage() {
           type="text"
           value={descricao}
           onChange={(e) => setDescricao(e.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#1565C0] focus:ring-1 focus:ring-[#1565C0]"
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C] focus:ring-1 focus:ring-[#0C447C]"
         />
       </label>
 
@@ -215,7 +215,7 @@ export default function AvulsoPage() {
       <button
         onClick={salvar}
         disabled={salvando}
-        className="flex h-11 items-center justify-center gap-2 rounded-lg bg-[#1565C0] font-semibold text-white transition hover:bg-[#1257A8] disabled:opacity-60"
+        className="flex h-11 items-center justify-center gap-2 rounded-lg bg-[#0C447C] font-semibold text-white transition hover:bg-[#042C53] disabled:opacity-60"
       >
         <Save size={16} />
         SALVAR LANÇAMENTO

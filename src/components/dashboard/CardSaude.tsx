@@ -6,9 +6,9 @@ interface CardSaudeProps {
 }
 
 const CORES_LABEL: Record<DashboardData["saude"]["label"], { cor: string; bg: string }> = {
-  BOA: { cor: "#2E7D32", bg: "#E8F5E9" },
-  REGULAR: { cor: "#F57F17", bg: "#FFF8E1" },
-  ATENÇÃO: { cor: "#C62828", bg: "#FFEBEE" },
+  BOA: { cor: "#3B6D11", bg: "#EAF3DE" },
+  REGULAR: { cor: "#854F0B", bg: "#FAEEDA" },
+  ATENÇÃO: { cor: "#A32D2D", bg: "#FCEBEB" },
 };
 
 /** Traduz o card de saúde financeira de views/dashboard.py */

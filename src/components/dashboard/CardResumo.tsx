@@ -39,7 +39,7 @@ export function CardResumo({
       {destaque && (
         <span
           className={`w-fit rounded px-1.5 py-0.5 text-[10px] font-semibold ${
-            destaque.cor === "verde" ? "bg-[#E8F5E9] text-[#2E7D32]" : "bg-[#FFEBEE] text-[#C62828]"
+            destaque.cor === "verde" ? "bg-[#EAF3DE] text-[#3B6D11]" : "bg-[#FCEBEB] text-[#A32D2D]"
           }`}
         >
           {destaque.texto}

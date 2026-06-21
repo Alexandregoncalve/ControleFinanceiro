@@ -5,9 +5,9 @@ interface OrcamentoMensalProps {
 }
 
 function statusOrcamento(pct: number) {
-  if (pct >= 100) return { icone: "🔴", bg: "#FFEBEE", cor: "#C62828", trilha: "#FFCDD2" };
-  if (pct >= 80) return { icone: "🟡", bg: "#FFF8E1", cor: "#F57F17", trilha: "#FFE082" };
-  return { icone: "✅", bg: "#E8F5E9", cor: "#2E7D32", trilha: "#C8E6C9" };
+  if (pct >= 100) return { icone: "🔴", bg: "#FCEBEB", cor: "#A32D2D", trilha: "#F7C1C1" };
+  if (pct >= 80) return { icone: "🟡", bg: "#FAEEDA", cor: "#854F0B", trilha: "#FAC775" };
+  return { icone: "✅", bg: "#EAF3DE", cor: "#3B6D11", trilha: "#C0DD97" };
 }
 
 /** Traduz a seção de Orçamento mensal de views/dashboard.py — grid 3 colunas, ordenado por % de uso */

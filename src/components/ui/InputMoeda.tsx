@@ -37,7 +37,7 @@ export function InputMoeda({
   return (
     <label className={`flex flex-col gap-1 ${className}`}>
       <span className="text-xs font-medium text-gray-600">{label}</span>
-      <div className="flex items-center rounded-lg border border-gray-300 bg-white px-3 py-2 focus-within:border-[#1565C0] focus-within:ring-1 focus-within:ring-[#1565C0]">
+      <div className="flex items-center rounded-lg border border-gray-300 bg-white px-3 py-2 focus-within:border-[#0C447C] focus-within:ring-1 focus-within:ring-[#0C447C]">
         <span className="text-sm text-gray-500 mr-1">R$</span>
         <input
           type="text"

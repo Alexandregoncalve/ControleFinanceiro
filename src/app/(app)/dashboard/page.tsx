@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ArrowUpRight, ArrowDownRight, Wallet, Repeat } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Wallet, Repeat, LayoutDashboard } from "lucide-react";
 import { SeletorMes } from "@/components/ui/SeletorMes";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { CardResumo } from "@/components/dashboard/CardResumo";
 import { CardSaude } from "@/components/dashboard/CardSaude";
 import { CardsBancos } from "@/components/dashboard/CardsBancos";
@@ -67,14 +68,7 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-3 p-4">
-      {/* Cabeçalho */}
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-[#1565C0]">Dashboard financeiro</h1>
-          <div className="mt-1 h-[3px] w-44 rounded bg-[#2E7D32]" />
-        </div>
-        <SeletorMes mes={mes} onChange={setMes} />
-      </div>
+      <PageHeader titulo="Dashboard financeiro" icon={LayoutDashboard} acoes={<SeletorMes mes={mes} onChange={setMes} />} />
 
       {/* LINHA 1: cards de resumo */}
       <div className="flex flex-wrap gap-2.5">
@@ -82,7 +76,7 @@ export default function DashboardPage() {
           titulo="RECEITAS DO MÊS"
           icon={ArrowUpRight}
           valor={resumo.receitas}
-          corBorda="#2E7D32"
+          corBorda="#3B6D11"
           variacaoTexto={tendTxt(resumo.receitas, resumo.receitasAnterior)}
           metaTexto={resumo.metaReceita > 0 ? `Meta: ${fmt(resumo.metaReceita)}` : "Sem meta definida"}
         />
@@ -90,7 +84,7 @@ export default function DashboardPage() {
           titulo="DESPESAS DO MÊS"
           icon={ArrowDownRight}
           valor={resumo.despesas}
-          corBorda="#C62828"
+          corBorda="#A32D2D"
           variacaoTexto={tendTxt(resumo.despesas, resumo.despesasAnterior)}
           metaTexto={resumo.metaDespesa > 0 ? `Meta: ${fmt(resumo.metaDespesa)}` : "Sem meta definida"}
         />
@@ -98,7 +92,7 @@ export default function DashboardPage() {
           titulo="RESULTADO"
           icon={Wallet}
           valor={resumo.resultado}
-          corBorda={positivo ? "#2E7D32" : "#C62828"}
+          corBorda={positivo ? "#3B6D11" : "#A32D2D"}
           destaque={{
             texto: positivo ? `✅ Sobrou ${fmt(resumo.resultado)} este mês` : `❌ Gastou ${fmt(Math.abs(resumo.resultado))} a mais`,
             cor: positivo ? "verde" : "vermelho",
@@ -109,7 +103,7 @@ export default function DashboardPage() {
           titulo="DESPESAS FIXAS"
           icon={Repeat}
           valor={fixas.valor}
-          corBorda="#1565C0"
+          corBorda="#0C447C"
           variacaoTexto={`${fmtPct(fixas.percentualDespesas)} das despesas do mês`}
           metaTexto={
             fixas.pendentes > 0
@@ -126,7 +120,7 @@ export default function DashboardPage() {
           <CardsBancos bancos={bancos} />
           {saldoAcumulado !== 0 && (
             <p className="mt-2 text-[11px] text-gray-500">
-              Saldo total acumulado: <span className="font-bold text-[#1565C0]">{fmt(saldoAcumulado)}</span>
+              Saldo total acumulado: <span className="font-bold text-[#0C447C]">{fmt(saldoAcumulado)}</span>
             </p>
           )}
         </div>
@@ -167,7 +161,7 @@ export default function DashboardPage() {
 
       {cartao.total > 0 && (
         <p className="text-[11px] text-gray-500">
-          💳 Cartão de crédito: <span className="font-bold text-[#1565C0]">{fmt(cartao.total)}</span> (
+          💳 Cartão de crédito: <span className="font-bold text-[#0C447C]">{fmt(cartao.total)}</span> (
           {fmtPct(cartao.percentualDespesas)} das despesas)
         </p>
       )}
