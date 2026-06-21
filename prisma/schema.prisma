@@ -1,0 +1,254 @@
+// Schema do banco de dados — traduzido de database.py (Python/psycopg2)
+// Mantém os mesmos nomes de tabelas e colunas do sistema original em Postgres,
+// para permitir migração direta dos dados existentes sem necessidade de ETL.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Usuario {
+  id    Int    @id @default(autoincrement())
+  login String @unique
+  senha String
+  nome  String
+
+  perfil        Perfil?
+  bancos        Banco[]
+  cartoes       Cartao[]
+  categorias    Categoria[]
+  subcontas     Subconta[]
+  transacoes    Transacao[]
+  transferenciasOrigem Transferencia[] @relation("TransferenciasComoUsuario")
+  metas         Meta[]
+  dividas       Divida[]
+  conciliacoes  Conciliacao[]
+
+  @@map("usuarios")
+}
+
+model Perfil {
+  id            Int     @id @default(autoincrement())
+  usuarioId     Int     @unique @map("usuario_id")
+  nome          String?
+  cpf           String?
+  rg            String?
+  email         String?
+  dataNasc      String? @map("data_nasc")
+  telefone      String?
+  cep           String?
+  logradouro    String?
+  numero        String?
+  complemento   String?
+  bairro        String?
+  cidade        String?
+  estado        String?
+  empresa       String?
+  cargo         String?
+  salario       Float?
+  diaPagamento  Int?    @map("dia_pagamento")
+  vale          Float?
+  diaVale       Int?    @map("dia_vale")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("perfil")
+}
+
+model Banco {
+  id           Int     @id @default(autoincrement())
+  usuarioId    Int     @map("usuario_id")
+  nomeBanco    String  @map("nome_banco")
+  saldoInicial Float   @default(0) @map("saldo_inicial")
+  dataCriacao  String? @map("data_criacao") // formato DD/MM/AAAA, igual ao sistema original
+  agencia      String?
+  numeroConta  String? @map("numero_conta")
+  codigoBanco  String? @map("codigo_banco")
+  cor          String? // preservada do banco original; não usada nesta versão do app
+  logoUrl      String? @map("logo_url") // preservada do banco original; não usada nesta versão do app
+
+  usuario           Usuario         @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  cartoes           Cartao[]
+  transacoes        Transacao[]
+  transferenciasOrigem Transferencia[] @relation("BancoOrigem")
+  transferenciasDestino Transferencia[] @relation("BancoDestino")
+  conciliacoes      Conciliacao[]
+
+  @@map("bancos")
+}
+
+model Cartao {
+  id            Int     @id @default(autoincrement())
+  usuarioId     Int     @map("usuario_id")
+  nomeCartao    String  @map("nome_cartao")
+  limite        Float?  @default(0)
+  diaVencimento Int?    @map("dia_vencimento")
+  bancoId       Int?    @map("banco_id")
+  tipo          String? // "Crédito" | "Débito" | "Ambos"
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  banco   Banco?  @relation(fields: [bancoId], references: [id])
+
+  @@map("cartoes")
+}
+
+model Categoria {
+  id        Int    @id @default(autoincrement())
+  usuarioId Int    @map("usuario_id")
+  nome      String
+  tipo      String // "Receita" | "Despesa"
+
+  usuario   Usuario    @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  subcontas Subconta[]
+
+  @@map("categorias")
+}
+
+model Subconta {
+  id            Int     @id @default(autoincrement())
+  usuarioId     Int     @map("usuario_id")
+  categoriaId   Int     @map("categoria_id")
+  nome          String
+  fixa          Int     @default(0) // 0/1 (mantido como int para compatibilidade com dados existentes)
+  orcamento     Float?  @default(0)
+  diaVencimento Int?    @map("dia_vencimento")
+
+  usuario    Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  categoria  Categoria   @relation(fields: [categoriaId], references: [id])
+  transacoes Transacao[] @relation("TransacaoSubconta")
+  transacoesCategoriaReal Transacao[] @relation("TransacaoCategoriaReal")
+
+  @@map("subcontas")
+}
+
+model Transacao {
+  id               Int     @id @default(autoincrement())
+  usuarioId        Int     @map("usuario_id")
+  data             String  // formato DD/MM/AAAA — mantido como texto por compatibilidade com o sistema original
+  valor            Float
+  descricao        String?
+  subcontaId       Int     @map("subconta_id")
+  tipo             String  // "Receita" | "Despesa"
+  metodoPagamento  String? @map("metodo_pagamento")
+  cartaoId         Int?    @map("cartao_id")
+  parcelaAtual     Int     @default(1) @map("parcela_atual")
+  totalParcelas    Int     @default(1) @map("total_parcelas")
+  categoriaRealId  Int?    @map("categoria_real_id")
+  bancoId          Int?    @map("banco_id")
+
+  usuario       Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  subconta      Subconta  @relation("TransacaoSubconta", fields: [subcontaId], references: [id])
+  categoriaReal Subconta? @relation("TransacaoCategoriaReal", fields: [categoriaRealId], references: [id])
+  banco         Banco?    @relation(fields: [bancoId], references: [id])
+
+  @@map("transacoes")
+  @@index([usuarioId, data])
+  @@index([usuarioId, tipo])
+}
+
+model Transferencia {
+  id         Int     @id @default(autoincrement())
+  usuarioId  Int     @map("usuario_id")
+  data       String
+  valor      Float
+  bancoOrig  Int     @map("banco_orig")
+  bancoDest  Int     @map("banco_dest")
+  descricao  String?
+
+  usuario      Usuario @relation("TransferenciasComoUsuario", fields: [usuarioId], references: [id], onDelete: Cascade)
+  bancoOrigem  Banco   @relation("BancoOrigem", fields: [bancoOrig], references: [id])
+  bancoDestino Banco   @relation("BancoDestino", fields: [bancoDest], references: [id])
+
+  @@map("transferencias")
+}
+
+model Meta {
+  id            Int    @id @default(autoincrement())
+  usuarioId     Int    @map("usuario_id")
+  mes           String // formato MM/AAAA
+  metaReceita   Float  @default(0) @map("meta_receita")
+  metaDespesa   Float  @default(0) @map("meta_despesa")
+  metaResultado Float  @default(0) @map("meta_resultado")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("metas")
+  @@unique([usuarioId, mes])
+}
+
+model Divida {
+  id             Int       @id @default(autoincrement())
+  usuarioId      Int       @map("usuario_id")
+  nome           String
+  tipoControle   String    @map("tipo_controle") // "parcelada" | "livre"
+  valorTotal     Float     @map("valor_total")
+  valorParcela   Float?    @map("valor_parcela")
+  totalParcelas  Int?      @map("total_parcelas")
+  diaVencimento  Int?      @map("dia_vencimento")
+  dataInicio     String?   @map("data_inicio") // DD/MM/AAAA
+  taxaJuros      Float?    @default(0) @map("taxa_juros")
+  status         String    @default("ativa") // "ativa" | "quitada"
+  dataQuitacao   String?   @map("data_quitacao")
+  subcontaId     Int?      @map("subconta_id") // subconta fixa criada automaticamente (dívida parcelada)
+
+  usuario    Usuario           @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  pagamentos DividaPagamento[]
+
+  @@map("dividas")
+}
+
+model DividaPagamento {
+  id          Int     @id @default(autoincrement())
+  dividaId    Int     @map("divida_id")
+  usuarioId   Int     @map("usuario_id")
+  valor       Float
+  data        String // DD/MM/AAAA
+  observacao  String?
+  transacaoId Int?    @map("transacao_id")
+
+  divida Divida @relation(fields: [dividaId], references: [id], onDelete: Cascade)
+
+  @@map("divida_pagamentos")
+}
+
+model Conciliacao {
+  id          Int     @id @default(autoincrement())
+  usuarioId   Int     @map("usuario_id")
+  bancoId     Int?    @map("banco_id")
+  dataIni     String? @map("data_ini")
+  dataFim     String? @map("data_fim")
+  dataExec    String? @map("data_exec")
+  totalBanco  Int     @default(0) @map("total_banco")
+  conciliados Int     @default(0)
+  pendentes   Int     @default(0)
+  extras      Int     @default(0)
+
+  usuario Usuario           @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  banco   Banco?            @relation(fields: [bancoId], references: [id])
+  itens   ConciliacaoItem[]
+
+  @@map("conciliacoes")
+}
+
+model ConciliacaoItem {
+  id             Int     @id @default(autoincrement())
+  conciliacaoId  Int?    @map("conciliacao_id")
+  status         String?
+  data           String?
+  descricao      String?
+  valor          Float?
+  tipo           String?
+  transacaoId    Int?    @map("transacao_id")
+
+  conciliacao Conciliacao? @relation(fields: [conciliacaoId], references: [id])
+
+  @@map("conciliacao_itens")
+}
+
+// Observação: os models Conciliacao/ConciliacaoItem acima preservam as tabelas
+// e dados já existentes no banco (parsing de extratos PDF/OFX). A tela e a lógica
+// de conciliação em si ficam para a v2, conforme combinado — por enquanto essas
+// tabelas só não são apagadas pelo `prisma db push`.
