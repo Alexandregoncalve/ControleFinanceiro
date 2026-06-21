@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSessao } from "@/lib/auth";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { AvisoContasProximas } from "@/components/dashboard/AvisoContasProximas";
 
 export const dynamic = "force-dynamic";
 
@@ -17,9 +18,10 @@ export default async function AppLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#F0F4FA]">
+    <div className="flex h-screen flex-col overflow-hidden bg-[#F0F4FA] lg:flex-row">
       <Sidebar nomeUsuario={sessao.nome} />
       <main className="flex-1 overflow-y-auto">{children}</main>
+      <AvisoContasProximas />
     </div>
   );
 }

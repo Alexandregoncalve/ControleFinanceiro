@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -15,6 +16,9 @@ import {
   User,
   LogOut,
   TrendingUp,
+  Menu,
+  X,
+  Briefcase,
 } from "lucide-react";
 
 interface NavItem {
@@ -55,6 +59,10 @@ const GRUPOS: NavGroup[] = [
     ],
   },
   {
+    titulo: "RENDA",
+    itens: [{ label: "Vínculos de Renda", href: "/vinculos-renda", icon: Briefcase }],
+  },
+  {
     titulo: "CONFIGURAÇÕES",
     itens: [{ label: "Meu Cadastro", href: "/perfil", icon: User }],
   },
@@ -67,6 +75,12 @@ interface SidebarProps {
 export function Sidebar({ nomeUsuario }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [abertoMobile, setAbertoMobile] = useState(false);
+
+  // Fecha o drawer mobile automaticamente ao navegar para outra rota
+  useEffect(() => {
+    setAbertoMobile(false);
+  }, [pathname]);
 
   const iniciais = nomeUsuario
     .split(" ")
@@ -81,17 +95,26 @@ export function Sidebar({ nomeUsuario }: SidebarProps) {
     router.refresh();
   }
 
-  return (
-    <aside className="flex h-screen w-[210px] flex-shrink-0 flex-col border-r border-gray-200 bg-white">
+  const conteudoMenu = (
+    <>
       {/* Logo */}
-      <div className="flex items-center gap-2 border-b border-gray-200 px-4 py-4">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#1565C0]">
-          <TrendingUp size={16} className="text-white" />
+      <div className="flex items-center justify-between gap-2 border-b border-gray-200 px-4 py-4">
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#1565C0]">
+            <TrendingUp size={16} className="text-white" />
+          </div>
+          <span className="text-[13px] font-semibold">
+            <span className="text-[#1565C0]">Finança</span>{" "}
+            <span className="text-[#2E7D32]">Simples</span>
+          </span>
         </div>
-        <span className="text-[13px] font-semibold">
-          <span className="text-[#1565C0]">Finança</span>{" "}
-          <span className="text-[#2E7D32]">Simples</span>
-        </span>
+        <button
+          onClick={() => setAbertoMobile(false)}
+          className="text-gray-400 lg:hidden"
+          aria-label="Fechar menu"
+        >
+          <X size={20} />
+        </button>
       </div>
 
       {/* Navegação */}
@@ -105,11 +128,7 @@ export function Sidebar({ nomeUsuario }: SidebarProps) {
               const ativo = pathname === item.href;
               const Icon = item.icon;
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="block px-2 py-0.5"
-                >
+                <Link key={item.href} href={item.href} className="block px-2 py-0.5">
                   <div
                     className={`flex items-center gap-2.5 rounded-full px-3.5 py-2 text-[13px] transition-colors ${
                       ativo
@@ -141,6 +160,43 @@ export function Sidebar({ nomeUsuario }: SidebarProps) {
           <LogOut size={16} />
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Barra superior mobile com botão de menu — só aparece em telas pequenas */}
+      <div className="flex h-12 flex-shrink-0 items-center gap-2 border-b border-gray-200 bg-white px-3 lg:hidden">
+        <button
+          onClick={() => setAbertoMobile(true)}
+          className="text-gray-600"
+          aria-label="Abrir menu"
+        >
+          <Menu size={22} />
+        </button>
+        <span className="text-[13px] font-semibold">
+          <span className="text-[#1565C0]">Finança</span> <span className="text-[#2E7D32]">Simples</span>
+        </span>
+      </div>
+
+      {/* Sidebar fixa — desktop */}
+      <aside className="hidden h-screen w-[210px] flex-shrink-0 flex-col border-r border-gray-200 bg-white lg:flex">
+        {conteudoMenu}
+      </aside>
+
+      {/* Drawer — mobile/tablet */}
+      {abertoMobile && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setAbertoMobile(false)}
+            aria-hidden="true"
+          />
+          <aside className="absolute left-0 top-0 flex h-full w-[260px] flex-col bg-white shadow-xl">
+            {conteudoMenu}
+          </aside>
+        </div>
+      )}
+    </>
   );
 }

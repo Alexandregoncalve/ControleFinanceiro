@@ -6,7 +6,10 @@ export const dynamic = "force-dynamic";
 
 export default async function PerfilPage() {
   const sessao = await exigirSessao();
-  const perfil = await prisma.perfil.findUnique({ where: { usuarioId: sessao.id } });
+  const [perfil, usuario] = await Promise.all([
+    prisma.perfil.findUnique({ where: { usuarioId: sessao.id } }),
+    prisma.usuario.findUnique({ where: { id: sessao.id }, select: { login: true } }),
+  ]);
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -18,7 +21,7 @@ export default async function PerfilPage() {
                 nome: perfil.nome ?? "",
                 cpf: perfil.cpf ?? "",
                 rg: perfil.rg ?? "",
-                email: perfil.email ?? "",
+                email: usuario?.login ?? perfil.email ?? "",
                 dataNasc: perfil.dataNasc ?? "",
                 telefone: perfil.telefone ?? "",
                 cep: perfil.cep ?? "",
@@ -35,7 +38,7 @@ export default async function PerfilPage() {
                 vale: perfil.vale ?? 0,
                 diaVale: perfil.diaVale,
               }
-            : null
+            : { email: usuario?.login ?? "" }
         }
       />
     </div>

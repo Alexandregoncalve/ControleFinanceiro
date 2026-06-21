@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ArrowUpRight, ArrowDownRight, Wallet, Repeat, Loader2 } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Wallet, Repeat } from "lucide-react";
 import { SeletorMes } from "@/components/ui/SeletorMes";
 import { CardResumo } from "@/components/dashboard/CardResumo";
 import { CardSaude } from "@/components/dashboard/CardSaude";
@@ -11,6 +11,9 @@ import { Secao } from "@/components/dashboard/Secao";
 import { ComoEstaOMes } from "@/components/dashboard/ComoEstaOMes";
 import { TopGastos } from "@/components/dashboard/TopGastos";
 import { OrcamentoMensal } from "@/components/dashboard/OrcamentoMensal";
+import { ComparativoMensal } from "@/components/dashboard/ComparativoMensal";
+import { SkeletonCardsResumo, Skeleton } from "@/components/ui/Loading";
+import { apiFetch } from "@/lib/api-fetch";
 import { fmt, fmtPct, mesAtual } from "@/lib/utils";
 import { DashboardData } from "@/types/dashboard";
 
@@ -28,15 +31,13 @@ export default function DashboardPage() {
 
   const carregar = useCallback(async (mesParam: string) => {
     setCarregando(true);
-    try {
-      const res = await fetch(`/api/dashboard?mes=${encodeURIComponent(mesParam)}`);
-      if (res.ok) {
-        const data = await res.json();
-        setDados(data);
-      }
-    } finally {
-      setCarregando(false);
-    }
+    const resultado = await apiFetch<DashboardData>(
+      `/api/dashboard?mes=${encodeURIComponent(mesParam)}`,
+      { mensagemErroPadrao: "Não foi possível carregar o dashboard.", toastErro: !!dados }
+    );
+    if (resultado.ok && resultado.data) setDados(resultado.data);
+    setCarregando(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -45,8 +46,16 @@ export default function DashboardPage() {
 
   if (carregando && !dados) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <Loader2 className="animate-spin text-[#1565C0]" size={28} />
+      <div className="flex flex-col gap-3 p-4">
+        <div>
+          <Skeleton className="h-6 w-56" />
+          <Skeleton className="mt-2 h-[3px] w-44" />
+        </div>
+        <SkeletonCardsResumo />
+        <div className="flex flex-col gap-2.5 lg:flex-row">
+          <Skeleton className="h-32 flex-1" />
+          <Skeleton className="h-32 flex-1" />
+        </div>
       </div>
     );
   }
@@ -162,6 +171,11 @@ export default function DashboardPage() {
           {fmtPct(cartao.percentualDespesas)} das despesas)
         </p>
       )}
+
+      {/* LINHA 5: Comparativo mensal */}
+      <Secao titulo="📅 Comparativo mensal" subtitulo="Evolução de gastos por conta, mês a mês">
+        <ComparativoMensal />
+      </Secao>
     </div>
   );
 }

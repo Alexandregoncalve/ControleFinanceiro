@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { UserPlus, Save } from "lucide-react";
+import Link from "next/link";
+import { UserPlus, Save, Briefcase } from "lucide-react";
 import { CampoValidado } from "@/components/ui/CampoValidado";
 import { InputMoeda } from "@/components/ui/InputMoeda";
 import {
@@ -261,6 +262,20 @@ export function FormularioCadastro({ novoUsuario, perfilInicial }: FormularioCad
             validacao={valid.nome}
             className="w-full max-w-md"
           />
+          {!novoUsuario && (
+            <label className="flex w-72 flex-col gap-1">
+              <span className="text-xs font-medium text-gray-600">E-mail de login</span>
+              <input
+                type="email"
+                value={dados.email}
+                disabled
+                className="w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500"
+              />
+              <span className="text-[10px] text-gray-400">
+                Para alterar o e-mail de login, entre em contato com o suporte.
+              </span>
+            </label>
+          )}
         </div>
         <div className="mt-3 flex flex-wrap gap-3">
           <CampoValidado
@@ -360,44 +375,25 @@ export function FormularioCadastro({ novoUsuario, perfilInicial }: FormularioCad
         </div>
       </section>
 
-      <section className="rounded-xl bg-[#F3E5F5] p-4">
-        <h2 className="mb-3 text-sm font-bold text-[#6A1B9A]">💼 3. DADOS PROFISSIONAIS E RENDA</h2>
-        <div className="flex flex-wrap gap-3">
-          <CampoValidado label="Empresa Atual" value={dados.empresa} onChange={(v) => set("empresa", v)} className="w-72" />
-          <CampoValidado label="Cargo / Função" value={dados.cargo} onChange={(v) => set("cargo", v)} className="w-64" />
-        </div>
-        <div className="mt-3 flex flex-wrap gap-3">
-          <InputMoeda label="Salário Bruto" value={dados.salario} onChange={(v) => set("salario", v)} className="w-44" />
-          <label className="flex w-36 flex-col gap-1">
-            <span className="text-xs font-medium text-gray-600">Dia Pagamento</span>
-            <input
-              type="number"
-              min={1}
-              max={31}
-              value={dados.diaPagamento ?? ""}
-              onChange={(e) => set("diaPagamento", e.target.value ? parseInt(e.target.value) : null)}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#1565C0] focus:ring-1 focus:ring-[#1565C0]"
-            />
-          </label>
-          <InputMoeda label="Valor Vale" value={dados.vale} onChange={(v) => set("vale", v)} className="w-44" />
-          <label className="flex w-36 flex-col gap-1">
-            <span className="text-xs font-medium text-gray-600">Dia do Vale</span>
-            <input
-              type="number"
-              min={1}
-              max={31}
-              value={dados.diaVale ?? ""}
-              onChange={(e) => set("diaVale", e.target.value ? parseInt(e.target.value) : null)}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#1565C0] focus:ring-1 focus:ring-[#1565C0]"
-            />
-          </label>
-        </div>
-      </section>
+      <div className="flex items-center gap-2 rounded-lg bg-[#FFF3E0] px-3 py-2.5">
+        <Briefcase size={16} className="flex-shrink-0 text-[#E65100]" />
+        <p className="text-xs text-[#E65100]">
+          Salário, vale-transporte, vale-alimentação e outros vínculos de renda agora ficam em{" "}
+          <Link href="/vinculos-renda" className="font-semibold underline">
+            Vínculos de Renda
+          </Link>
+          .
+        </p>
+      </div>
 
       {msg && (
-        <p className={`text-sm font-medium ${msg.cor === "red" ? "text-red-600" : "text-green-600"}`}>
+        <div
+          className={`rounded-lg p-3 text-sm font-medium ${
+            msg.cor === "red" ? "bg-[#FFEBEE] text-red-700" : "bg-[#E8F5E9] text-green-700"
+          }`}
+        >
           {msg.texto}
-        </p>
+        </div>
       )}
 
       <div className="flex justify-center">

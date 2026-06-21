@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { InputMoeda } from "@/components/ui/InputMoeda";
+import { LoadingBotao } from "@/components/ui/Loading";
+import { apiFetch } from "@/lib/api-fetch";
 
 interface FormMetasProps {
   mes: string;
@@ -25,7 +27,6 @@ export function FormMetas({
   const [despesa, setDespesa] = useState(metaDespesa);
   const [resultado, setResultado] = useState(metaResultado);
   const [salvando, setSalvando] = useState(false);
-  const [msg, setMsg] = useState("");
 
   useEffect(() => {
     setReceita(metaReceita);
@@ -35,29 +36,19 @@ export function FormMetas({
 
   async function salvar() {
     setSalvando(true);
-    setMsg("");
-    try {
-      const res = await fetch("/api/metas", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mes,
-          metaReceita: receita,
-          metaDespesa: despesa,
-          metaResultado: resultado,
-        }),
-      });
-      if (res.ok) {
-        setMsg("✅ Metas salvas!");
-        onSalvo();
-      } else {
-        setMsg("❌ Erro ao salvar.");
-      }
-    } catch {
-      setMsg("❌ Erro de conexão.");
-    } finally {
-      setSalvando(false);
-    }
+    const resultadoFetch = await apiFetch("/api/metas", {
+      method: "POST",
+      body: JSON.stringify({
+        mes,
+        metaReceita: receita,
+        metaDespesa: despesa,
+        metaResultado: resultado,
+      }),
+      mensagemSucesso: "Metas salvas!",
+      mensagemErroPadrao: "Não foi possível salvar as metas.",
+    });
+    setSalvando(false);
+    if (resultadoFetch.ok) onSalvo();
   }
 
   return (
@@ -69,13 +60,13 @@ export function FormMetas({
         <button
           onClick={salvar}
           disabled={salvando}
-          className="h-[38px] rounded-lg bg-[#1565C0] px-5 text-xs font-semibold text-white transition hover:bg-[#1257A8] disabled:opacity-60"
+          className="flex h-[38px] items-center justify-center gap-2 rounded-lg bg-[#1565C0] px-5 text-xs font-semibold text-white transition hover:bg-[#1257A8] disabled:opacity-60"
         >
+          {salvando && <LoadingBotao size={14} />}
           SALVAR
         </button>
       </div>
-      {msg && <p className="text-xs text-gray-600">{msg}</p>}
-      {metaCopiada && !msg && (
+      {metaCopiada && (
         <p className="text-[10px] italic text-[#2E7D32]">💡 Copiada automaticamente do mês anterior</p>
       )}
     </div>

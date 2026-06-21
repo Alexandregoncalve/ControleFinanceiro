@@ -16,6 +16,13 @@ model Usuario {
   senha String
   nome  String
 
+  // Canal de contato preferido para recuperação de senha e verificações
+  telefone           String?
+  emailVerificado    Boolean   @default(false) @map("email_verificado")
+  telefoneVerificado Boolean   @default(false) @map("telefone_verificado")
+  metodoPreferido    String    @default("email") @map("metodo_preferido") // "email" | "whatsapp"
+  aceitouTermosEm    DateTime? @map("aceitou_termos_em")
+
   perfil        Perfil?
   bancos        Banco[]
   cartoes       Cartao[]
@@ -26,8 +33,62 @@ model Usuario {
   metas         Meta[]
   dividas       Divida[]
   conciliacoes  Conciliacao[]
+  vinculosRenda VinculoRenda[]
+  tokensRecuperacao TokenRecuperacao[]
+  codigosVerificacao CodigoVerificacao[]
 
   @@map("usuarios")
+}
+
+/**
+ * Vínculo de renda do usuário — uma pessoa pode ter vários ao mesmo tempo
+ * (ex: CLT + MEI simultaneamente). Cada tipo usa um subconjunto diferente
+ * de campos, guardados em `detalhes` como JSON flexível para não precisar
+ * de uma tabela por tipo.
+ */
+model VinculoRenda {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int      @map("usuario_id")
+  tipo      String   // "CLT" | "AUTONOMO" | "MEI" | "SIMPLES_NACIONAL"
+  apelido   String   // nome dado pelo usuário, ex: "Emprego Principal", "MEI Design"
+  ativo     Boolean  @default(true)
+  detalhes  Json     // campos específicos do tipo (salário, CNPJ, anexo, etc)
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  subcontas Subconta[]
+
+  @@map("vinculos_renda")
+}
+
+/** Token de uso único para o fluxo de "esqueci minha senha" (válido por tempo limitado). */
+model TokenRecuperacao {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int      @map("usuario_id")
+  token     String   @unique
+  expiraEm  DateTime @map("expira_em")
+  usadoEm   DateTime? @map("usado_em")
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("tokens_recuperacao")
+}
+
+/** Código numérico (tipo "123456") para verificação de e-mail ou WhatsApp. */
+model CodigoVerificacao {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int      @map("usuario_id")
+  canal     String   // "email" | "whatsapp"
+  destino   String   // o e-mail ou telefone para o qual foi enviado
+  codigo    String
+  expiraEm  DateTime @map("expira_em")
+  usadoEm   DateTime? @map("usado_em")
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("codigos_verificacao")
 }
 
 model Perfil {
@@ -111,6 +172,7 @@ model Subconta {
   id            Int     @id @default(autoincrement())
   usuarioId     Int     @map("usuario_id")
   categoriaId   Int     @map("categoria_id")
+  vinculoRendaId Int?   @map("vinculo_renda_id") // se criada automaticamente a partir de um vínculo de renda
   nome          String
   fixa          Int     @default(0) // 0/1 (mantido como int para compatibilidade com dados existentes)
   orcamento     Float?  @default(0)
@@ -118,6 +180,7 @@ model Subconta {
 
   usuario    Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   categoria  Categoria   @relation(fields: [categoriaId], references: [id])
+  vinculoRenda VinculoRenda? @relation(fields: [vinculoRendaId], references: [id])
   transacoes Transacao[] @relation("TransacaoSubconta")
   transacoesCategoriaReal Transacao[] @relation("TransacaoCategoriaReal")
 

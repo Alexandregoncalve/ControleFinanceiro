@@ -4,7 +4,7 @@ import { jwtVerify } from "jose";
 // Equivalente a ROTAS_SEM_AUTH em main.py: rotas que não exigem login.
 // Nota: "/cadastro" aqui é só para CRIAR conta nova (sem sessão).
 // A edição de perfil de um usuário já logado vive em "/perfil" (dentro do grupo autenticado).
-const ROTAS_PUBLICAS = ["/login", "/cadastro"];
+const ROTAS_PUBLICAS = ["/login", "/cadastro", "/esqueci-senha", "/redefinir-senha"];
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "dev-secret-troque-em-producao"

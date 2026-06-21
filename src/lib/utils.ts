@@ -114,6 +114,32 @@ export function diasNoMes(mes: number, ano: number): number {
   return new Date(ano, mes, 0).getDate();
 }
 
+/**
+ * Calcula o 5º dia útil do mês seguinte a partir de um mês/ano de referência —
+ * o prazo legal máximo de pagamento de salário (CLT art. 459, §1º).
+ * Sábado conta como dia útil (Instrução Normativa 01/1989); domingo não.
+ * Não considera feriados nacionais/locais (variam por município), só fins de semana.
+ */
+export function calcular5DiaUtilMesSeguinte(mesRef: number, anoRef: number): number {
+  let mes = mesRef + 1;
+  let ano = anoRef;
+  if (mes > 12) {
+    mes = 1;
+    ano += 1;
+  }
+
+  let diaUtil = 0;
+  let dia = 1;
+  while (diaUtil < 5) {
+    const data = new Date(ano, mes - 1, dia);
+    const diaSemana = data.getDay(); // 0 = domingo
+    if (diaSemana !== 0) diaUtil++;
+    if (diaUtil === 5) return dia;
+    dia++;
+  }
+  return dia;
+}
+
 /** Valida CPF — traduzido de validar_cpf() em cadastro.py */
 export function validarCPF(cpfStr: string): boolean {
   const cpf = cpfStr.replace(/\D/g, "");
