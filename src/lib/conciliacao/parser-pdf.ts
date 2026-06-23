@@ -215,12 +215,17 @@ export async function parsearPDF(buffer: Buffer): Promise<ResultadoParsing> {
 
   let texto: string;
   try {
-    // Usa o módulo interno diretamente — evita bug do Next.js onde pdf-parse
-    // tenta ler test/version.pdf ao ser importado via require("pdf-parse") normal
+    // pdf-parse v2.x exporta uma classe PDFParse, não uma função direta
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const pdfParse = require("pdf-parse/lib/pdf-parse");
-    const data = await pdfParse(buffer);
-    texto = data.text;
+    const { PDFParse } = require("pdf-parse");
+    const parser = new PDFParse();
+    const data = await parser.parse(buffer);
+    // v2.x retorna { pages } com texto em cada página
+    texto = data.pages
+      ? data.pages.map((p: { lines: { text: string }[] }) =>
+          p.lines.map((l) => l.text).join("\n")
+        ).join("\n")
+      : data.text || "";
   } catch (ex) {
     return {
       linhas: [],
