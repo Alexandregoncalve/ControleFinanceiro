@@ -50,30 +50,46 @@ function detectarLayout(texto: string): "sicredi" | "rico" | "btg" | "generico" 
 }
 
 /**
- * Parser Sicredi: 5 colunas — Data | Descrição | Documento | Valor (R$) | Saldo (R$)
- * Valor negativo = débito, positivo = crédito.
+ * Parser Sicredi: linhas compactas sem separadores entre campos.
+ * Formato: DD/MM/AAAADESCRICAODOCUMENTO-VALOR,XXSALDO,XX
+ * 
+ * LIMITAÇÃO CONHECIDA: quando o código do documento é numérico e fica colado
+ * ao valor (ex: "8549561.100,00"), o parser não consegue separar corretamente.
+ * Para melhor resultado, use o formato OFX exportado pelo Sicredi.
  */
 function parsearSicredi(linhas: string[]): LinhaExtrato[] {
   const resultado: LinhaExtrato[] = [];
   let idx = 0;
 
+  const RE_2_VALORES = /(-?(?:\d{1,3}\.)*\d{1,3},\d{2})(-?(?:\d{1,3}\.)*\d{1,3},\d{2})$/;
+
   for (const linha of linhas) {
     if (deveIgnorar(linha)) continue;
 
-    // Padrão: DD/MM/AAAA + texto + código_doc + -999,99 + 999,99
-    const m = linha.match(
-      /^(\d{2}\/\d{2}\/\d{4})\s+(.+?)\s+([A-Z0-9_]+)\s+(-?\d[\d.,]+)\s+(-?\d[\d.,]+)\s*$/
-    );
+    const dataMatch = linha.match(/^(\d{2}\/\d{2}\/\d{4})/);
+    if (!dataMatch) continue;
+    const data = dataMatch[1];
+    const resto = linha.slice(10);
+
+    const m = resto.match(RE_2_VALORES);
     if (!m) continue;
 
-    const [, data, descricao, , valorStr] = m;
-    const valor = normalizarValor(valorStr);
-    if (!valor || valor === 0) continue;
+    const valorStr = m[1].replace(/\./g, "").replace(",", ".");
+    const valor = parseFloat(valorStr);
+    if (isNaN(valor) || valor === 0) continue;
+
+    const antesDoValor = resto.slice(0, resto.length - m[0].length);
+
+    // Remove código de documento do final (alfanumérico ou numérico)
+    const desc = antesDoValor
+      .replace(/[A-Z][A-Z0-9_]{1,29}$/, "")  // doc alfanum: VE0650230, PIX_DEB, DAS
+      .replace(/\d{4,}$/, "")                   // doc numérico curto: evita remover valor
+      .trim() || antesDoValor.trim();
 
     resultado.push({
-      linhaOriginal: linha.trim(),
+      linhaOriginal: linha,
       data,
-      descricao: descricao.trim(),
+      descricao: desc || "(sem descrição)",
       valor: Math.abs(valor),
       tipo: valor < 0 ? "Despesa" : "Receita",
       selecionada: true,
