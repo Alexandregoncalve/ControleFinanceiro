@@ -211,12 +211,14 @@ function parsearGenerico(linhas: string[]): LinhaExtrato[] {
  * mas pode falhar em PDFs escaneados (imagens sem camada de texto).
  */
 export async function parsearPDF(buffer: Buffer): Promise<ResultadoParsing> {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const pdfParse = require("pdf-parse");
   const avisos: string[] = [];
 
   let texto: string;
   try {
+    // Usa o módulo interno diretamente — evita bug do Next.js onde pdf-parse
+    // tenta ler test/version.pdf ao ser importado via require("pdf-parse") normal
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const pdfParse = require("pdf-parse/lib/pdf-parse");
     const data = await pdfParse(buffer);
     texto = data.text;
   } catch (ex) {
