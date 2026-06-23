@@ -13,41 +13,68 @@ const linhaSchema = z.object({
 });
 
 const bodySchema = z.object({
-  subcontaId: z.number().int().positive("Selecione uma subconta de destino."),
+  bancoId: z.number().int().positive("Banco não identificado."),
   linhas: z.array(linhaSchema),
 });
 
-/**
- * POST /api/conciliacao/confirmar
- * Recebe as linhas aprovadas pelo usuário na prévia e cria as transações no banco.
- * Só insere linhas com selecionada=true e que não tenham data duplicada na mesma subconta.
- */
 export const POST = comTratamentoErro(async (req: NextRequest) => {
   const sessao = await exigirSessao();
   const body = await req.json();
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) return apiErro(parsed.error.issues[0].message);
 
-  const { subcontaId, linhas } = parsed.data;
+  const { bancoId, linhas } = parsed.data;
 
-  // Verifica que a subconta pertence ao usuário
-  const subconta = await prisma.subconta.findFirst({
-    where: { id: subcontaId, usuarioId: sessao.id },
-    include: { categoria: { select: { tipo: true } } },
-  });
-  if (!subconta) return apiErro("Subconta não encontrada.", 404);
+  // Verifica que o banco pertence ao usuário
+  const banco = await prisma.banco.findFirst({ where: { id: bancoId, usuarioId: sessao.id } });
+  if (!banco) return apiErro("Banco não encontrado.", 404);
 
   const linhasParaImportar = linhas.filter((l) => l.selecionada);
-  if (linhasParaImportar.length === 0) return apiErro("Nenhuma linha selecionada para importar.");
+  if (linhasParaImportar.length === 0) return apiErro("Nenhuma linha selecionada.");
 
-  // Busca transações já existentes nessa subconta (para evitar duplicatas por data+valor+descrição)
+  // Busca uma subconta padrão do banco (qualquer uma vinculada a ele por transações anteriores)
+  // Se não existir, usa a primeira subconta "Outras Receitas/Despesas" como fallback genérico
+  let subcontaReceitaId: number | null = null;
+  let subcontaDespesaId: number | null = null;
+
+  const transacaoExistente = await prisma.transacao.findFirst({
+    where: { usuarioId: sessao.id, bancoId },
+    select: { subcontaId: true, tipo: true },
+  });
+
+  if (transacaoExistente) {
+    if (transacaoExistente.tipo === "Receita") subcontaReceitaId = transacaoExistente.subcontaId;
+    else subcontaDespesaId = transacaoExistente.subcontaId;
+  }
+
+  // Fallback: busca subcontas genéricas se não encontrou por histórico
+  if (!subcontaReceitaId) {
+    const sub = await prisma.subconta.findFirst({
+      where: { usuarioId: sessao.id, categoria: { tipo: "Receita" } },
+      select: { id: true },
+    });
+    subcontaReceitaId = sub?.id ?? null;
+  }
+  if (!subcontaDespesaId) {
+    const sub = await prisma.subconta.findFirst({
+      where: { usuarioId: sessao.id, categoria: { tipo: "Despesa" } },
+      select: { id: true },
+    });
+    subcontaDespesaId = sub?.id ?? null;
+  }
+
+  if (!subcontaReceitaId || !subcontaDespesaId) {
+    return apiErro("Nenhuma subconta encontrada. Cadastre ao menos uma conta de Receita e uma de Despesa.");
+  }
+
+  // Verifica duplicatas pelo conjunto data+valor+descricao
   const existentes = await prisma.transacao.findMany({
-    where: { usuarioId: sessao.id, subcontaId },
+    where: { usuarioId: sessao.id, bancoId },
     select: { data: true, valor: true, descricao: true },
   });
   const chaveExistente = new Set(
     existentes.map((t: { data: string; valor: number; descricao: string | null }) =>
-      `${t.data}|${t.valor}|${(t.descricao || "").toLowerCase().trim()}`
+      `${t.data}|${t.valor}|${(t.descricao ?? "").toLowerCase().trim()}`
     )
   );
 
@@ -56,38 +83,33 @@ export const POST = comTratamentoErro(async (req: NextRequest) => {
 
   for (const l of linhasParaImportar) {
     const chave = `${l.data}|${l.valor}|${l.descricao.toLowerCase().trim()}`;
-    if (chaveExistente.has(chave)) {
-      duplicatas++;
-      continue;
-    }
+    if (chaveExistente.has(chave)) { duplicatas++; continue; }
 
-    // Determina o tipo real pela subconta (categoria pai) se conflitar com o extrato
-    // Prefere o tipo do extrato, mas valida contra o tipo da categoria
-    const tipoFinal = l.tipo;
+    const subcontaId = l.tipo === "Receita" ? subcontaReceitaId : subcontaDespesaId;
 
     await prisma.transacao.create({
       data: {
         usuarioId: sessao.id,
         subcontaId,
+        bancoId,
         data: l.data,
         descricao: l.descricao,
         valor: l.valor,
-        tipo: tipoFinal,
+        tipo: l.tipo,
         parcelaAtual: 1,
         totalParcelas: 1,
       },
     });
 
     importadas++;
-    chaveExistente.add(chave); // evita duplicata dentro do próprio lote
+    chaveExistente.add(chave);
   }
 
   return apiOk({
     importadas,
     duplicatas,
-    mensagem:
-      duplicatas > 0
-        ? `${importadas} lançamento(s) importado(s). ${duplicatas} ignorado(s) por já existirem.`
-        : `${importadas} lançamento(s) importado(s) com sucesso.`,
+    mensagem: duplicatas > 0
+      ? `${importadas} lançamento(s) importado(s) para ${banco.nomeBanco}. ${duplicatas} ignorado(s) por já existirem.`
+      : `${importadas} lançamento(s) importado(s) para ${banco.nomeBanco} com sucesso.`,
   });
 });

@@ -16,8 +16,8 @@ export default function ConciliacaoPage() {
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [resultado, setResultado] = useState<ResultadoParsing | null>(null);
   const [linhas, setLinhas] = useState<LinhaExtrato[]>([]);
-  const [subcontaId, setSubcontaId] = useState<number | null>(null);
-  const [subcontaNome, setSubcontaNome] = useState("");
+  const [bancoId, setBancoId] = useState<number | null>(null);
+  const [bancoNome, setBancoNome] = useState("");
   const [carregando, setCarregando] = useState(false);
   const [importando, setImportando] = useState(false);
   const [mensagemFinal, setMensagemFinal] = useState("");
@@ -32,31 +32,26 @@ export default function ConciliacaoPage() {
     setCarregando(true);
     const form = new FormData();
     form.append("arquivo", arquivo);
-    const res = await apiFetch<ResultadoParsing>("/api/conciliacao/parsear", {
-      method: "POST", body: form,
-      mensagemErroPadrao: "Não foi possível processar o arquivo.",
-    });
+    const res = await apiFetch<ResultadoParsing & { bancoId: number | null; bancoNome: string | null }>(
+      "/api/conciliacao/parsear",
+      { method: "POST", body: form, mensagemErroPadrao: "Não foi possível processar o arquivo." }
+    );
     setCarregando(false);
     if (res.ok && res.data) {
       setResultado(res.data);
       setLinhas(res.data.linhas);
-      if (res.data.subcontaSugeridaId) {
-        setSubcontaId(res.data.subcontaSugeridaId);
-        setSubcontaNome(res.data.subcontaSugeridaNome ?? "");
-      } else {
-        setSubcontaId(null);
-        setSubcontaNome("");
-      }
+      setBancoId(res.data.bancoId ?? null);
+      setBancoNome(res.data.bancoNome ?? "");
       setPasso(2);
     }
   }
 
   async function confirmarImportacao() {
-    if (!subcontaId) return;
+    if (!bancoId) return;
     setImportando(true);
     const res = await apiFetch<{ importadas: number; duplicatas: number; mensagem: string }>(
       "/api/conciliacao/confirmar",
-      { method: "POST", body: JSON.stringify({ subcontaId, linhas }), mensagemErroPadrao: "Erro ao importar." }
+      { method: "POST", body: JSON.stringify({ bancoId, linhas }), mensagemErroPadrao: "Erro ao importar." }
     );
     setImportando(false);
     if (res.ok && res.data) { setMensagemFinal(res.data.mensagem); setPasso(3); }
@@ -64,7 +59,7 @@ export default function ConciliacaoPage() {
 
   function reiniciar() {
     setPasso(1); setArquivo(null); setResultado(null);
-    setLinhas([]); setSubcontaId(null); setSubcontaNome(""); setMensagemFinal("");
+    setLinhas([]); setBancoId(null); setBancoNome(""); setMensagemFinal("");
   }
 
   const onDrop = useCallback((e: React.DragEvent) => {
@@ -101,7 +96,7 @@ export default function ConciliacaoPage() {
             <Upload size={36} className="text-[#0C447C] dark:text-blue-300 opacity-70" />
             <div className="text-center">
               <p className="text-sm font-medium text-gray-700 dark:text-gray-200">Arraste o extrato aqui ou clique para selecionar</p>
-              <p className="mt-1 text-xs text-gray-400">CSV, Excel (.xlsx/.xls), OFX, PDF — até 10MB</p>
+              <p className="mt-1 text-xs text-gray-400">CSV, Excel, OFX, PDF — até 10MB</p>
             </div>
             {arquivo && (
               <div className="flex items-center gap-2 rounded-lg bg-[#EAF3DE] px-3 py-1.5 dark:bg-green-900/40">
@@ -114,8 +109,8 @@ export default function ConciliacaoPage() {
           </div>
           <div className="rounded-lg bg-[#E6F1FB] p-3 dark:bg-blue-900/30">
             <p className="text-xs text-[#0C447C] dark:text-blue-300">
-              <strong>Dica:</strong> O sistema detecta o banco automaticamente e seleciona a conta destino
-              sem precisar configurar nada. OFX e XLS são os formatos mais confiáveis.
+              <strong>Dica:</strong> O sistema detecta o banco automaticamente pelo conteúdo do arquivo
+              e vincula os lançamentos diretamente a ele — sem perguntas.
             </p>
           </div>
           <Button variante="primario" carregando={carregando} disabled={!arquivo || carregando} onClick={processarArquivo} className="self-end">
@@ -137,19 +132,21 @@ export default function ConciliacaoPage() {
             </div>
           )}
 
-          <div className="flex items-center gap-3 rounded-xl border border-[#E2E8F0] bg-white p-3.5 dark:border-white/10 dark:bg-[#1E293B]">
-            <Building2 size={18} className="flex-shrink-0 text-[#0C447C] dark:text-blue-300" />
-            <div className="flex-1">
-              {subcontaId ? (
+          <div className={`flex items-center gap-3 rounded-xl border p-3.5 ${bancoId ? "border-[#E2E8F0] bg-white dark:border-white/10 dark:bg-[#1E293B]" : "border-[#A32D2D]/30 bg-[#FCEBEB] dark:bg-red-900/20"}`}>
+            <Building2 size={18} className={`flex-shrink-0 ${bancoId ? "text-[#0C447C] dark:text-blue-300" : "text-[#A32D2D]"}`} />
+            <div>
+              {bancoId ? (
                 <>
-                  <p className="text-xs text-gray-400">Conta destino detectada automaticamente</p>
-                  <p className="text-sm font-semibold text-[#0C447C] dark:text-blue-300">✓ {subcontaNome}</p>
+                  <p className="text-xs text-gray-400">Banco detectado automaticamente</p>
+                  <p className="text-sm font-semibold text-[#0C447C] dark:text-blue-300">✓ {bancoNome}</p>
+                  <p className="text-[10px] text-gray-400">Lançamentos serão vinculados a este banco</p>
                 </>
               ) : (
                 <>
-                  <p className="text-xs text-[#854F0B]">Conta não detectada automaticamente</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">
-                    Cadastre uma subconta com o nome do banco (ex: {resultado.bancoDetectado?.toUpperCase() ?? "BANCO"}) para detecção automática.
+                  <p className="text-sm font-semibold text-[#A32D2D]">⚠ Banco não encontrado</p>
+                  <p className="text-xs text-[#A32D2D]">
+                    O banco &quot;{resultado.bancoDetectado?.toUpperCase() ?? "detectado"}&quot; não está cadastrado.
+                    Cadastre-o em <strong>Bancos</strong> e tente novamente.
                   </p>
                 </>
               )}
@@ -196,7 +193,7 @@ export default function ConciliacaoPage() {
           <div className="flex items-center justify-between">
             <Button variante="fantasma" onClick={() => setPasso(1)}><ArrowLeft size={14} /> Voltar</Button>
             <Button variante="primario" carregando={importando}
-              disabled={!subcontaId || totalSelecionadas === 0 || importando} onClick={confirmarImportacao}>
+              disabled={!bancoId || totalSelecionadas === 0 || importando} onClick={confirmarImportacao}>
               {importando ? "Importando..." : `IMPORTAR ${totalSelecionadas} LANÇAMENTO(S)`}
               {!importando && <ArrowRight size={14} />}
             </Button>

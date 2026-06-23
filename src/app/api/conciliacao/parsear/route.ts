@@ -4,16 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { apiOk, apiErro, comTratamentoErro } from "@/lib/api-helpers";
 import { processarArquivoExtrato } from "@/lib/conciliacao";
 
-/**
- * Termos de busca por banco detectado — usados para encontrar automaticamente
- * a subconta cadastrada que corresponde ao extrato importado.
- */
-const TERMOS_BUSCA: Record<string, string[]> = {
+const TERMOS_BANCO: Record<string, string[]> = {
   sicredi: ["sicredi", "cooperativa"],
-  btg: ["btg", "pactual"],
-  rico: ["rico"],
-  ofx: [], // OFX genérico — não tenta auto-detectar
-  generico: [],
+  btg:     ["btg", "pactual"],
+  rico:    ["rico"],
 };
 
 export const POST = comTratamentoErro(async (req: NextRequest) => {
@@ -21,64 +15,28 @@ export const POST = comTratamentoErro(async (req: NextRequest) => {
 
   const formData = await req.formData();
   const arquivo = formData.get("arquivo") as File | null;
-
   if (!arquivo) return apiErro("Nenhum arquivo enviado.");
   if (arquivo.size > 10 * 1024 * 1024) return apiErro("Arquivo muito grande. Limite: 10MB.");
 
   const buffer = Buffer.from(await arquivo.arrayBuffer());
   const resultado = await processarArquivoExtrato(buffer, arquivo.name);
 
-  // Tenta encontrar automaticamente a subconta que corresponde ao banco detectado
-  const banco = resultado.bancoDetectado ?? "generico";
-  const termos = TERMOS_BUSCA[banco] ?? [];
+  const bancoDetectado = resultado.bancoDetectado ?? "generico";
+  const termos = TERMOS_BANCO[bancoDetectado] ?? [];
 
-  let subcontaSugeridaId: number | null = null;
-  let subcontaSugeridaNome: string | null = null;
+  let bancoId: number | null = null;
+  let bancoNome: string | null = null;
 
+  // 1. Busca o banco cadastrado pelo nome
   if (termos.length > 0) {
-    // Busca a subconta do usuário cujo nome contenha algum dos termos do banco
     for (const termo of termos) {
-      const subconta = await prisma.subconta.findFirst({
-        where: {
-          usuarioId: sessao.id,
-          nome: { contains: termo, mode: "insensitive" },
-        },
-        select: { id: true, nome: true },
-      });
-      if (subconta) {
-        subcontaSugeridaId = subconta.id;
-        subcontaSugeridaNome = subconta.nome;
-        break;
-      }
-    }
-
-    // Se não achou pelo nome da subconta, tenta pelo nome do banco vinculado
-    if (!subcontaSugeridaId) {
-      const banco_obj = await prisma.banco.findFirst({
-        where: {
-          usuarioId: sessao.id,
-          nomeBanco: { contains: termos[0], mode: "insensitive" },
-        },
+      const banco = await prisma.banco.findFirst({
+        where: { usuarioId: sessao.id, nomeBanco: { contains: termo, mode: "insensitive" } },
         select: { id: true, nomeBanco: true },
       });
-
-      if (banco_obj) {
-        // Pega a primeira subconta vinculada a este banco via transações
-        const transacao = await prisma.transacao.findFirst({
-          where: { usuarioId: sessao.id, bancoId: banco_obj.id },
-          select: { subcontaId: true, subconta: { select: { nome: true } } },
-        });
-        if (transacao) {
-          subcontaSugeridaId = transacao.subcontaId;
-          subcontaSugeridaNome = transacao.subconta.nome;
-        }
-      }
+      if (banco) { bancoId = banco.id; bancoNome = banco.nomeBanco; break; }
     }
   }
 
-  return apiOk({
-    ...resultado,
-    subcontaSugeridaId,
-    subcontaSugeridaNome,
-  });
+  return apiOk({ ...resultado, bancoId, bancoNome });
 });

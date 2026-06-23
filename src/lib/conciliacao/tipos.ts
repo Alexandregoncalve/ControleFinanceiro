@@ -51,12 +51,12 @@ export interface ResultadoParsing {
   avisos: string[];
   /** Formato detectado */
   formato: "csv" | "xlsx" | "pdf";
-  /** Banco detectado automaticamente (sicredi, rico, btg, ofx, generico) */
+  /** Banco detectado automaticamente */
   bancoDetectado?: string;
-  /** ID da subconta sugerida automaticamente (se encontrada) */
-  subcontaSugeridaId?: number | null;
-  /** Nome da subconta sugerida */
-  subcontaSugeridaNome?: string | null;
+  /** ID do banco cadastrado que corresponde ao extrato */
+  bancoId?: number | null;
+  /** Nome do banco detectado */
+  bancoNome?: string | null;
 }
 
 /** Padrões conhecidos de extrato bancário para detecção automática de colunas */
