@@ -387,5 +387,6 @@ export async function parsearPDF(buffer: Buffer): Promise<ResultadoParsing> {
     linhasBrutas: resultado.slice(0, 5).map((l) => [l.data, l.descricao, String(l.valor)]),
     avisos,
     formato: "pdf",
+    bancoDetectado: layout,
   };
 }

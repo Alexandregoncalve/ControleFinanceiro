@@ -89,6 +89,7 @@ export function parsearOFX(conteudo: string): ResultadoParsing {
     headers: ["Data", "Descrição", "Valor"],
     linhasBrutas: linhas.slice(0, 5).map((l) => [l.data, l.descricao, String(l.valor)]),
     avisos,
-    formato: "csv", // OFX não precisa de mapeamento — tratamos como "já processado"
+    formato: "csv",
+    bancoDetectado: "ofx",
   };
 }
