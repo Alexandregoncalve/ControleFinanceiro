@@ -86,13 +86,20 @@ function parsearSicredi(linhas: string[]): LinhaExtrato[] {
       .replace(/\d{4,}$/, "")                   // doc numérico curto: evita remover valor
       .trim() || antesDoValor.trim();
 
+    // Valores acima de R$50.000 provavelmente têm código numérico colado ao valor
+    // (limitação do formato PDF do Sicredi — use OFX para melhor resultado)
+    const valorAbsoluto = Math.abs(valor);
+    const suspeito = valorAbsoluto > 50000;
+
     resultado.push({
       linhaOriginal: linha,
       data,
-      descricao: desc || "(sem descrição)",
-      valor: Math.abs(valor),
+      descricao: suspeito
+        ? `⚠️ Valor suspeito — verifique manualmente: ${desc || "(sem descrição)"}`
+        : (desc || "(sem descrição)"),
+      valor: valorAbsoluto,
       tipo: valor < 0 ? "Despesa" : "Receita",
-      selecionada: true,
+      selecionada: !suspeito, // desmarca automaticamente para o usuário revisar
       indice: idx++,
     });
   }
