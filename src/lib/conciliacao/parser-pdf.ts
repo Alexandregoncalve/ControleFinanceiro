@@ -122,36 +122,87 @@ function parsearSicredi(linhas: string[]): LinhaExtrato[] {
 }
 
 /**
- * Parser Rico: 5 colunas — Liq | Mov | Histórico | Valor | Saldo
- * Valor negativo = débito (saída). Ignora linhas de dividendos/JCP se necessário.
+ * Parser Rico Corretora: o PDF extrai as linhas sem espaço entre os campos.
+ * Formatos:
+ * - Linha simples: "DD/MM/AAAA DD/MM/AAAA DESCRIÇÃO R$ VALOR R$ SALDO"
+ *   (tudo junto: "22/06/202622/06/2026JUROS S/...R$ 0,26R$ 0,55")
+ * - Linhas multi-linha: data sozinha, depois descrição, depois valores
+ *   ("10/06/202610/06/2026", "TED BCO...", "-R$ 389,25R$ 0,00")
  */
 function parsearRico(linhas: string[]): LinhaExtrato[] {
   const resultado: LinhaExtrato[] = [];
   let idx = 0;
 
+  // Regex para linha simples: duas datas coladas + descrição + R$ valor + R$ saldo
+  const RE_LINHA_COMPLETA = /^(\d{2}\/\d{2}\/\d{4})\d{2}\/\d{2}\/\d{4}(.+?)(-?R\$\s*[\d.,]+)(R\$\s*[\d.,]+)$/;
+  // Regex para linha de valores: "-R$ 999,99R$ 999,99" ou "R$ 999,99R$ 999,99"
+  const RE_VALORES = /^(-?R\$\s*[\d.,]+)(R\$\s*[\d.,]+)$/;
+  // Regex para linha que é só datas coladas: "DD/MM/AAAA DD/MM/AAAA" (sem descrição)
+  const RE_SO_DATAS = /^(\d{2}\/\d{2}\/\d{4})\d{2}\/\d{2}\/\d{4}$/;
+
+  let pendente: { data: string; descricao: string } | null = null;
+  let descPendente: string[] = [];
+
   for (const linha of linhas) {
-    if (deveIgnorar(linha)) continue;
+    if (deveIgnorar(linha)) { pendente = null; descPendente = []; continue; }
+    // Ignora cabeçalho da tabela
+    if (/^LiqMovHistórico/i.test(linha)) continue;
 
-    // Padrão: DD/MM/AAAA DD/MM/AAAA DESCRIÇÃO R$ 999,99 R$ 999,99
-    // ou: DD/MM/AAAA DD/MM/AAAA DESCRIÇÃO -R$ 999,99 R$ 999,99
-    const m = linha.match(
-      /^(\d{2}\/\d{2}\/\d{4})\s+\d{2}\/\d{2}\/\d{4}\s+(.+?)\s+(-?R?\$?\s*\d[\d.,]+)\s+(-?R?\$?\s*\d[\d.,]+)\s*$/
-    );
-    if (!m) continue;
+    // Linha simples completa: tudo numa linha
+    const mCompleto = linha.match(RE_LINHA_COMPLETA);
+    if (mCompleto) {
+      const data = mCompleto[1];
+      const descricao = mCompleto[2].trim().replace(/\s+\d+\s*$/, "").trim(); // remove número de cota do final
+      const valorStr = mCompleto[3].replace(/R\$\s*/, "").trim();
+      const valor = normalizarValor(valorStr);
+      if (valor !== null && valor !== 0) {
+        resultado.push({
+          linhaOriginal: linha,
+          data,
+          descricao: descricao || "(sem descrição)",
+          valor: Math.abs(valor),
+          tipo: valor < 0 ? "Despesa" : "Receita",
+          selecionada: true,
+          indice: idx++,
+        });
+      }
+      pendente = null; descPendente = [];
+      continue;
+    }
 
-    const [, data, descricao, valorStr] = m;
-    const valor = normalizarValor(valorStr.replace(/R\$/g, "").trim());
-    if (!valor || valor === 0) continue;
+    // Linha só com datas: início de registro multi-linha
+    const mSoDatas = linha.match(RE_SO_DATAS);
+    if (mSoDatas) {
+      pendente = { data: mSoDatas[1], descricao: "" };
+      descPendente = [];
+      continue;
+    }
 
-    resultado.push({
-      linhaOriginal: linha.trim(),
-      data,
-      descricao: descricao.trim(),
-      valor: Math.abs(valor),
-      tipo: valor < 0 ? "Despesa" : "Receita",
-      selecionada: true,
-      indice: idx++,
-    });
+    // Linha de valores: fecha o registro multi-linha
+    const mValores = linha.match(RE_VALORES);
+    if (mValores && pendente) {
+      const valorStr = mValores[1].replace(/R\$\s*/, "").trim();
+      const valor = normalizarValor(valorStr);
+      const descricao = descPendente.join(" ").replace(/\s+\d+\s*$/, "").trim();
+      if (valor !== null && valor !== 0) {
+        resultado.push({
+          linhaOriginal: `${pendente.data} ${descricao} | ${linha}`,
+          data: pendente.data,
+          descricao: descricao || "(sem descrição)",
+          valor: Math.abs(valor),
+          tipo: valor < 0 ? "Despesa" : "Receita",
+          selecionada: true,
+          indice: idx++,
+        });
+      }
+      pendente = null; descPendente = [];
+      continue;
+    }
+
+    // Linha de descrição intermediária (multi-linha)
+    if (pendente) {
+      descPendente.push(linha.trim());
+    }
   }
 
   return resultado;
