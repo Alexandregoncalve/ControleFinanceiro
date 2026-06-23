@@ -52,16 +52,38 @@ function detectarLayout(texto: string): "sicredi" | "rico" | "btg" | "generico" 
 /**
  * Parser Sicredi: linhas compactas sem separadores entre campos.
  * Formato: DD/MM/AAAADESCRICAODOCUMENTO-VALOR,XXSALDO,XX
- * 
- * LIMITAÇÃO CONHECIDA: quando o código do documento é numérico e fica colado
- * ao valor (ex: "8549561.100,00"), o parser não consegue separar corretamente.
- * Para melhor resultado, use o formato OFX exportado pelo Sicredi.
+ *
+ * Quando o código do documento é numérico e fica colado ao valor
+ * (ex: "8549561.100,00"), usa o saldo como validador para corrigir.
  */
 function parsearSicredi(linhas: string[]): LinhaExtrato[] {
   const resultado: LinhaExtrato[] = [];
   let idx = 0;
 
   const RE_2_VALORES = /(-?(?:\d{1,3}\.)*\d{1,3},\d{2})(-?(?:\d{1,3}\.)*\d{1,3},\d{2})$/;
+
+  function tentarCorrigirValor(valorStr: string, saldo: number): number {
+    const valor = parseFloat(valorStr.replace(/\./g, "").replace(",", "."));
+    // Se o valor está dentro de 50x do saldo, está correto
+    if (Math.abs(valor) <= Math.abs(saldo) * 50 + 500) return valor;
+
+    // Tenta remover dígitos do início do primeiro grupo até achar valor razoável
+    const semSinal = valorStr.replace(/^-/, "");
+    const negativo = valorStr.startsWith("-");
+    const partes = semSinal.split(".");
+    const primeiroGrupo = partes[0];
+
+    for (let i = 1; i < primeiroGrupo.length; i++) {
+      const candidato = primeiroGrupo.slice(i) + (partes.length > 1 ? "." + partes.slice(1).join(".") : "");
+      if (/^\d{1,3}(?:\.\d{3})*,\d{2}$/.test(candidato)) {
+        const v = parseFloat(candidato.replace(/\./g, "").replace(",", "."));
+        if (Math.abs(v) <= Math.abs(saldo) * 50 + 500) {
+          return negativo ? -v : v;
+        }
+      }
+    }
+    return valor; // retorna o original se não achou candidato melhor
+  }
 
   for (const linha of linhas) {
     if (deveIgnorar(linha)) continue;
@@ -74,32 +96,24 @@ function parsearSicredi(linhas: string[]): LinhaExtrato[] {
     const m = resto.match(RE_2_VALORES);
     if (!m) continue;
 
-    const valorStr = m[1].replace(/\./g, "").replace(",", ".");
-    const valor = parseFloat(valorStr);
+    const saldo = parseFloat(m[2].replace(/\./g, "").replace(",", "."));
+    const valor = tentarCorrigirValor(m[1], saldo);
     if (isNaN(valor) || valor === 0) continue;
 
     const antesDoValor = resto.slice(0, resto.length - m[0].length);
-
-    // Remove código de documento do final (alfanumérico ou numérico)
+    const codigoSobrou = antesDoValor.match(/\d+$/)?.[0] ?? "";
     const desc = antesDoValor
-      .replace(/[A-Z][A-Z0-9_]{1,29}$/, "")  // doc alfanum: VE0650230, PIX_DEB, DAS
-      .replace(/\d{4,}$/, "")                   // doc numérico curto: evita remover valor
+      .slice(0, antesDoValor.length - codigoSobrou.length)
+      .replace(/[A-Z][A-Z0-9_]{1,29}$/, "")
       .trim() || antesDoValor.trim();
-
-    // Valores acima de R$50.000 provavelmente têm código numérico colado ao valor
-    // (limitação do formato PDF do Sicredi — use OFX para melhor resultado)
-    const valorAbsoluto = Math.abs(valor);
-    const suspeito = valorAbsoluto > 50000;
 
     resultado.push({
       linhaOriginal: linha,
       data,
-      descricao: suspeito
-        ? `⚠️ Valor suspeito — verifique manualmente: ${desc || "(sem descrição)"}`
-        : (desc || "(sem descrição)"),
-      valor: valorAbsoluto,
+      descricao: desc || "(sem descrição)",
+      valor: Math.abs(valor),
       tipo: valor < 0 ? "Despesa" : "Receita",
-      selecionada: !suspeito, // desmarca automaticamente para o usuário revisar
+      selecionada: true,
       indice: idx++,
     });
   }
@@ -144,50 +158,73 @@ function parsearRico(linhas: string[]): LinhaExtrato[] {
 }
 
 /**
- * Parser BTG: 5 colunas — Data | Descrição | Débito | Crédito | Saldo
- * Débito e crédito em colunas separadas.
+ * Parser BTG Pactual: o PDF extrai em 2 linhas por transação.
+ * Linha 1: "DD/MM/AAAA DESCRIÇÃO"
+ * Linha 2: "SALDO,XXVALOR,XX" (saldo e valor sem separador, valor pode ser débito ou crédito)
+ *
+ * Para saber se é débito ou crédito, compara o saldo com o saldo anterior:
+ * - Se saldo diminuiu → débito (despesa)
+ * - Se saldo aumentou → crédito (receita)
  */
 function parsearBTG(linhas: string[]): LinhaExtrato[] {
   const resultado: LinhaExtrato[] = [];
   let idx = 0;
 
+  const RE_DATA_DESC = /^(\d{2}\/\d{2}\/\d{4})\s+(.+)$/;
+  const RE_2_VALORES = /^(-?(?:\d{1,3}\.)*\d{1,3},\d{2})(\d{1,3}(?:\.\d{3})*,\d{2})$/;
+
+  let saldoAnterior: number | null = null;
+  let pendente: { data: string; descricao: string } | null = null;
+
   for (const linha of linhas) {
-    if (deveIgnorar(linha)) continue;
-
-    // Padrão com débito e crédito separados: DD/MM/AAAA DESCRIÇÃO 999,99 999,99 999,99
-    // ou: DD/MM/AAAA DESCRIÇÃO [débito vazio] 999,99 999,99
-    const m = linha.match(
-      /^(\d{2}\/\d{2}\/\d{4})\s+(.+?)\s+(\d[\d.,]+)?\s+(\d[\d.,]+)?\s+\d[\d.,]+\s*$/
-    );
-    if (!m) continue;
-
-    const [, data, descricao, debitoStr, creditoStr] = m;
-
-    let valor: number;
-    let tipo: "Receita" | "Despesa";
-
-    const debito = debitoStr ? normalizarValor(debitoStr) : null;
-    const credito = creditoStr ? normalizarValor(creditoStr) : null;
-
-    if (credito && credito > 0) {
-      valor = credito;
-      tipo = "Receita";
-    } else if (debito && debito > 0) {
-      valor = debito;
-      tipo = "Despesa";
-    } else {
+    // Linha de saldo inicial do BTG: "Saldo Inicial996,00" (sem espaço entre texto e valor)
+    // Precisa ser verificada ANTES do filtro deveIgnorar pois o filtro a ignoraria
+    const saldoIni = linha.match(/Saldo\s*Inicial\s*(-?[\d.,]+)/i);
+    if (saldoIni) {
+      saldoAnterior = normalizarValor(saldoIni[1]);
+      pendente = null;
       continue;
     }
 
-    resultado.push({
-      linhaOriginal: linha.trim(),
-      data,
-      descricao: descricao.trim(),
-      valor,
-      tipo,
-      selecionada: true,
-      indice: idx++,
-    });
+    if (deveIgnorar(linha)) {
+      pendente = null;
+      continue;
+    }
+
+    // Linha 1: data + descrição
+    const mDesc = linha.match(RE_DATA_DESC);
+    if (mDesc) {
+      pendente = { data: mDesc[1], descricao: mDesc[2].trim() };
+      continue;
+    }
+
+    // Linha 2: saldo+valor colados (ex: "836,00160,00" ou "37,901.100,00")
+    if (pendente) {
+      const mVal = linha.match(RE_2_VALORES);
+      if (mVal) {
+        const novoSaldo = normalizarValor(mVal[1]);
+        const valor = normalizarValor(mVal[2]);
+
+        if (novoSaldo !== null && valor !== null && valor > 0) {
+          // Tipo: se saldo caiu → débito, se subiu → crédito
+          const tipo: "Receita" | "Despesa" =
+            saldoAnterior !== null && novoSaldo < saldoAnterior ? "Despesa" : "Receita";
+
+          resultado.push({
+            linhaOriginal: `${pendente.data} ${pendente.descricao} | ${linha}`,
+            data: pendente.data,
+            descricao: pendente.descricao,
+            valor,
+            tipo,
+            selecionada: true,
+            indice: idx++,
+          });
+
+          saldoAnterior = novoSaldo;
+        }
+      }
+      pendente = null;
+    }
   }
 
   return resultado;
