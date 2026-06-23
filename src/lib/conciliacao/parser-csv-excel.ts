@@ -97,21 +97,47 @@ function linhasBrutasParaExtrato(
 }
 
 /**
- * Detecta a linha de header: a primeira linha que tem texto em pelo menos
- * 3 células é tratada como header. Extrai e retorna as linhas de dados separadas.
+ * Detecta a linha de header em extratos bancários.
+ * Prioriza linhas que contêm palavras-chave típicas de cabeçalho de extrato,
+ * depois cai para a heurística de "primeiro linha com 3+ células".
  */
 function separarHeaderEDados(linhas: string[][]): { headers: string[]; dados: string[][] } {
-  let headerIdx = 0;
-  for (let i = 0; i < Math.min(10, linhas.length); i++) {
-    const celulasComTexto = linhas[i].filter((c) => c && c.trim().length > 0).length;
-    if (celulasComTexto >= 3) {
+  const PALAVRAS_HEADER = [
+    "data", "descrição", "descricao", "histórico", "historico", "valor",
+    "saldo", "débito", "debito", "crédito", "credito", "movimentação",
+    "movimentacao", "liquidação", "liquidacao", "lançamento", "lancamento",
+  ];
+
+  let headerIdx = -1;
+
+  // 1ª tentativa: linha com pelo menos 2 palavras-chave de header
+  for (let i = 0; i < Math.min(20, linhas.length); i++) {
+    const textos = linhas[i].map((c) => (c ?? "").toString().toLowerCase().trim());
+    const matches = textos.filter((t) =>
+      PALAVRAS_HEADER.some((p) => t.includes(p))
+    ).length;
+    if (matches >= 2) {
       headerIdx = i;
       break;
     }
   }
+
+  // 2ª tentativa: primeira linha com 3+ células não vazias
+  if (headerIdx === -1) {
+    for (let i = 0; i < Math.min(20, linhas.length); i++) {
+      const celulasComTexto = linhas[i].filter((c) => c && c.toString().trim().length > 0).length;
+      if (celulasComTexto >= 3) {
+        headerIdx = i;
+        break;
+      }
+    }
+  }
+
+  if (headerIdx === -1) headerIdx = 0;
+
   return {
     headers: linhas[headerIdx].map((c) => c?.toString() ?? ""),
-    dados: linhas.slice(headerIdx + 1).filter((l) => l.some((c) => c && c.trim())),
+    dados: linhas.slice(headerIdx + 1).filter((l) => l.some((c) => c && c.toString().trim())),
   };
 }
 
