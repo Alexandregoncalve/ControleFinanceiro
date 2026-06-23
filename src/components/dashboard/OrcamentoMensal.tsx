@@ -13,11 +13,11 @@ function statusOrcamento(pct: number) {
 /** Traduz a seção de Orçamento mensal de views/dashboard.py — grid 3 colunas, ordenado por % de uso */
 export function OrcamentoMensal({ orcamentos }: OrcamentoMensalProps) {
   if (orcamentos.length === 0) {
-    return <p className="text-sm italic text-gray-400">Nenhum orçamento definido.</p>;
+    return <p className="text-sm italic text-gray-400 dark:text-gray-500">Nenhum orçamento definido.</p>;
   }
 
   return (
-    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
       {orcamentos.map((o) => {
         const pct = o.orcamento > 0 ? (o.total / o.orcamento) * 100 : 0;
         const { icone, bg, cor, trilha } = statusOrcamento(pct);

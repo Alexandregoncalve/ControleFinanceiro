@@ -111,22 +111,22 @@ export default function FixasPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-4 p-6">
+    <div className="mx-auto flex max-w-3xl flex-col gap-4 p-4 sm:p-6">
       <div className="flex items-end justify-between">
-        <h1 className="text-xl font-bold text-[#0C447C]">CONTAS FIXAS</h1>
+        <h1 className="text-xl font-bold text-[#0C447C] dark:text-blue-300">CONTAS FIXAS</h1>
         <SeletorMes mes={mes} onChange={setMes} />
       </div>
 
       <div className="flex gap-3">
-        <div className="flex-1 rounded-lg bg-[#E6F1FB] p-3 text-center">
-          <p className="text-[10px] font-bold text-[#0C447C]">TOTAL DE FIXAS</p>
-          <p className="text-lg font-bold text-[#0C447C]">{resumo.total}</p>
+        <div className="flex-1 rounded-lg bg-[#E6F1FB] dark:bg-blue-900/40 p-3 text-center">
+          <p className="text-[10px] font-bold text-[#0C447C] dark:text-blue-300">TOTAL DE FIXAS</p>
+          <p className="text-lg font-bold text-[#0C447C] dark:text-blue-300">{resumo.total}</p>
         </div>
-        <div className="flex-1 rounded-lg bg-[#EAF3DE] p-3 text-center">
-          <p className="text-[10px] font-bold text-[#3B6D11]">JÁ LANÇADAS</p>
-          <p className="text-lg font-bold text-[#3B6D11]">{resumo.lancadas}</p>
+        <div className="flex-1 rounded-lg bg-[#EAF3DE] dark:bg-green-900/40 p-3 text-center">
+          <p className="text-[10px] font-bold text-[#3B6D11] dark:text-green-400">JÁ LANÇADAS</p>
+          <p className="text-lg font-bold text-[#3B6D11] dark:text-green-400">{resumo.lancadas}</p>
         </div>
-        <div className="flex-1 rounded-lg bg-[#FCEBEB] p-3 text-center">
+        <div className="flex-1 rounded-lg bg-[#FCEBEB] dark:bg-red-900/40 p-3 text-center">
           <p className="text-[10px] font-bold text-[#A32D2D]">PENDENTES</p>
           <p className="text-lg font-bold text-[#A32D2D]">{pendentes.length}</p>
         </div>
@@ -134,20 +134,20 @@ export default function FixasPage() {
 
       {carregando ? (
         <div className="flex justify-center py-8">
-          <Loader2 className="animate-spin text-[#0C447C]" size={24} />
+          <Loader2 className="animate-spin text-[#0C447C] dark:text-blue-300" size={24} />
         </div>
       ) : pendentes.length === 0 ? (
-        <div className="rounded-lg bg-[#EAF3DE] p-6 text-center">
-          <p className="text-sm font-medium text-[#3B6D11]">✅ Todas as contas fixas já foram lançadas neste mês!</p>
+        <div className="rounded-lg bg-[#EAF3DE] dark:bg-green-900/40 p-6 text-center">
+          <p className="text-sm font-medium text-[#3B6D11] dark:text-green-400">✅ Todas as contas fixas já foram lançadas neste mês!</p>
         </div>
       ) : (
         <>
           <label className="flex w-56 flex-col gap-1">
-            <span className="text-xs font-medium text-gray-600">🏦 Banco para baixa</span>
+            <span className="text-xs font-medium text-gray-600 dark:text-gray-300">🏦 Banco para baixa</span>
             <select
               value={bancoId}
               onChange={(e) => setBancoId(e.target.value ? Number(e.target.value) : "")}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
+              className="rounded-lg border border-gray-300 dark:border-white/15 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
             >
               <option value="">— Selecione —</option>
               {bancos.map((b) => (
@@ -158,20 +158,20 @@ export default function FixasPage() {
             </select>
           </label>
 
-          <div className="flex flex-col gap-2 rounded-xl border border-gray-200 bg-white p-3">
+          <div className="flex flex-col gap-2 rounded-xl border border-gray-200 bg-white dark:bg-[#1E293B] p-3">
             {itens.map((item) => (
               <div
                 key={item.subcontaId}
-                className="flex items-center gap-3 border-b border-gray-100 py-2 last:border-0"
+                className="flex items-center gap-3 border-b border-gray-100 dark:border-white/10 py-2 last:border-0"
               >
                 <button onClick={() => toggleItem(item.subcontaId)} className="flex-shrink-0">
                   {item.selecionado ? (
-                    <CheckSquare size={18} className="text-[#0C447C]" />
+                    <CheckSquare size={18} className="text-[#0C447C] dark:text-blue-300" />
                   ) : (
                     <Square size={18} className="text-gray-300" />
                   )}
                 </button>
-                <span className="flex-1 text-sm text-gray-700">{item.nome}</span>
+                <span className="flex-1 text-sm text-gray-700 dark:text-gray-200">{item.nome}</span>
                 <InputMoeda
                   label=""
                   value={item.valor}
@@ -182,11 +182,11 @@ export default function FixasPage() {
             ))}
           </div>
 
-          <div className="flex items-center justify-between rounded-lg bg-[#F4F7FB] p-3">
-            <span className="text-sm font-medium text-gray-600">
+          <div className="flex items-center justify-between rounded-lg bg-[#F4F7FB] dark:bg-[#0F172A] p-3">
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
               {selecionados.length} conta(s) selecionada(s)
             </span>
-            <span className="text-lg font-bold text-[#0C447C]">{fmt(totalSelecionado)}</span>
+            <span className="text-lg font-bold text-[#0C447C] dark:text-blue-300">{fmt(totalSelecionado)}</span>
           </div>
 
           {msg && (

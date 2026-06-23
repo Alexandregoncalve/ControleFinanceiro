@@ -142,31 +142,31 @@ export default function ContasPage() {
   }));
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-5 p-6">
+    <div className="mx-auto flex max-w-4xl flex-col gap-5 p-4 sm:p-6">
       <div className="flex items-center gap-2">
-        <Wallet className="text-[#0C447C]" size={26} />
-        <h1 className="text-xl font-bold text-[#0C447C]">CADASTRO DE CONTAS</h1>
+        <Wallet className="text-[#0C447C] dark:text-blue-300" size={26} />
+        <h1 className="text-xl font-bold text-[#0C447C] dark:text-blue-300">CADASTRO DE CONTAS</h1>
       </div>
 
       {/* Conta pai (categoria) */}
-      <div className="rounded-xl border-2 border-[#85B7EB] bg-[#E6F1FB] p-4">
-        <p className="mb-3 text-sm font-bold text-[#0C447C]">Nova conta pai (categoria)</p>
+      <div className="rounded-xl border-2 border-[#85B7EB] bg-[#E6F1FB] dark:bg-blue-900/40 p-4">
+        <p className="mb-3 text-sm font-bold text-[#0C447C] dark:text-blue-300">Nova conta pai (categoria)</p>
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex w-56 flex-col gap-1">
-            <span className="text-xs font-medium text-gray-600">Nome</span>
+            <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Nome</span>
             <input
               type="text"
               value={nomeCategoria}
               onChange={(e) => setNomeCategoria(e.target.value)}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
+              className="rounded-lg border border-gray-300 dark:border-white/15 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
             />
           </label>
           <label className="flex w-36 flex-col gap-1">
-            <span className="text-xs font-medium text-gray-600">Tipo</span>
+            <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Tipo</span>
             <select
               value={tipoCategoria}
               onChange={(e) => setTipoCategoria(e.target.value as "Receita" | "Despesa")}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
+              className="rounded-lg border border-gray-300 dark:border-white/15 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
             >
               <option value="Receita">Receita</option>
               <option value="Despesa">Despesa</option>
@@ -183,17 +183,17 @@ export default function ContasPage() {
       </div>
 
       {/* Subconta */}
-      <div className="rounded-xl border-2 border-[#97C459] bg-[#EAF3DE] p-4">
-        <p className="mb-3 text-sm font-bold text-[#3B6D11]">
+      <div className="rounded-xl border-2 border-[#97C459] bg-[#EAF3DE] dark:bg-green-900/40 p-4">
+        <p className="mb-3 text-sm font-bold text-[#3B6D11] dark:text-green-400">
           {editandoSubconta ? "Editar subconta" : "Nova subconta"}
         </p>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           <label className="flex w-56 flex-col gap-1">
-            <span className="text-xs font-medium text-gray-600">Conta pai</span>
+            <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Conta pai</span>
             <select
               value={categoriaIdSel}
               onChange={(e) => setCategoriaIdSel(e.target.value ? Number(e.target.value) : "")}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#3B6D11]"
+              className="rounded-lg border border-gray-300 dark:border-white/15 px-3 py-2 text-sm outline-none focus:border-[#3B6D11]"
             >
               <option value="">— Selecione —</option>
               {categorias.map((c) => (
@@ -204,19 +204,19 @@ export default function ContasPage() {
             </select>
           </label>
           <label className="flex w-56 flex-col gap-1">
-            <span className="text-xs font-medium text-gray-600">Nome da subconta</span>
+            <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Nome da subconta</span>
             <input
               type="text"
               value={nomeSubconta}
               onChange={(e) => setNomeSubconta(e.target.value)}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#3B6D11]"
+              className="rounded-lg border border-gray-300 dark:border-white/15 px-3 py-2 text-sm outline-none focus:border-[#3B6D11]"
             />
           </label>
         </div>
         <div className="mt-2.5 flex flex-wrap items-end gap-3">
-          <InputMoeda label="Orçamento mensal (opcional)" value={orcamento} onChange={setOrcamento} className="w-48" />
+          <InputMoeda label="Orçamento mensal (opcional)" value={orcamento} onChange={setOrcamento} className="w-full sm:w-48" />
           <label className="flex w-32 flex-col gap-1">
-            <span className="text-xs font-medium text-gray-600">Dia vencimento</span>
+            <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Dia vencimento</span>
             <input
               type="number"
               min={1}
@@ -236,12 +236,12 @@ export default function ContasPage() {
                 // valores fora de 1-31 (ou com mais dígitos) são ignorados silenciosamente,
                 // o campo simplesmente não atualiza além do último valor válido
               }}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#3B6D11]"
+              className="rounded-lg border border-gray-300 dark:border-white/15 px-3 py-2 text-sm outline-none focus:border-[#3B6D11]"
             />
           </label>
           <label className="flex items-center gap-2 pb-2">
             <input type="checkbox" checked={fixa} onChange={(e) => setFixa(e.target.checked)} className="h-4 w-4" />
-            <span className="text-xs text-gray-600">É uma conta fixa (recorrente todo mês)</span>
+            <span className="text-xs text-gray-600 dark:text-gray-300">É uma conta fixa (recorrente todo mês)</span>
           </label>
         </div>
         <div className="mt-3 flex items-center gap-3">
@@ -263,19 +263,19 @@ export default function ContasPage() {
       {/* Listagem agrupada por categoria */}
       <div className="flex flex-col gap-3">
         {subcontasPorCategoria.map(({ categoria, itens }) => (
-          <div key={categoria.id} className="rounded-xl border border-gray-200 bg-white p-3.5">
-            <div className="mb-2 flex items-center gap-2 border-b border-gray-100 pb-2">
+          <div key={categoria.id} className="rounded-xl border border-gray-200 bg-white dark:bg-[#1E293B] p-3.5">
+            <div className="mb-2 flex items-center gap-2 border-b border-gray-100 dark:border-white/10 pb-2">
               <span
                 className={`rounded px-2 py-0.5 text-[10px] font-bold ${
-                  categoria.tipo === "Receita" ? "bg-[#EAF3DE] text-[#3B6D11]" : "bg-[#FCEBEB] text-[#A32D2D]"
+                  categoria.tipo === "Receita" ? "bg-[#EAF3DE] dark:bg-green-900/40 text-[#3B6D11] dark:text-green-400" : "bg-[#FCEBEB] dark:bg-red-900/40 text-[#A32D2D]"
                 }`}
               >
                 {categoria.tipo}
               </span>
-              <span className="text-sm font-bold text-gray-700">{categoria.nome}</span>
+              <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{categoria.nome}</span>
             </div>
             {itens.length === 0 ? (
-              <p className="text-xs italic text-gray-400">Nenhuma subconta cadastrada.</p>
+              <p className="text-xs italic text-gray-400 dark:text-gray-500">Nenhuma subconta cadastrada.</p>
             ) : (
               <div className="flex flex-col">
                 {itens.map((s) => (
@@ -283,24 +283,24 @@ export default function ContasPage() {
                     key={s.id}
                     className="flex items-center gap-2 border-b border-gray-50 py-1.5 text-xs last:border-0"
                   >
-                    <span className="flex-1 text-gray-700">{s.nome}</span>
+                    <span className="flex-1 text-gray-700 dark:text-gray-200">{s.nome}</span>
                     {s.fixa === 1 && (
-                      <span className="rounded bg-[#E6F1FB] px-1.5 py-0.5 text-[9px] font-bold text-[#0C447C]">
+                      <span className="rounded bg-[#E6F1FB] dark:bg-blue-900/40 px-1.5 py-0.5 text-[9px] font-bold text-[#0C447C] dark:text-blue-300">
                         FIXA
                       </span>
                     )}
                     {s.diaVencimento && (
-                      <span className="rounded bg-[#FAEEDA] px-1.5 py-0.5 text-[9px] font-bold text-[#854F0B]">
+                      <span className="rounded bg-[#FAEEDA] dark:bg-yellow-900/40 px-1.5 py-0.5 text-[9px] font-bold text-[#854F0B]">
                         Dia {s.diaVencimento}
                       </span>
                     )}
                     {s.orcamento > 0 && (
-                      <span className="text-[10px] text-gray-400">
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500">
                         orç. R$ {s.orcamento.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                       </span>
                     )}
                     <button onClick={() => prepararEdicaoSubconta(s)}>
-                      <Pencil size={13} className="text-[#0C447C]" />
+                      <Pencil size={13} className="text-[#0C447C] dark:text-blue-300" />
                     </button>
                     <button onClick={() => excluirSubconta(s.id)}>
                       <Trash2 size={13} className="text-red-500" />

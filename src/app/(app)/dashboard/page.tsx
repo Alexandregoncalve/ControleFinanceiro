@@ -71,7 +71,7 @@ export default function DashboardPage() {
       <PageHeader titulo="Dashboard financeiro" icon={LayoutDashboard} acoes={<SeletorMes mes={mes} onChange={setMes} />} />
 
       {/* LINHA 1: cards de resumo */}
-      <div className="flex flex-wrap gap-2.5">
+      <div className="flex flex-wrap gap-2 sm:gap-2.5">
         <CardResumo
           titulo="RECEITAS DO MÊS"
           icon={ArrowUpRight}

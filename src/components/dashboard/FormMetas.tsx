@@ -54,9 +54,9 @@ export function FormMetas({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-end gap-2">
-        <InputMoeda label="Meta Receita" value={receita} onChange={setReceita} className="w-36" />
-        <InputMoeda label="Meta Despesa" value={despesa} onChange={setDespesa} className="w-36" />
-        <InputMoeda label="Meta Resultado" value={resultado} onChange={setResultado} className="w-36" />
+        <InputMoeda label="Meta Receita" value={receita} onChange={setReceita} className="w-full sm:w-36" />
+        <InputMoeda label="Meta Despesa" value={despesa} onChange={setDespesa} className="w-full sm:w-36" />
+        <InputMoeda label="Meta Resultado" value={resultado} onChange={setResultado} className="w-full sm:w-36" />
         <button
           onClick={salvar}
           disabled={salvando}

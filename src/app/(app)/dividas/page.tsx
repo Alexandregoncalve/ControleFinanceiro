@@ -217,14 +217,14 @@ export default function DividasPage() {
   const dividasAtivas = dividas.filter((d) => d.status === "ativa");
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-5 p-6">
+    <div className="mx-auto flex max-w-4xl flex-col gap-5 p-4 sm:p-6">
       <div className="flex items-center gap-2">
         <AlertTriangle className="text-[#A32D2D]" size={26} />
         <h1 className="text-xl font-bold text-[#A32D2D]">CONTROLE DE DÍVIDAS</h1>
       </div>
 
       {/* Resumo */}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-2 sm:gap-3">
         <CardResumo titulo="💸 TOTAL PAGO" valor={fmt(resumo.totalPagoGeral)} sub="soma de todos os pagamentos" cor="#A32D2D" />
         <CardResumo titulo="📋 DÍVIDAS ATIVAS" valor={String(resumo.qtdAtivas)} sub="dívidas em aberto" cor="#0C447C" />
         <CardResumo titulo="⏳ SALDO DEVEDOR" valor={fmt(resumo.saldoTotalGeral)} sub="total ainda a pagar" cor="#854F0B" />
@@ -232,16 +232,16 @@ export default function DividasPage() {
       </div>
 
       {/* Cadastrar nova dívida */}
-      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="rounded-xl border border-gray-200 bg-white dark:bg-[#1E293B] p-4 shadow-sm">
         <p className="text-sm font-bold text-[#A32D2D]">➕ CADASTRAR NOVA DÍVIDA</p>
-        <p className="mb-3 text-xs text-gray-400">Escolha como quer controlar essa dívida</p>
+        <p className="mb-3 text-xs text-gray-400 dark:text-gray-500">Escolha como quer controlar essa dívida</p>
 
         <div className="mb-3 flex items-center gap-2">
-          <span className="text-xs text-gray-500">Tipo de controle:</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500">Tipo de controle:</span>
           <button
             onClick={() => setTipo("parcelada")}
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
-              tipo === "parcelada" ? "bg-[#0C447C] text-white" : "bg-gray-200 text-gray-600"
+              tipo === "parcelada" ? "bg-[#0C447C] text-white" : "bg-gray-200 text-gray-600 dark:text-gray-300"
             }`}
           >
             🔵 PARCELADA
@@ -249,33 +249,33 @@ export default function DividasPage() {
           <button
             onClick={() => setTipo("livre")}
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
-              tipo === "livre" ? "bg-[#854F0B] text-white" : "bg-gray-200 text-gray-600"
+              tipo === "livre" ? "bg-[#854F0B] text-white" : "bg-gray-200 text-gray-600 dark:text-gray-300"
             }`}
           >
             🟠 PAGAMENTO LIVRE
           </button>
         </div>
 
-        <div className={`mb-3 flex items-start gap-2 rounded-lg p-2.5 ${tipo === "parcelada" ? "bg-[#E6F1FB]" : "bg-[#FAEEDA]"}`}>
-          <Info size={14} className={`mt-0.5 flex-shrink-0 ${tipo === "parcelada" ? "text-[#0C447C]" : "text-[#854F0B]"}`} />
-          <p className={`text-xs italic ${tipo === "parcelada" ? "text-[#0C447C]" : "text-[#854F0B]"}`}>
+        <div className={`mb-3 flex items-start gap-2 rounded-lg p-2.5 ${tipo === "parcelada" ? "bg-[#E6F1FB] dark:bg-blue-900/40" : "bg-[#FAEEDA] dark:bg-yellow-900/40"}`}>
+          <Info size={14} className={`mt-0.5 flex-shrink-0 ${tipo === "parcelada" ? "text-[#0C447C] dark:text-blue-300" : "text-[#854F0B]"}`} />
+          <p className={`text-xs italic ${tipo === "parcelada" ? "text-[#0C447C] dark:text-blue-300" : "text-[#854F0B]"}`}>
             {tipo === "parcelada"
               ? "Uma conta fixa será criada automaticamente e aparecerá em Contas Fixas todo mês para você dar baixa."
               : "Sem vencimento fixo. Você registra o pagamento quando e quanto quiser, abatendo do saldo devedor."}
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-3">
-          <CampoTexto label="Nome da Dívida" value={nome} onChange={setNome} className="w-64" />
+        <div className="flex flex-wrap gap-2 sm:gap-3">
+          <CampoTexto label="Nome da Dívida" value={nome} onChange={setNome} className="w-full sm:w-64" />
           <InputMoeda label="Valor Total (R$)" value={valorTotal} onChange={setValorTotal} className="w-40" />
         </div>
 
         {tipo === "parcelada" && (
           <div className="mt-2.5 flex flex-wrap gap-3">
-            <InputMoeda label="Valor da Parcela (R$)" value={valorParcela} onChange={setValorParcela} className="w-44" />
+            <InputMoeda label="Valor da Parcela (R$)" value={valorParcela} onChange={setValorParcela} className="w-full sm:w-44" />
             <CampoTexto label="Nº Parcelas" value={totalParcelas} onChange={setTotalParcelas} className="w-28" tipo="number" />
             <CampoTexto label="Dia Vencimento" value={diaVenc} onChange={setDiaVenc} className="w-32" tipo="number" />
-            <CampoTexto label="Data Início (DD/MM/AAAA)" value={dataInicio} onChange={setDataInicio} className="w-44" />
+            <CampoTexto label="Data Início (DD/MM/AAAA)" value={dataInicio} onChange={setDataInicio} className="w-full sm:w-44" />
             <InputMoeda label="Juros % a.m." value={taxa} onChange={setTaxa} className="w-32" />
           </div>
         )}
@@ -294,19 +294,19 @@ export default function DividasPage() {
       </div>
 
       {/* Registrar pagamento avulso */}
-      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="rounded-xl border border-gray-200 bg-white dark:bg-[#1E293B] p-4 shadow-sm">
         <p className="text-sm font-bold text-[#A32D2D]">💰 REGISTRAR PAGAMENTO</p>
-        <p className="mb-3 text-xs text-gray-400">
+        <p className="mb-3 text-xs text-gray-400 dark:text-gray-500">
           Para dívidas parceladas, dê baixa diretamente em Contas Fixas. Aqui registre pagamentos avulsos.
         </p>
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex w-64 flex-col gap-1">
-            <span className="text-xs font-medium text-gray-600">Dívida</span>
+            <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Dívida</span>
             <select
               value={dividaPagId}
               onChange={(e) => setDividaPagId(e.target.value ? Number(e.target.value) : "")}
               disabled={dividasAtivas.length === 0}
-              className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none disabled:bg-gray-100"
+              className="rounded-lg border border-gray-300 dark:border-white/15 px-3 py-2 text-sm outline-none disabled:bg-gray-100 dark:bg-white/10"
             >
               <option value="">{dividasAtivas.length === 0 ? "Nenhuma dívida ativa" : "Selecione a dívida"}</option>
               {dividasAtivas.map((d) => (
@@ -317,8 +317,8 @@ export default function DividasPage() {
             </select>
           </label>
           <InputMoeda label="Valor Pago (R$)" value={valorPag} onChange={setValorPag} className="w-40" />
-          <CampoTexto label="Data Pagamento" value={dataPag} onChange={setDataPag} className="w-36" />
-          <CampoTexto label="Observação (opcional)" value={obsPag} onChange={setObsPag} className="w-56" />
+          <CampoTexto label="Data Pagamento" value={dataPag} onChange={setDataPag} className="w-full sm:w-36" />
+          <CampoTexto label="Observação (opcional)" value={obsPag} onChange={setObsPag} className="w-full sm:w-56" />
           <button
             onClick={registrarPagamento}
             className="flex h-[38px] items-center gap-1.5 rounded-lg bg-[#A32D2D] px-4 text-xs font-semibold text-white"
@@ -337,7 +337,7 @@ export default function DividasPage() {
       <div>
         <p className="mb-2 text-sm font-bold text-[#A32D2D]">📋 DÍVIDAS REGISTRADAS</p>
         {dividas.length === 0 ? (
-          <p className="text-sm italic text-gray-400">Nenhuma dívida cadastrada.</p>
+          <p className="text-sm italic text-gray-400 dark:text-gray-500">Nenhuma dívida cadastrada.</p>
         ) : (
           <div className="flex flex-col gap-2.5">
             {dividas.map((d) => {
@@ -359,11 +359,11 @@ export default function DividasPage() {
               }
 
               return (
-                <div key={d.id} className="rounded-xl border border-gray-200 bg-white p-3.5 shadow-sm">
+                <div key={d.id} className="rounded-xl border border-gray-200 bg-white dark:bg-[#1E293B] p-3.5 shadow-sm">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="min-w-[180px] flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-gray-800">{d.nome}</span>
+                        <span className="text-sm font-bold text-gray-800 dark:text-gray-100">{d.nome}</span>
                         <span
                           className="rounded-full border px-2 py-0.5 text-[10px] font-bold"
                           style={{ borderColor: tipoCor, color: tipoCor }}
@@ -372,7 +372,7 @@ export default function DividasPage() {
                         </span>
                       </div>
                       {infoParts.length > 0 && (
-                        <p className="text-[10px] text-gray-400">{infoParts.join("  •  ")}</p>
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500">{infoParts.join("  •  ")}</p>
                       )}
                     </div>
 
@@ -384,26 +384,26 @@ export default function DividasPage() {
                     </span>
 
                     <div className="text-right">
-                      <p className="text-[10px] text-gray-400">Total pago</p>
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500">Total pago</p>
                       <p className="text-sm font-bold text-[#A32D2D]">{fmt(d.totalPago)}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[10px] text-gray-400">Saldo devedor</p>
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500">Saldo devedor</p>
                       <p className="text-sm font-bold" style={{ color: d.saldo > 0 ? "#854F0B" : "#639922" }}>
                         {d.saldo > 0 ? fmt(d.saldo) : "Quitado"}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[10px] text-gray-400">Valor total</p>
-                      <p className="text-xs text-gray-500">{fmt(d.valorTotal)}</p>
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500">Valor total</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500">{fmt(d.valorTotal)}</p>
                     </div>
 
                     <div className="flex items-center gap-1">
                       <button onClick={() => toggleExpandida(d.id)} title="Ver pagamentos">
                         {expandida ? (
-                          <ChevronUp size={18} className="text-[#0C447C]" />
+                          <ChevronUp size={18} className="text-[#0C447C] dark:text-blue-300" />
                         ) : (
-                          <ChevronDown size={18} className="text-[#0C447C]" />
+                          <ChevronDown size={18} className="text-[#0C447C] dark:text-blue-300" />
                         )}
                       </button>
                       {d.status === "ativa" && (
@@ -418,12 +418,12 @@ export default function DividasPage() {
                   </div>
 
                   <div className="mt-2 flex items-center gap-2">
-                    <span className="flex-1 text-[10px] text-gray-400">
+                    <span className="flex-1 text-[10px] text-gray-400 dark:text-gray-500">
                       {d.totalParcelas
                         ? `${d.pagamentos.length}/${d.totalParcelas} parcelas pagas`
                         : `${d.pagamentos.length} pagamento(s)`}
                     </span>
-                    <span className="text-[10px] font-bold text-[#0C447C]">{Math.round(progresso * 100)}%</span>
+                    <span className="text-[10px] font-bold text-[#0C447C] dark:text-blue-300">{Math.round(progresso * 100)}%</span>
                   </div>
                   <div className="mt-1 h-1.5 rounded bg-gray-200">
                     <div
@@ -433,18 +433,18 @@ export default function DividasPage() {
                   </div>
 
                   {expandida && (
-                    <div className="mt-2.5 flex flex-col gap-1.5 border-t border-gray-100 pt-2.5">
+                    <div className="mt-2.5 flex flex-col gap-1.5 border-t border-gray-100 dark:border-white/10 pt-2.5">
                       {d.pagamentos.length === 0 ? (
-                        <p className="text-xs italic text-gray-400">Nenhum pagamento registrado ainda.</p>
+                        <p className="text-xs italic text-gray-400 dark:text-gray-500">Nenhum pagamento registrado ainda.</p>
                       ) : (
                         d.pagamentos.map((p) => (
                           <div
                             key={p.id}
-                            className="flex items-center gap-2 rounded-md bg-[#F4F7FB] px-3 py-1.5"
+                            className="flex items-center gap-2 rounded-md bg-[#F4F7FB] dark:bg-[#0F172A] px-3 py-1.5"
                           >
-                            <Receipt size={14} className="text-[#0C447C]" />
-                            <span className="w-20 flex-shrink-0 text-xs text-gray-500">{p.data}</span>
-                            <span className="flex-1 truncate text-xs text-gray-500">{p.observacao || ""}</span>
+                            <Receipt size={14} className="text-[#0C447C] dark:text-blue-300" />
+                            <span className="w-20 flex-shrink-0 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500">{p.data}</span>
+                            <span className="flex-1 truncate text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500">{p.observacao || ""}</span>
                             <span className="text-xs font-bold text-[#A32D2D]">{fmt(p.valor)}</span>
                             <button onClick={() => excluirPagamento(p.id, p.valor, p.data)}>
                               <Trash2 size={13} className="text-[#A32D2D]" />
@@ -489,12 +489,12 @@ function CampoTexto({
 }) {
   return (
     <label className={`flex flex-col gap-1 ${className}`}>
-      <span className="text-xs font-medium text-gray-600">{label}</span>
+      <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{label}</span>
       <input
         type={tipo}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C] focus:ring-1 focus:ring-[#0C447C]"
+        className="rounded-lg border border-gray-300 dark:border-white/15 px-3 py-2 text-sm outline-none focus:border-[#0C447C] focus:ring-1 focus:ring-[#0C447C]"
       />
     </label>
   );

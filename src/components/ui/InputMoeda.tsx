@@ -46,7 +46,7 @@ export function InputMoeda({
           placeholder={placeholder}
           onChange={(e) => setTexto(e.target.value)}
           onBlur={handleBlur}
-          className="w-full text-sm outline-none"
+          className="w-full bg-transparent text-sm text-gray-900 outline-none"
         />
       </div>
     </label>

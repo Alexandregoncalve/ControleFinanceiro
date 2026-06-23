@@ -82,47 +82,47 @@ export function FormVinculoCLT({
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border border-[#85B7EB] bg-[#E6F1FB] p-4">
-      <div className="flex flex-wrap gap-3">
+    <div className="flex flex-col gap-4 rounded-xl border border-[#85B7EB] bg-[#E6F1FB] dark:bg-blue-900/40 p-4">
+      <div className="flex flex-wrap gap-2 sm:gap-3">
         <label className="flex w-60 flex-col gap-1">
-          <span className="text-xs font-medium text-gray-600">Apelido deste vínculo</span>
+          <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Apelido deste vínculo</span>
           <input
             type="text"
             placeholder="Ex: Emprego Principal"
             value={apelido}
             onChange={(e) => setApelido(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
+            className="rounded-lg border border-gray-300 dark:border-white/15 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
           />
         </label>
         <label className="flex w-56 flex-col gap-1">
-          <span className="text-xs font-medium text-gray-600">Empresa</span>
+          <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Empresa</span>
           <input
             type="text"
             value={d.empresa}
             onChange={(e) => set("empresa", e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
+            className="rounded-lg border border-gray-300 dark:border-white/15 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
           />
         </label>
         <label className="flex w-44 flex-col gap-1">
-          <span className="text-xs font-medium text-gray-600">Cargo</span>
+          <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Cargo</span>
           <input
             type="text"
             value={d.cargo}
             onChange={(e) => set("cargo", e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
+            className="rounded-lg border border-gray-300 dark:border-white/15 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
           />
         </label>
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-2 sm:gap-3">
         <InputMoeda
           label="Salário Bruto"
           value={d.salarioBruto}
           onChange={(v) => set("salarioBruto", v)}
-          className="w-44"
+          className="w-full sm:w-44"
         />
         <label className="flex w-44 flex-col gap-1">
-          <span className="text-xs font-medium text-gray-600">Dia de pagamento (opcional)</span>
+          <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Dia de pagamento (opcional)</span>
           <input
             type="number"
             min={1}
@@ -130,16 +130,16 @@ export function FormVinculoCLT({
             placeholder="Auto (5º dia útil)"
             value={d.diaPagamento ?? ""}
             onChange={(e) => set("diaPagamento", e.target.value ? parseInt(e.target.value) : null)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
+            className="rounded-lg border border-gray-300 dark:border-white/15 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
           />
-          <span className="text-[10px] text-gray-400">
+          <span className="text-[10px] text-gray-400 dark:text-gray-500">
             Em branco, considera o prazo legal: até o 5º dia útil (CLT art. 459).
           </span>
         </label>
       </div>
 
       {/* Vale-transporte — checkbox liga cálculo automático */}
-      <div className="rounded-lg bg-white p-3">
+      <div className="rounded-lg bg-white dark:bg-[#1E293B] p-3">
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -147,12 +147,12 @@ export function FormVinculoCLT({
             onChange={(e) => set("recebeValeTransporte", e.target.checked)}
             className="h-4 w-4"
           />
-          <span className="text-sm font-medium text-gray-700">Recebo vale-transporte</span>
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Recebo vale-transporte</span>
         </label>
         {d.recebeValeTransporte && (
-          <div className="mt-2 flex items-start gap-2 rounded-md bg-[#EAF3DE] p-2.5">
-            <Info size={14} className="mt-0.5 flex-shrink-0 text-[#3B6D11]" />
-            <p className="text-xs text-[#3B6D11]">
+          <div className="mt-2 flex items-start gap-2 rounded-md bg-[#EAF3DE] dark:bg-green-900/40 p-2.5">
+            <Info size={14} className="mt-0.5 flex-shrink-0 text-[#3B6D11] dark:text-green-400" />
+            <p className="text-xs text-[#3B6D11] dark:text-green-400">
               Desconto calculado automaticamente: <strong>{fmt(descontoVT)}</strong> (6% do salário bruto,
               teto máximo conforme Lei 7.418/85).
             </p>
@@ -161,7 +161,7 @@ export function FormVinculoCLT({
       </div>
 
       {/* Vale-alimentação — checkbox liga campo de valor livre */}
-      <div className="rounded-lg bg-white p-3">
+      <div className="rounded-lg bg-white dark:bg-[#1E293B] p-3">
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -169,7 +169,7 @@ export function FormVinculoCLT({
             onChange={(e) => set("recebeValeAlimentacao", e.target.checked)}
             className="h-4 w-4"
           />
-          <span className="text-sm font-medium text-gray-700">Recebo vale-alimentação/refeição</span>
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Recebo vale-alimentação/refeição</span>
         </label>
         {d.recebeValeAlimentacao && (
           <div className="mt-2">
@@ -177,14 +177,14 @@ export function FormVinculoCLT({
               label="Valor mensal (não há % fixo em lei, varia por empresa)"
               value={d.valorValeAlimentacao}
               onChange={(v) => set("valorValeAlimentacao", v)}
-              className="w-52"
+              className="w-full sm:w-52"
             />
           </div>
         )}
       </div>
 
       {/* Adiantamento — checkbox liga cálculo com sugestão editável */}
-      <div className="rounded-lg bg-white p-3">
+      <div className="rounded-lg bg-white dark:bg-[#1E293B] p-3">
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -192,35 +192,35 @@ export function FormVinculoCLT({
             onChange={(e) => set("recebeAdiantamento", e.target.checked)}
             className="h-4 w-4"
           />
-          <span className="text-sm font-medium text-gray-700">Recebo adiantamento salarial</span>
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Recebo adiantamento salarial</span>
         </label>
         {d.recebeAdiantamento && (
           <div className="mt-2 flex flex-wrap items-end gap-3">
             <label className="flex w-32 flex-col gap-1">
-              <span className="text-xs font-medium text-gray-600">% do salário</span>
+              <span className="text-xs font-medium text-gray-600 dark:text-gray-300">% do salário</span>
               <input
                 type="number"
                 min={0}
                 max={100}
                 value={d.percentualAdiantamento}
                 onChange={(e) => set("percentualAdiantamento", Number(e.target.value))}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
+                className="rounded-lg border border-gray-300 dark:border-white/15 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
               />
             </label>
             <label className="flex w-36 flex-col gap-1">
-              <span className="text-xs font-medium text-gray-600">Dia do adiantamento</span>
+              <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Dia do adiantamento</span>
               <input
                 type="number"
                 min={1}
                 max={31}
                 value={d.diaAdiantamento ?? ""}
                 onChange={(e) => set("diaAdiantamento", e.target.value ? parseInt(e.target.value) : null)}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
+                className="rounded-lg border border-gray-300 dark:border-white/15 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
               />
             </label>
-            <p className="pb-2 text-xs text-gray-500">
-              Valor estimado: <strong className="text-[#0C447C]">{fmt(valorAdiantamento)}</strong>
-              <span className="block text-[10px] text-gray-400">(sugestão de mercado, não é definido em lei)</span>
+            <p className="pb-2 text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500">
+              Valor estimado: <strong className="text-[#0C447C] dark:text-blue-300">{fmt(valorAdiantamento)}</strong>
+              <span className="block text-[10px] text-gray-400 dark:text-gray-500">(sugestão de mercado, não é definido em lei)</span>
             </p>
           </div>
         )}

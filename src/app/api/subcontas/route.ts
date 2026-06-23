@@ -4,13 +4,18 @@ import { exigirSessao } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { apiOk, apiErro, comTratamentoErro } from "@/lib/api-helpers";
 
-export const GET = comTratamentoErro(async () => {
+export const GET = comTratamentoErro(async (req: NextRequest) => {
   const sessao = await exigirSessao();
+  const busca = req.nextUrl.searchParams.get("busca") ?? "";
 
   const subcontas = await prisma.subconta.findMany({
-    where: { usuarioId: sessao.id },
+    where: {
+      usuarioId: sessao.id,
+      ...(busca ? { nome: { contains: busca, mode: "insensitive" } } : {}),
+    },
     include: { categoria: { select: { nome: true, tipo: true } } },
     orderBy: [{ categoria: { nome: "asc" } }, { nome: "asc" }],
+    take: busca ? 10 : undefined,
   });
 
   const resultado = subcontas.map((s: (typeof subcontas)[number]) => ({
@@ -22,6 +27,7 @@ export const GET = comTratamentoErro(async () => {
     diaVencimento: s.diaVencimento,
     categoriaNome: s.categoria.nome,
     categoriaTipo: s.categoria.tipo,
+    categoria: s.categoria.nome, // alias para busca na conciliação
   }));
 
   return apiOk({ subcontas: resultado });

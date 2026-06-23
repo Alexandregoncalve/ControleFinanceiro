@@ -45,7 +45,7 @@ export function CampoValidado({
           maxLength={maxLength}
           onChange={(e) => onChange(e.target.value)}
           onBlur={onBlur}
-          className={`w-full rounded-lg border px-3 py-2 pr-8 text-sm outline-none focus:ring-1 ${corBorda}`}
+          className={`w-full rounded-lg border bg-white px-3 py-2 pr-8 text-sm text-gray-900 outline-none focus:ring-1 ${corBorda}`}
         />
         {validacao?.valido === true && (
           <CheckCircle2

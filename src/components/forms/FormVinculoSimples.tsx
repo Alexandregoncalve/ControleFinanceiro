@@ -92,41 +92,41 @@ export function FormVinculoSimples({
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border border-[#85B7EB] bg-[#E6F1FB] p-4">
-      <div className="flex flex-wrap gap-3">
+    <div className="flex flex-col gap-4 rounded-xl border border-[#85B7EB] bg-[#E6F1FB] dark:bg-blue-900/40 p-4">
+      <div className="flex flex-wrap gap-2 sm:gap-3">
         <label className="flex w-56 flex-col gap-1">
-          <span className="text-xs font-medium text-gray-600">Apelido deste vínculo</span>
+          <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Apelido deste vínculo</span>
           <input
             type="text"
             placeholder="Ex: Minha Empresa LTDA"
             value={apelido}
             onChange={(e) => setApelido(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
+            className="rounded-lg border border-gray-300 dark:border-white/15 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
           />
         </label>
         <label className="flex w-56 flex-col gap-1">
-          <span className="text-xs font-medium text-gray-600">Razão social</span>
+          <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Razão social</span>
           <input
             type="text"
             value={d.razaoSocial}
             onChange={(e) => set("razaoSocial", e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
+            className="rounded-lg border border-gray-300 dark:border-white/15 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
           />
         </label>
         <label className="flex w-44 flex-col gap-1">
-          <span className="text-xs font-medium text-gray-600">CNPJ</span>
+          <span className="text-xs font-medium text-gray-600 dark:text-gray-300">CNPJ</span>
           <input
             type="text"
             placeholder="00.000.000/0001-00"
             value={d.cnpj}
             onChange={(e) => set("cnpj", e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
+            className="rounded-lg border border-gray-300 dark:border-white/15 px-3 py-2 text-sm outline-none focus:border-[#0C447C]"
           />
         </label>
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium text-gray-600">Anexo (definido pela atividade/CNAE)</p>
+        <p className="mb-2 text-xs font-medium text-gray-600 dark:text-gray-300">Anexo (definido pela atividade/CNAE)</p>
         <div className="flex flex-wrap gap-2">
           {ANEXOS.map((a) => (
             <button
@@ -134,50 +134,50 @@ export function FormVinculoSimples({
               onClick={() => set("anexo", a)}
               title={DESCRICAO_ANEXO[a]}
               className={`rounded-lg border px-3 py-2 text-xs font-medium ${
-                d.anexo === a ? "border-[#0C447C] bg-white text-[#0C447C]" : "border-gray-300 bg-white text-gray-500"
+                d.anexo === a ? "border-[#0C447C] bg-white dark:bg-[#1E293B] text-[#0C447C] dark:text-blue-300" : "border-gray-300 dark:border-white/15 bg-white dark:bg-[#1E293B] text-gray-500 dark:text-gray-400 dark:text-gray-500"
               }`}
             >
               Anexo {a}
             </button>
           ))}
         </div>
-        <p className="mt-1 text-[10px] text-gray-500">{DESCRICAO_ANEXO[d.anexo]}</p>
+        <p className="mt-1 text-[10px] text-gray-500 dark:text-gray-400 dark:text-gray-500">{DESCRICAO_ANEXO[d.anexo]}</p>
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-2 sm:gap-3">
         <InputMoeda
           label="Faturamento últimos 12 meses (RBT12)"
           value={d.faturamento12meses}
           onChange={(v) => set("faturamento12meses", v)}
-          className="w-60"
+          className="w-full sm:w-60"
         />
         <InputMoeda
           label="Faturamento médio mensal"
           value={d.faturamentoMedioMensal}
           onChange={(v) => set("faturamentoMedioMensal", v)}
-          className="w-56"
+          className="w-full sm:w-56"
         />
       </div>
 
       {d.anexo === "V" && (
-        <div className="rounded-lg bg-white p-3">
-          <p className="mb-2 text-xs font-medium text-gray-600">
+        <div className="rounded-lg bg-white dark:bg-[#1E293B] p-3">
+          <p className="mb-2 text-xs font-medium text-gray-600 dark:text-gray-300">
             Fator R (folha de pagamento ÷ faturamento dos últimos 12 meses)
           </p>
           <InputMoeda
             label="Folha de pagamento últimos 12 meses"
             value={d.folhaPagamento12meses}
             onChange={(v) => set("folhaPagamento12meses", v)}
-            className="w-60"
+            className="w-full sm:w-60"
           />
           {d.faturamento12meses > 0 && (
             <div
               className={`mt-2 flex items-start gap-2 rounded-md p-2.5 ${
-                beneficiadoPeloFatorR ? "bg-[#EAF3DE]" : "bg-[#F5F5F5]"
+                beneficiadoPeloFatorR ? "bg-[#EAF3DE] dark:bg-green-900/40" : "bg-[#F5F5F5]"
               }`}
             >
-              {beneficiadoPeloFatorR && <TrendingDown size={14} className="mt-0.5 flex-shrink-0 text-[#3B6D11]" />}
-              <p className={`text-xs ${beneficiadoPeloFatorR ? "text-[#3B6D11]" : "text-gray-600"}`}>
+              {beneficiadoPeloFatorR && <TrendingDown size={14} className="mt-0.5 flex-shrink-0 text-[#3B6D11] dark:text-green-400" />}
+              <p className={`text-xs ${beneficiadoPeloFatorR ? "text-[#3B6D11] dark:text-green-400" : "text-gray-600 dark:text-gray-300"}`}>
                 Fator R: <strong>{fmtPct(fatorR * 100)}</strong>
                 {beneficiadoPeloFatorR
                   ? " — acima de 28%! Sua empresa será tributada pelo Anexo III (alíquotas menores)."
@@ -189,12 +189,12 @@ export function FormVinculoSimples({
       )}
 
       {d.faturamento12meses > 0 && (
-        <div className="rounded-md bg-white p-3">
+        <div className="rounded-md bg-white dark:bg-[#1E293B] p-3">
           <div className="flex items-center gap-2">
-            <Info size={14} className="text-[#0C447C]" />
-            <p className="text-xs text-gray-600">
-              Alíquota efetiva: <strong className="text-[#0C447C]">{fmtPct(aliquotaEfetiva * 100)}</strong> ·
-              DAS estimado do mês: <strong className="text-[#0C447C]">{fmt(dasEstimado)}</strong>
+            <Info size={14} className="text-[#0C447C] dark:text-blue-300" />
+            <p className="text-xs text-gray-600 dark:text-gray-300">
+              Alíquota efetiva: <strong className="text-[#0C447C] dark:text-blue-300">{fmtPct(aliquotaEfetiva * 100)}</strong> ·
+              DAS estimado do mês: <strong className="text-[#0C447C] dark:text-blue-300">{fmt(dasEstimado)}</strong>
             </p>
           </div>
         </div>
@@ -202,14 +202,14 @@ export function FormVinculoSimples({
 
       {d.faturamento12meses > 0 && (
         <div
-          className={`flex items-start gap-2 rounded-md p-2.5 ${proximoDoLimite ? "bg-[#FCEBEB]" : "bg-[#EAF3DE]"}`}
+          className={`flex items-start gap-2 rounded-md p-2.5 ${proximoDoLimite ? "bg-[#FCEBEB] dark:bg-red-900/40" : "bg-[#EAF3DE] dark:bg-green-900/40"}`}
         >
           {proximoDoLimite ? (
             <AlertTriangle size={14} className="mt-0.5 flex-shrink-0 text-[#A32D2D]" />
           ) : (
-            <Info size={14} className="mt-0.5 flex-shrink-0 text-[#3B6D11]" />
+            <Info size={14} className="mt-0.5 flex-shrink-0 text-[#3B6D11] dark:text-green-400" />
           )}
-          <p className={`text-xs ${proximoDoLimite ? "text-[#A32D2D]" : "text-[#3B6D11]"}`}>
+          <p className={`text-xs ${proximoDoLimite ? "text-[#A32D2D]" : "text-[#3B6D11] dark:text-green-400"}`}>
             {pctLimite.toFixed(0)}% do limite anual do Simples ({fmt(LIMITE_FATURAMENTO_SIMPLES_ANUAL)}).
             {proximoDoLimite && " Você está próximo do limite — considere planejamento tributário."}
           </p>

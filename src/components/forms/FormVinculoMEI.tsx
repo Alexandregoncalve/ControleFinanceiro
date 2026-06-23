@@ -74,41 +74,41 @@ export function FormVinculoMEI({
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border border-[#FAC775] bg-[#FAEEDA] p-4">
-      <div className="flex flex-wrap gap-3">
+    <div className="flex flex-col gap-4 rounded-xl border border-[#FAC775] bg-[#FAEEDA] dark:bg-yellow-900/40 p-4">
+      <div className="flex flex-wrap gap-2 sm:gap-3">
         <label className="flex w-56 flex-col gap-1">
-          <span className="text-xs font-medium text-gray-600">Apelido deste vínculo</span>
+          <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Apelido deste vínculo</span>
           <input
             type="text"
             placeholder="Ex: Minha Loja MEI"
             value={apelido}
             onChange={(e) => setApelido(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#854F0B]"
+            className="rounded-lg border border-gray-300 dark:border-white/15 px-3 py-2 text-sm outline-none focus:border-[#854F0B]"
           />
         </label>
         <label className="flex w-56 flex-col gap-1">
-          <span className="text-xs font-medium text-gray-600">Nome fantasia</span>
+          <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Nome fantasia</span>
           <input
             type="text"
             value={d.nomeFantasia}
             onChange={(e) => set("nomeFantasia", e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#854F0B]"
+            className="rounded-lg border border-gray-300 dark:border-white/15 px-3 py-2 text-sm outline-none focus:border-[#854F0B]"
           />
         </label>
         <label className="flex w-44 flex-col gap-1">
-          <span className="text-xs font-medium text-gray-600">CNPJ</span>
+          <span className="text-xs font-medium text-gray-600 dark:text-gray-300">CNPJ</span>
           <input
             type="text"
             placeholder="00.000.000/0001-00"
             value={d.cnpj}
             onChange={(e) => set("cnpj", e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#854F0B]"
+            className="rounded-lg border border-gray-300 dark:border-white/15 px-3 py-2 text-sm outline-none focus:border-[#854F0B]"
           />
         </label>
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium text-gray-600">Atividade principal</p>
+        <p className="mb-2 text-xs font-medium text-gray-600 dark:text-gray-300">Atividade principal</p>
         <div className="flex gap-2">
           {OPCOES_ATIVIDADE.map((o) => (
             <button
@@ -116,8 +116,8 @@ export function FormVinculoMEI({
               onClick={() => set("atividade", o.value)}
               className={`rounded-lg border px-3 py-2 text-xs font-medium ${
                 d.atividade === o.value
-                  ? "border-[#854F0B] bg-white text-[#854F0B]"
-                  : "border-gray-300 bg-white text-gray-500"
+                  ? "border-[#854F0B] bg-white dark:bg-[#1E293B] text-[#854F0B]"
+                  : "border-gray-300 dark:border-white/15 bg-white dark:bg-[#1E293B] text-gray-500 dark:text-gray-400 dark:text-gray-500"
               }`}
             >
               {o.label}
@@ -126,11 +126,11 @@ export function FormVinculoMEI({
         </div>
       </div>
 
-      <div className="rounded-md bg-white p-3">
+      <div className="rounded-md bg-white dark:bg-[#1E293B] p-3">
         <div className="flex items-center gap-2">
-          <Info size={14} className="text-[#0C447C]" />
-          <p className="text-xs text-gray-600">
-            DAS calculado automaticamente: <strong className="text-[#0C447C]">{fmt(dasValor)}</strong>/mês
+          <Info size={14} className="text-[#0C447C] dark:text-blue-300" />
+          <p className="text-xs text-gray-600 dark:text-gray-300">
+            DAS calculado automaticamente: <strong className="text-[#0C447C] dark:text-blue-300">{fmt(dasValor)}</strong>/mês
             (INSS + {d.atividade === "comercio" ? "ICMS" : d.atividade === "servico" ? "ISS" : "ICMS + ISS"}),
             vencimento dia <strong>{d.diaVencimentoDAS}</strong>.
           </p>
@@ -141,21 +141,21 @@ export function FormVinculoMEI({
         label="Faturamento médio mensal"
         value={d.faturamentoMedioMensal}
         onChange={(v) => set("faturamentoMedioMensal", v)}
-        className="w-56"
+        className="w-full sm:w-56"
       />
 
       {d.faturamentoMedioMensal > 0 && (
         <div
           className={`flex items-start gap-2 rounded-md p-2.5 ${
-            proximoDoLimite ? "bg-[#FCEBEB]" : "bg-[#EAF3DE]"
+            proximoDoLimite ? "bg-[#FCEBEB] dark:bg-red-900/40" : "bg-[#EAF3DE] dark:bg-green-900/40"
           }`}
         >
           {proximoDoLimite ? (
             <AlertTriangle size={14} className="mt-0.5 flex-shrink-0 text-[#A32D2D]" />
           ) : (
-            <Info size={14} className="mt-0.5 flex-shrink-0 text-[#3B6D11]" />
+            <Info size={14} className="mt-0.5 flex-shrink-0 text-[#3B6D11] dark:text-green-400" />
           )}
-          <p className={`text-xs ${proximoDoLimite ? "text-[#A32D2D]" : "text-[#3B6D11]"}`}>
+          <p className={`text-xs ${proximoDoLimite ? "text-[#A32D2D]" : "text-[#3B6D11] dark:text-green-400"}`}>
             Projeção anual: <strong>{fmt(faturamentoAnualProjetado)}</strong> ({pctLimite.toFixed(0)}% do
             limite de {fmt(LIMITE_FATURAMENTO_MEI_ANUAL)}/ano).
             {proximoDoLimite && " Você está perto do limite do MEI — considere migrar para Simples Nacional."}

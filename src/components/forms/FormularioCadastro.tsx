@@ -202,15 +202,15 @@ export function FormularioCadastro({ novoUsuario, perfilInicial }: FormularioCad
 
   return (
     <div className="flex flex-col gap-4 p-6">
-      <h1 className="text-xl font-bold text-[#0C447C]">
+      <h1 className="text-xl font-bold text-[#0C447C] dark:text-blue-300">
         {novoUsuario ? "CRIAR CONTA" : "MEU CADASTRO"}
       </h1>
       <hr />
 
       {novoUsuario && (
-        <section className="rounded-xl bg-[#EAF3DE] p-4">
-          <h2 className="mb-3 text-sm font-bold text-[#3B6D11]">🔐 DADOS DE ACESSO</h2>
-          <div className="flex flex-wrap gap-3">
+        <section className="rounded-xl bg-[#EAF3DE] dark:bg-green-900/40 p-4">
+          <h2 className="mb-3 text-sm font-bold text-[#3B6D11] dark:text-green-400">🔐 DADOS DE ACESSO</h2>
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             <CampoValidado
               label="E-mail (será seu login)"
               value={login}
@@ -223,7 +223,7 @@ export function FormularioCadastro({ novoUsuario, perfilInicial }: FormularioCad
                 )
               }
               validacao={valid.login}
-              className="w-72"
+              className="w-full sm:w-72"
             />
             <CampoValidado
               label="Senha (mín. 6 caracteres)"
@@ -232,7 +232,7 @@ export function FormularioCadastro({ novoUsuario, perfilInicial }: FormularioCad
               onChange={setSenha}
               onBlur={() => validar("senha", () => validarSenhaCampo(senha))}
               validacao={valid.senha}
-              className="w-56"
+              className="w-full sm:w-56"
             />
             <CampoValidado
               label="Confirmar senha"
@@ -245,15 +245,15 @@ export function FormularioCadastro({ novoUsuario, perfilInicial }: FormularioCad
                 )
               }
               validacao={valid.senha2}
-              className="w-56"
+              className="w-full sm:w-56"
             />
           </div>
         </section>
       )}
 
-      <section className="rounded-xl bg-[#E6F1FB] p-4">
-        <h2 className="mb-3 text-sm font-bold text-[#0C447C]">👤 1. IDENTIFICAÇÃO E CONTATO</h2>
-        <div className="flex flex-wrap gap-3">
+      <section className="rounded-xl bg-[#E6F1FB] dark:bg-blue-900/40 p-4">
+        <h2 className="mb-3 text-sm font-bold text-[#0C447C] dark:text-blue-300">👤 1. IDENTIFICAÇÃO E CONTATO</h2>
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           <CampoValidado
             label="Nome Completo"
             value={dados.nome}
@@ -264,14 +264,14 @@ export function FormularioCadastro({ novoUsuario, perfilInicial }: FormularioCad
           />
           {!novoUsuario && (
             <label className="flex w-72 flex-col gap-1">
-              <span className="text-xs font-medium text-gray-600">E-mail de login</span>
+              <span className="text-xs font-medium text-gray-600 dark:text-gray-300">E-mail de login</span>
               <input
                 type="email"
                 value={dados.email}
                 disabled
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 outline-none"
+                className="w-full rounded-lg border border-gray-300 dark:border-white/15 bg-white dark:bg-[#1E293B] px-3 py-2 text-sm text-gray-700 outline-none"
               />
-              <span className="text-[10px] text-gray-400">
+              <span className="text-[10px] text-gray-400 dark:text-gray-500">
                 Para alterar o e-mail de login, entre em contato com o suporte.
               </span>
             </label>
@@ -285,7 +285,7 @@ export function FormularioCadastro({ novoUsuario, perfilInicial }: FormularioCad
             onBlur={() => validar("cpf", () => validarCpfCampo(dados.cpf))}
             validacao={valid.cpf}
             maxLength={14}
-            className="w-44"
+            className="w-full sm:w-44"
           />
           <CampoValidado
             label="RG"
@@ -303,7 +303,7 @@ export function FormularioCadastro({ novoUsuario, perfilInicial }: FormularioCad
             onBlur={() => validar("dataNasc", () => validarDataNascCampo(dados.dataNasc))}
             validacao={valid.dataNasc}
             maxLength={10}
-            className="w-44"
+            className="w-full sm:w-44"
           />
           <CampoValidado
             label="WhatsApp"
@@ -312,15 +312,15 @@ export function FormularioCadastro({ novoUsuario, perfilInicial }: FormularioCad
             onBlur={() => validar("telefone", () => validarTelefoneCampo(dados.telefone))}
             validacao={valid.telefone}
             maxLength={15}
-            className="w-44"
+            className="w-full sm:w-44"
           />
         </div>
       </section>
 
-      <section className="rounded-xl bg-[#FAEEDA] p-4">
+      <section className="rounded-xl bg-[#FAEEDA] dark:bg-yellow-900/40 p-4">
         <h2 className="mb-1 text-sm font-bold text-[#854F0B]">🏠 2. ENDEREÇO RESIDENCIAL</h2>
-        <p className="mb-3 text-[11px] italic text-gray-500">💡 Preencha o endereço manualmente.</p>
-        <div className="flex flex-wrap gap-3">
+        <p className="mb-3 text-[11px] italic text-gray-500 dark:text-gray-400 dark:text-gray-500">💡 Preencha o endereço manualmente.</p>
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           <CampoValidado
             label="CEP"
             value={dados.cep}
@@ -336,14 +336,14 @@ export function FormularioCadastro({ novoUsuario, perfilInicial }: FormularioCad
             onChange={(v) => set("logradouro", v)}
             onBlur={() => validar("logradouro", () => validarObrigatorio(dados.logradouro, "Endereço"))}
             validacao={valid.logradouro}
-            className="w-72"
+            className="w-full sm:w-72"
           />
           <CampoValidado label="Número" value={dados.numero} onChange={(v) => set("numero", v)} className="w-24" />
           <CampoValidado
             label="Complemento"
             value={dados.complemento}
             onChange={(v) => set("complemento", v)}
-            className="w-44"
+            className="w-full sm:w-44"
           />
         </div>
         <div className="mt-3 flex flex-wrap gap-3">
@@ -353,7 +353,7 @@ export function FormularioCadastro({ novoUsuario, perfilInicial }: FormularioCad
             onChange={(v) => set("bairro", v)}
             onBlur={() => validar("bairro", () => validarObrigatorio(dados.bairro, "Bairro"))}
             validacao={valid.bairro}
-            className="w-52"
+            className="w-full sm:w-52"
           />
           <CampoValidado
             label="Cidade"
@@ -361,7 +361,7 @@ export function FormularioCadastro({ novoUsuario, perfilInicial }: FormularioCad
             onChange={(v) => set("cidade", v)}
             onBlur={() => validar("cidade", () => validarObrigatorio(dados.cidade, "Cidade"))}
             validacao={valid.cidade}
-            className="w-52"
+            className="w-full sm:w-52"
           />
           <CampoValidado
             label="UF"
@@ -375,7 +375,7 @@ export function FormularioCadastro({ novoUsuario, perfilInicial }: FormularioCad
         </div>
       </section>
 
-      <div className="flex items-center gap-2 rounded-lg bg-[#FAEEDA] px-3 py-2.5">
+      <div className="flex items-center gap-2 rounded-lg bg-[#FAEEDA] dark:bg-yellow-900/40 px-3 py-2.5">
         <Briefcase size={16} className="flex-shrink-0 text-[#854F0B]" />
         <p className="text-xs text-[#854F0B]">
           Salário, vale-transporte, vale-alimentação e outros vínculos de renda agora ficam em{" "}
@@ -389,7 +389,7 @@ export function FormularioCadastro({ novoUsuario, perfilInicial }: FormularioCad
       {msg && (
         <div
           className={`rounded-lg p-3 text-sm font-medium ${
-            msg.cor === "red" ? "bg-[#FCEBEB] text-red-700" : "bg-[#EAF3DE] text-green-700"
+            msg.cor === "red" ? "bg-[#FCEBEB] dark:bg-red-900/40 text-red-700" : "bg-[#EAF3DE] dark:bg-green-900/40 text-green-700"
           }`}
         >
           {msg.texto}

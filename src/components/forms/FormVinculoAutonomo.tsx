@@ -68,35 +68,35 @@ export function FormVinculoAutonomo({
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl border border-[#97C459] bg-[#EAF3DE] p-4">
-      <div className="flex items-start gap-2 rounded-md bg-white p-2.5">
-        <Info size={14} className="mt-0.5 flex-shrink-0 text-[#3B6D11]" />
-        <p className="text-xs text-[#3B6D11]">
+    <div className="flex flex-col gap-4 rounded-xl border border-[#97C459] bg-[#EAF3DE] dark:bg-green-900/40 p-4">
+      <div className="flex items-start gap-2 rounded-md bg-white dark:bg-[#1E293B] p-2.5">
+        <Info size={14} className="mt-0.5 flex-shrink-0 text-[#3B6D11] dark:text-green-400" />
+        <p className="text-xs text-[#3B6D11] dark:text-green-400">
           Renda autônoma é variável — não criamos uma conta fixa de salário. Lance cada recebimento
           normalmente em <strong>Avulso</strong>. Aqui você só guarda os dados para referência e para os
           futuros módulos de Imposto de Renda.
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-2 sm:gap-3">
         <label className="flex w-60 flex-col gap-1">
-          <span className="text-xs font-medium text-gray-600">Apelido deste vínculo</span>
+          <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Apelido deste vínculo</span>
           <input
             type="text"
             placeholder="Ex: Freelas de Design"
             value={apelido}
             onChange={(e) => setApelido(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#3B6D11]"
+            className="rounded-lg border border-gray-300 dark:border-white/15 px-3 py-2 text-sm outline-none focus:border-[#3B6D11]"
           />
         </label>
         <label className="flex w-60 flex-col gap-1">
-          <span className="text-xs font-medium text-gray-600">Atividade</span>
+          <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Atividade</span>
           <input
             type="text"
             placeholder="Ex: Designer, Consultor, Motorista"
             value={d.atividade}
             onChange={(e) => set("atividade", e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#3B6D11]"
+            className="rounded-lg border border-gray-300 dark:border-white/15 px-3 py-2 text-sm outline-none focus:border-[#3B6D11]"
           />
         </label>
       </div>
@@ -105,7 +105,7 @@ export function FormVinculoAutonomo({
         label="Renda média mensal (estimativa, apenas referência)"
         value={d.rendaMediaMensal}
         onChange={(v) => set("rendaMediaMensal", v)}
-        className="w-64"
+        className="w-full sm:w-64"
       />
 
       <label className="flex items-center gap-2">
@@ -115,14 +115,14 @@ export function FormVinculoAutonomo({
           onChange={(e) => set("prestaServicoPJ", e.target.checked)}
           className="h-4 w-4"
         />
-        <span className="text-sm text-gray-700">Presto serviço para empresas (Pessoa Jurídica)</span>
+        <span className="text-sm text-gray-700 dark:text-gray-200">Presto serviço para empresas (Pessoa Jurídica)</span>
       </label>
 
-      <div className="rounded-lg bg-white p-3">
-        <p className="mb-2 text-sm font-medium text-gray-700">Como você contribui para o INSS?</p>
+      <div className="rounded-lg bg-white dark:bg-[#1E293B] p-3">
+        <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">Como você contribui para o INSS?</p>
         <div className="flex flex-col gap-2">
           {(Object.keys(PLANOS_INSS) as PlanoINSS[]).map((plano) => (
-            <label key={plano} className="flex items-start gap-2 rounded-md p-2 hover:bg-gray-50">
+            <label key={plano} className="flex items-start gap-2 rounded-md p-2 hover:bg-gray-50 dark:bg-[#0F172A]">
               <input
                 type="radio"
                 checked={d.planoINSS === plano}
@@ -130,16 +130,16 @@ export function FormVinculoAutonomo({
                 className="mt-0.5 h-4 w-4"
               />
               <div>
-                <p className="text-xs font-semibold text-gray-700">{PLANOS_INSS[plano].label}</p>
-                <p className="text-[10px] text-gray-500">{PLANOS_INSS[plano].descricao}</p>
+                <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">{PLANOS_INSS[plano].label}</p>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 dark:text-gray-500">{PLANOS_INSS[plano].descricao}</p>
               </div>
             </label>
           ))}
         </div>
         {d.rendaMediaMensal > 0 && (
-          <div className="mt-2 flex items-center gap-2 rounded-md bg-[#EAF3DE] px-3 py-2">
-            <span className="text-xs text-[#3B6D11]">INSS estimado por mês:</span>
-            <strong className="text-sm text-[#3B6D11]">{fmt(inssEstimado)}</strong>
+          <div className="mt-2 flex items-center gap-2 rounded-md bg-[#EAF3DE] dark:bg-green-900/40 px-3 py-2">
+            <span className="text-xs text-[#3B6D11] dark:text-green-400">INSS estimado por mês:</span>
+            <strong className="text-sm text-[#3B6D11] dark:text-green-400">{fmt(inssEstimado)}</strong>
           </div>
         )}
       </div>

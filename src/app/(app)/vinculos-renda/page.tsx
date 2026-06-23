@@ -127,11 +127,11 @@ export default function VinculosRendaPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-5 p-6">
+    <div className="mx-auto flex max-w-3xl flex-col gap-5 p-4 sm:p-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Briefcase className="text-[#0C447C]" size={26} />
-          <h1 className="text-xl font-bold text-[#0C447C]">VÍNCULOS DE RENDA</h1>
+          <Briefcase className="text-[#0C447C] dark:text-blue-300" size={26} />
+          <h1 className="text-xl font-bold text-[#0C447C] dark:text-blue-300">VÍNCULOS DE RENDA</h1>
         </div>
         {!criandoTipo && !escolhendoTipo && !editandoId && (
           <button
@@ -143,14 +143,14 @@ export default function VinculosRendaPage() {
         )}
       </div>
 
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-500">
         Você pode ter mais de um vínculo ao mesmo tempo (ex: CLT + MEI). Vínculos com valor fixo (CLT, MEI,
         Simples Nacional) geram automaticamente contas fixas em <strong>Contas Fixas</strong>. Renda
         autônoma é lançada manualmente em <strong>Avulso</strong>, por ser variável.
       </p>
 
       {escolhendoTipo && (
-        <div className="grid grid-cols-2 gap-3 rounded-xl border border-gray-200 bg-white p-4 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white p-4 sm:grid-cols-4">
           {(Object.keys(TIPOS_INFO) as TipoVinculo[]).map((tipo) => {
             const info = TIPOS_INFO[tipo];
             const Icon = info.icon;
@@ -161,10 +161,10 @@ export default function VinculosRendaPage() {
                   setEscolhendoTipo(false);
                   setCriandoTipo(tipo);
                 }}
-                className="flex flex-col items-center gap-2 rounded-lg border border-gray-200 p-4 hover:border-gray-300 hover:bg-gray-50"
+                className="flex flex-col items-center gap-2 rounded-lg border border-gray-200 dark:border-white/10 p-4 hover:border-gray-300 dark:border-white/15 hover:bg-gray-50 dark:bg-[#0F172A]"
               >
                 <Icon size={24} style={{ color: info.cor }} />
-                <span className="text-xs font-semibold text-gray-700">{info.label}</span>
+                <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">{info.label}</span>
               </button>
             );
           })}
@@ -220,7 +220,7 @@ export default function VinculosRendaPage() {
       {carregando ? (
         <LoadingPagina />
       ) : vinculos.length === 0 && !criandoTipo && !escolhendoTipo ? (
-        <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-gray-300 py-12 text-gray-400">
+        <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-gray-300 dark:border-white/15 py-12 text-gray-400 dark:text-gray-500">
           <Briefcase size={32} />
           <p className="text-sm">Nenhum vínculo de renda cadastrado ainda.</p>
         </div>
@@ -235,7 +235,7 @@ export default function VinculosRendaPage() {
                 <div
                   key={v.id}
                   className={`rounded-xl border p-4 ${
-                    v.ativo ? "border-gray-200 bg-white" : "border-gray-200 bg-gray-50 opacity-60"
+                    v.ativo ? "border-gray-200 dark:border-white/10 bg-white dark:bg-[#1E293B]" : "border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-[#0F172A] opacity-60"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -243,7 +243,7 @@ export default function VinculosRendaPage() {
                       <Icon size={16} style={{ color: info.cor }} />
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-gray-800">{v.apelido}</span>
+                          <span className="text-sm font-bold text-gray-800 dark:text-gray-100">{v.apelido}</span>
                           <span
                             className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
                             style={{ backgroundColor: info.cor }}
@@ -251,7 +251,7 @@ export default function VinculosRendaPage() {
                             {info.label}
                           </span>
                           {!v.ativo && (
-                            <span className="rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-bold text-gray-500">
+                            <span className="rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-bold text-gray-500 dark:text-gray-400 dark:text-gray-500">
                               INATIVO
                             </span>
                           )}
@@ -260,10 +260,10 @@ export default function VinculosRendaPage() {
                     </div>
                     <div className="flex gap-2">
                       <button onClick={() => setEditandoId(v.id)} title="Editar">
-                        <Pencil size={15} className="text-[#0C447C]" />
+                        <Pencil size={15} className="text-[#0C447C] dark:text-blue-300" />
                       </button>
                       <button onClick={() => alternarAtivo(v)} title={v.ativo ? "Desativar" : "Reativar"}>
-                        <Power size={15} className={v.ativo ? "text-[#854F0B]" : "text-[#3B6D11]"} />
+                        <Power size={15} className={v.ativo ? "text-[#854F0B]" : "text-[#3B6D11] dark:text-green-400"} />
                       </button>
                       <button onClick={() => excluir(v.id, v.apelido)} title="Excluir">
                         <Trash2 size={15} className="text-red-500" />
@@ -274,7 +274,7 @@ export default function VinculosRendaPage() {
                   <div className="mt-3 flex flex-wrap gap-4 text-xs">
                     {resumoFinanceiro(v).map((item, i) => (
                       <div key={i}>
-                        <span className="text-gray-400">{item.label}</span>
+                        <span className="text-gray-400 dark:text-gray-500">{item.label}</span>
                         <p className="font-bold" style={{ color: item.cor }}>
                           {item.valor < 0 ? "-" : ""}
                           {fmt(Math.abs(item.valor))}

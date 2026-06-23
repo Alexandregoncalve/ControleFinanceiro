@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
+import { TemaProvider } from "@/components/providers/TemaProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -13,19 +14,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR">
-      <body className="antialiased bg-[#F4F7FB] text-gray-800">
-        {children}
-        <Toaster
-          position="top-right"
-          richColors
-          closeButton
-          toastOptions={{
-            style: { fontSize: "13px" },
-          }}
-        />
+    <html lang="pt-BR" suppressHydrationWarning>
+      <body className="antialiased bg-[var(--app-bg)] text-[var(--app-texto)]">
+        <TemaProvider>
+          {children}
+          <Toaster
+            position="top-right"
+            richColors
+            closeButton
+            toastOptions={{
+              style: { fontSize: "13px" },
+            }}
+          />
+        </TemaProvider>
       </body>
     </html>
   );
 }
-

@@ -46,13 +46,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F4F7FB] px-4">
+    <div className="flex min-h-screen items-center justify-center bg-[#F4F7FB] dark:bg-[#0F172A] px-4">
       <div className="flex w-full max-w-sm flex-col items-center gap-3">
-        <Landmark size={64} className="text-[#0C447C]" />
-        <h1 className="text-2xl font-bold tracking-wide text-[#0C447C]">
+        <Landmark size={64} className="text-[#0C447C] dark:text-blue-300" />
+        <h1 className="text-2xl font-bold tracking-wide text-[#0C447C] dark:text-blue-300">
           FINANÇA SIMPLES
         </h1>
-        <p className="text-sm text-gray-500">Acesse sua conta</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500">Acesse sua conta</p>
 
         <form onSubmit={fazerLogin} className="mt-4 flex w-full flex-col gap-4">
           <input
@@ -60,14 +60,14 @@ export default function LoginPage() {
             placeholder="E-mail ou usuário"
             value={login}
             onChange={(e) => setLogin(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-[#0C447C] focus:ring-1 focus:ring-[#0C447C]"
+            className="w-full rounded-lg border border-gray-300 dark:border-white/15 px-4 py-3 text-sm outline-none focus:border-[#0C447C] focus:ring-1 focus:ring-[#0C447C]"
           />
           <input
             type="password"
             placeholder="Senha"
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-[#0C447C] focus:ring-1 focus:ring-[#0C447C]"
+            className="w-full rounded-lg border border-gray-300 dark:border-white/15 px-4 py-3 text-sm outline-none focus:border-[#0C447C] focus:ring-1 focus:ring-[#0C447C]"
           />
 
           {erro && <p className="text-sm text-red-600">{erro}</p>}
@@ -87,7 +87,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="mt-2 text-sm text-gray-500">
+        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 dark:text-gray-500">
           Não tem conta?{" "}
           <Link href="/cadastro" className="font-medium text-[#0C447C] hover:underline">
             Criar conta
