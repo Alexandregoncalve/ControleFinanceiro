@@ -215,17 +215,23 @@ export async function parsearPDF(buffer: Buffer): Promise<ResultadoParsing> {
 
   let texto: string;
   try {
-    // pdf-parse v2.x exporta uma classe PDFParse, não uma função direta
+    // Importa lib/pdf-parse.js diretamente (não index.js) para evitar o código
+    // de teste que pdf-parse v1.x executa quando é o módulo raiz — isso causava
+    // "Unexpected token ':'" durante o build do Next.js
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { PDFParse } = require("pdf-parse");
-    const parser = new PDFParse();
-    const data = await parser.parse(buffer);
-    // v2.x retorna { pages } com texto em cada página
-    texto = data.pages
-      ? data.pages.map((p: { lines: { text: string }[] }) =>
-          p.lines.map((l) => l.text).join("\n")
-        ).join("\n")
-      : data.text || "";
+    const pdfParse = require("pdf-parse/lib/pdf-parse");
+    const data = await pdfParse(buffer);
+    texto = data.text || "";
+    if (!texto.trim()) {
+      return {
+        linhas: [],
+        mapeamento: { data: null, descricao: null, valor: null, debito: null, credito: null, tipo: null },
+        headers: [],
+        linhasBrutas: [],
+        avisos: ["O PDF não contém texto extraível. Pode ser um arquivo escaneado (imagem). Tente exportar em formato OFX, CSV ou XLS."],
+        formato: "pdf",
+      };
+    }
   } catch (ex) {
     return {
       linhas: [],
