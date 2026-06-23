@@ -50,6 +50,15 @@ export function normalizarData(texto: string): string | null {
     }
   }
 
+  // AAAA-MM-DD HH:MM:SS (formato datetime do Excel — ex: "2026-06-22 00:00:00")
+  const m5 = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})[\sT]\d{2}:\d{2}/);
+  if (m5) {
+    const [, a, mo, d] = m5;
+    if (Number(mo) >= 1 && Number(mo) <= 12 && Number(d) >= 1 && Number(d) <= 31) {
+      return `${d.padStart(2, "0")}/${mo.padStart(2, "0")}/${a}`;
+    }
+  }
+
   return null;
 }
 

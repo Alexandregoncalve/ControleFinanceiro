@@ -55,12 +55,19 @@ export interface ResultadoParsing {
 
 /** Padrões conhecidos de extrato bancário para detecção automática de colunas */
 export const PADROES_COLUNA = {
-  data: ["data", "date", "dt", "vencimento", "lançamento", "lancamento", "competencia"],
+  data: [
+    "data", "date", "dt", "vencimento", "lançamento", "lancamento", "competencia",
+    "movimentação", "movimentacao", "liquidação", "liquidacao", "mov", "liq",
+  ],
   descricao: [
     "descricao", "descrição", "historico", "histórico", "memo",
-    "description", "detalhe", "complemento", "favorecido", "beneficiario"
+    "description", "detalhe", "complemento", "favorecido", "beneficiario",
+    "lançamento", "lancamento", "histórico", "historico",
   ],
-  valor: ["valor", "value", "amount", "montante", "quantia"],
+  valor: [
+    "valor", "value", "amount", "montante", "quantia",
+    "valor (r$)", "valor r$", "vlr", "vl",
+  ],
   debito: ["debito", "débito", "saida", "saída", "debit", "valor debito", "valor débito"],
   credito: ["credito", "crédito", "entrada", "credit", "valor credito", "valor crédito"],
   tipo: ["tipo", "natureza", "dc", "d/c", "type"],
